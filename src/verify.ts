@@ -1,0 +1,2 @@
+import { decodeRun } from './run-code.ts';
+document.getElementById('verify')!.onclick=async()=>{const status=document.getElementById('status')!,out=document.getElementById('output')!;out.textContent='';try{const run=await decodeRun((document.getElementById('code') as HTMLTextAreaElement).value);status.textContent='Checksum valid. Statistics structurally consistent; gameplay is not certified.';out.textContent=JSON.stringify(run,null,2);}catch(e){status.textContent=e instanceof Error?e.message:'Invalid run code.';}};

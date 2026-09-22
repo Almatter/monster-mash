@@ -1,0 +1,7 @@
+{
+  "name": "isekai-hell-monster-mash",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node tools/build.mjs", "dev": "node tools/serve.mjs", "test": "node --test tests/*.test.mjs" }
+}
