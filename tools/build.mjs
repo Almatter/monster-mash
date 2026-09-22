@@ -7,5 +7,8 @@ for (const name of await readdir('src')) {
   const js = stripTypeScriptTypes(source, { mode: 'strip' }).replaceAll(/from '(\.\/[^']+)\.ts'/g, "from '$1.js'");
   await writeFile(`dist/src/${name.replace('.ts', '.js')}`, js);
 }
-for (const name of await readdir('public')) await copyFile(`public/${name}`, `dist/${name}`);
+const {cp}=await import('node:fs/promises');await cp('public','dist',{recursive:true});
+const modules=(await readdir('src')).filter(n=>n.endsWith('.ts')).map(n=>'src/'+n.replace('.ts','.js'));
+const assets=['./','index.html','style.css','event.css','icon.svg','manifest.webmanifest','verify.html',...modules];
+const worker=(await readFile('public/sw.js','utf8')).replace(/const ASSETS=\[[\s\S]*?\];/, 'const ASSETS='+JSON.stringify(assets)+';');await writeFile('dist/sw.js',worker);
 console.log('Production build ready in dist/ (no runtime dependencies).');

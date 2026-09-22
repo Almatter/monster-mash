@@ -1,6 +1,11 @@
 import { ENEMIES, EVENT, PHASES, POWERS, type EnemyKind } from './data.ts';
 import { Score } from './scoring.ts';
-export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number};
+import {ABILITIES,MONSTERS} from './content-monsters.ts';
+import {createIdentity,type Identity} from './identity.ts';
+import {POWER_HANDLERS} from './powers.ts';
+import {MASSACRES} from './content-records.ts';
+import {createServants,updateServants} from './servants.ts';
+export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
 export type Input={x:number;y:number;aimX:number;aimY:number;aiming:boolean};
@@ -11,16 +16,25 @@ export class Game {
  effects:Effect[]=[];shots:Shot[]=[]; cooldowns=[0,0,0,0];beam=0;beamTick=0;attack=0;spawnBank=0;alive=0;serial=0;
  grid=new Map<number,Enemy[]>(); freeBuckets:Enemy[][]=[];
  notice='THE HORDE IS YOURS.';noticeTime=4;shake=0;sound:(kind:string)=>void=()=>{};
- constructor(seed:number){this.seed=seed>>>0;this.rng=this.seed||1;}
+ surrounded=0;passiveTimer=0;healBudget=250;beamKills=0;beamPower=ABILITIES.beam;ultimateTime=0;activationBest=0;
+ frenzy=0;frenzyHealing=0;
+ resonance=0;servants=createServants();corruptionTick=0;chains:{x:number;y:number}[]=[];
+ fields:{kind:string;x:number;y:number;life:number;radius:number;damage:number;tick:number;kills:number}[]=[];
+ bolts:{x:number;y:number;vx:number;vy:number;life:number;damage:number;source:string}[]=[];
+ debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
+ dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
+ identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
+ constructor(seed:number,identity:Partial<Identity>={}){this.seed=seed>>>0;this.rng=this.seed||1;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;}
  random(){let x=this.rng;x^=x<<13;x^=x>>>17;x^=x<<5;this.rng=x>>>0;return this.rng/4294967296;}
- announce(text:string){this.notice=text;this.noticeTime=3.2;}
+ notifications:string[]=[];
+ announce(text:string){if(this.noticeTime<=0){this.notice=text;this.noticeTime=2.8;}else if(this.notifications.length<10&&!this.notifications.includes(text))this.notifications.push(text);}
  effect(x:number,y:number,kind:string,radius:number,life=.5,angle=0){if(this.effects.length<180)this.effects.push({x,y,kind,radius,life,max:life,angle});}
  spawn(kind:EnemyKind){
   if(this.alive>=EVENT.maxEnemies-24&&kind!=='elite'&&kind!=='titan')return;
   const e=this.enemies.find(e=>!e.active);if(!e)return;
   const a=this.random()*Math.PI*2,r=540+this.random()*160,def=ENEMIES[kind];
   const hpScale=1+Math.max(0,this.wave-4)*.045;
-  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial});this.alive++;
+  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,corruptUntil:0});this.alive++;
  }
  rebuildGrid(){
   for(const bucket of this.grid.values()){bucket.length=0;this.freeBuckets.push(bucket);}this.grid.clear();
@@ -32,44 +46,31 @@ export class Game {
    const bucket=this.grid.get((ix+4096)*8192+iy+4096);if(bucket)for(const e of bucket)if(e.active)visit(e);
   }
  }
- hurt(damage:number){if(this.player.invuln>0)return;this.player.hp=Math.max(0,this.player.hp-damage);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp<=0)this.ended=true;}
+ hurt(damage:number){if(this.player.invuln>0)return;this.player.hp=Math.max(0,this.player.hp-damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.75:1));this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp<=0)this.ended=true;}
  damage(e:Enemy,amount:number,source:string){
   if(!e.active)return false;
   e.hp-=amount;e.flash=.1;
   if(e.hp>0)return false;
-  e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time);
+  e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time,source);
   this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
-  if(source==='devour'){this.player.hp=Math.min(this.player.maxHp,this.player.hp+(e.kind==='elite'?120:18));}
+  if(this.frenzy>0){const heal=Math.min(8,this.frenzyHealing);this.frenzyHealing-=heal;this.player.hp=Math.min(this.player.maxHp,this.player.hp+heal);}
+  if((e.corruptUntil||0)>this.time&&this.chains.length<128)this.chains.push({x:e.x,y:e.y});
+  if(Math.hypot(e.vx,e.vy)>100&&this.debris.length<80)this.debris.push({x:e.x,y:e.y,vx:e.vx,vy:e.vy,life:.6,kills:0});
+  if(source==='devour'){const heal=Math.min(this.healBudget,e.kind==='elite'?120:18);this.healBudget-=heal;this.player.hp=Math.min(this.player.maxHp,this.player.hp+heal);}
   return true;
  }
  resolveFeats(extra:Parameters<Score['evaluate']>[1]){const earned=this.score.evaluate(this.time,extra);if(earned.length)this.announce(earned.join(' · '));}
- cast(index:number){
-  if(this.ended||this.cooldowns[index]>0)return false;
-  const power=POWERS[index];if(!power)return false;
-  this.cooldowns[index]=power.cooldown;this.sound(power.id);
-  if(index===2){this.beam=2.5;this.beamTick=0;return true;}
-  const p=this.player,boost=this.powerScale();let kills=0,overkill=0,apex=0;
-  this.shake=index===3?18:8;this.effect(p.x,p.y,power.id,power.radius,index===3?1.2:.55);
-  this.nearby(p.x,p.y,power.radius+65,e=>{
-   const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);
-   if(d>power.radius+ENEMIES[e.kind].radius)return;
-   if(power.damage*boost>e.hp*4)overkill++;
-   if(index===0){e.vx=dx/(d||1)*750;e.vy=dy/(d||1)*750;}
-   if(this.damage(e,power.damage*boost,power.id)){kills++;if(e.kind==='elite'&&index===1)apex++;}
-  });
-  // Rupture sends surviving heavies flying, while its outward blast scatters weak prey
-  // into a second annulus for the same collision-kill scoring treatment.
-  if(index===0){let chain=0;this.nearby(p.x,p.y,300,e=>{const d=Math.hypot(e.x-p.x,e.y-p.y);if(d>190&&d<300&&this.damage(e,55*boost,'collision')){kills++;chain++;}});this.resolveFeats({chain});}
-  if(index===1)p.rage=6;
-  this.score.multikill(kills);this.resolveFeats({multi:kills,overkill,eliteDevoured:apex});return true;
- }
- powerScale(){return (1+(this.wave-1)*.075)*(this.player.rage>0?1.4:1);}
+ completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier)this.announce(tier.name+' · '+kills+' SLAIN · +'+(kills*5)+' MULTIKILL');}
+ area(x:number,y:number,radius:number,damage:number,source:string,knockback=0,settle=true){let kills=0,overkill=0,apex=0;this.nearby(x,y,radius+65,e=>{const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d>radius+ENEMIES[e.kind].radius)return;if(damage*this.powerScale()>e.hp*4)overkill++;if(knockback){e.vx=dx/(d||1)*knockback;e.vy=dy/(d||1)*knockback;}if(this.damage(e,damage*this.powerScale(),source)){kills++;if(e.kind==='elite'&&source==='devour')apex++;}});if(settle)this.completeAttack(kills,{overkill,eliteDevoured:apex});return kills;}
+ cast(index:number){if(this.ended||this.cooldowns[index]>0)return false;const power=this.powers[index],handler=power&&POWER_HANDLERS[power.effect];if(!handler)return false;this.cooldowns[index]=power.cooldown;this.sound(index===3?'catastrophe':power.effect==='beam'?'beam':power.effect==='devour'?'devour':'rupture');this.shake=index===3?18:8;this.effect(this.player.x,this.player.y,power.effect==='shockwave'?'rupture':power.effect,power.radius,index===3?1:.5);if(index===3)this.ultimateTime=.85;handler(this,power);return true;}
+ powerScale(){return (1+(this.wave-1)*.075)*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
  update(dt:number,input:Input){
   if(this.ended)return;
-  this.time+=dt;this.score.update(dt,this.time);this.noticeTime-=dt;this.shake=Math.max(0,this.shake-dt*25);
-  const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
+  this.time+=dt;this.score.update(dt,this.time);this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length)this.announce(this.notifications.shift()!);this.shake=Math.max(0,this.shake-dt*25);
+  this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);
-  const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*205*dt;p.y+=input.y/Math.max(1,length)*205*dt;
+  const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
+  if(this.dash){const d=this.dash;p.x+=Math.cos(d.angle)*d.speed*dt;p.y+=Math.sin(d.angle)*d.speed*dt;d.remaining-=dt;}
   const fromCenter=Math.hypot(p.x,p.y);if(fromCenter>EVENT.arenaRadius){p.x*=EVENT.arenaRadius/fromCenter;p.y*=EVENT.arenaRadius/fromCenter;}
   if(input.aiming)p.angle=Math.atan2(input.aimY-p.y,input.aimX-p.x);
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
@@ -94,10 +95,16 @@ export class Game {
    if(d<def.radius+23){this.hurt(def.damage*threat);e.x-=dx/d*12;e.y-=dy/d*12;}
   }
   this.rebuildGrid();
+  updateServants(this,dt);
+  this.passiveTimer-=dt;if(this.passiveTimer<=0){this.passiveTimer=.2;this.surrounded=0;this.nearby(p.x,p.y,130,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<130)this.surrounded++;});}
+  if(this.dash){const d=this.dash;this.nearby(p.x,p.y,d.radius+60,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<d.radius+ENEMIES[e.kind].radius&&this.damage(e,d.damage*this.powerScale()*dt*12,d.source))d.kills++;});if(d.remaining<=0){this.completeAttack(d.kills);this.dash=null;}}
+  for(let i=this.debris.length-1;i>=0;i--){const b=this.debris[i];b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;this.nearby(b.x,b.y,35,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<ENEMIES[e.kind].radius+18&&this.damage(e,100*this.powerScale(),'collision'))b.kills++;});if(b.life<=0){this.resolveFeats({chain:b.kills});this.debris.splice(i,1);}}
   for(const e of this.enemies)if(e.active&&Math.hypot(e.vx,e.vy)>180){let chain=0;this.nearby(e.x,e.y,40,other=>{if(other!==e&&other.active&&Math.hypot(e.x-other.x,e.y-other.y)<ENEMIES[e.kind].radius+ENEMIES[other.kind].radius&&this.damage(other,80*this.powerScale(),'collision'))chain++;});if(chain){this.score.multikill(chain);this.resolveFeats({chain});}}
+  for(let i=this.fields.length-1;i>=0;i--){const f=this.fields[i];f.life-=dt;f.tick-=dt;if(f.kind==='vortex'){this.nearby(f.x,f.y,f.radius+60,e=>{const dx=f.x-e.x,dy=f.y-e.y,d=Math.hypot(dx,dy);if(d<f.radius&&d>8){e.vx=dx/d*140;e.vy=dy/d*140;}});if(f.tick<=0){f.tick=.25;f.kills+=this.area(f.x,f.y,f.radius,f.damage,'vortex',0,false);}}if(f.life<=0){if(f.kind==='meteor'){f.kills+=this.area(f.x,f.y,f.radius,f.damage,'meteor',0,false);this.effect(f.x,f.y,'catastrophe',f.radius,.8);this.sound('catastrophe');}this.completeAttack(f.kills);this.fields.splice(i,1);}}
+  for(let i=this.bolts.length-1;i>=0;i--){const b=this.bolts[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let hit=false;this.nearby(b.x,b.y,65,e=>{if(!hit&&Math.hypot(e.x-b.x,e.y-b.y)<ENEMIES[e.kind].radius+10){this.damage(e,b.damage,b.source);hit=true;}});if(hit||b.life<=0)this.bolts.splice(i,1);}
   this.attack-=dt;
-  if(this.attack<=0){this.attack=.45;let kills=0;this.nearby(p.x,p.y,130,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<95+ENEMIES[e.kind].radius&&this.damage(e,42*this.powerScale(),'claw'))kills++;});this.effect(p.x,p.y,'claw',110,.22,p.angle);if(kills){this.score.multikill(kills);this.sound('hit');}}
-  if(this.beam>0){this.beam-=dt;this.beamTick-=dt;if(this.beamTick<=0){this.beamTick=.1;let kills=0;const ax=Math.cos(p.angle),ay=Math.sin(p.angle);this.nearby(p.x,p.y,720,e=>{const dx=e.x-p.x,dy=e.y-p.y,along=dx*ax+dy*ay,side=Math.abs(dx*ay-dy*ax);if(along>0&&along<680&&side<30+ENEMIES[e.kind].radius&&this.damage(e,110*this.powerScale(),'beam'))kills++;});this.score.multikill(kills);this.resolveFeats({multi:kills});}}
+  if(this.attack<=0){const basic=this.monster.basic;this.attack=basic.interval*(this.frenzy>0?.5:1);let kills=0;if(basic.ranged){if(this.bolts.length<80)this.bolts.push({x:p.x,y:p.y,vx:Math.cos(p.angle)*800,vy:Math.sin(p.angle)*800,life:basic.radius/800,damage:basic.damage*this.powerScale(),source:'direct'});}else this.nearby(p.x,p.y,basic.radius+65,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<basic.radius+ENEMIES[e.kind].radius&&this.damage(e,basic.damage*this.powerScale(),'direct'))kills++;});if(!basic.ranged)this.effect(p.x,p.y,'claw',basic.radius+15,.22,p.angle);if(kills){this.completeAttack(kills);this.sound('hit');}}
+  if(this.beam>0){this.beam-=dt;this.beamTick-=dt;if(this.beamTick<=0){this.beamTick=.1;let kills=0;const ax=Math.cos(p.angle),ay=Math.sin(p.angle);this.nearby(p.x,p.y,720,e=>{const dx=e.x-p.x,dy=e.y-p.y,along=dx*ax+dy*ay,side=Math.abs(dx*ay-dy*ax);if(along>0&&along<this.beamPower.radius&&side<30+ENEMIES[e.kind].radius&&this.damage(e,this.beamPower.damage*this.powerScale(),'beam'))kills++;});this.beamKills+=kills;}if(this.beam<=0)this.completeAttack(this.beamKills);}
   for(let i=this.shots.length-1;i>=0;i--){const s=this.shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(Math.hypot(s.x-p.x,s.y-p.y)<28){this.hurt(s.damage);s.life=0;}if(s.life<=0)this.shots.splice(i,1);}
   for(let i=this.effects.length-1;i>=0;i--){this.effects[i].life-=dt;if(this.effects[i].life<=0)this.effects.splice(i,1);}
   this.resolveFeats({});
