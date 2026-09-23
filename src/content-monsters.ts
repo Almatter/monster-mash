@@ -14,15 +14,15 @@ export const ABILITIES:Record<string,AbilityDef>={
  vortex:{id:'vortex',name:'Event Horizon',short:'Vortex',description:'Pull enemies into a damaging field ahead of you for four seconds.',symbol:'◉',cooldown:16,radius:220,damage:70,effect:'vortex',duration:4},
  crimson:{id:'crimson',name:'Crimson Catastrophe',short:'Catastrophe',description:'Erase an enormous area with a signature magical detonation.',symbol:'✦',cooldown:48,radius:850,damage:2200,effect:'blast'},
  rendlunge:{id:'rendlunge',name:'Riftfang Lunge',short:'Lunge',description:'Lunge through prey in your aim direction.',symbol:'➤',cooldown:5,radius:60,damage:100,effect:'lunge',duration:.3},
- maw:{id:'maw',name:'Maw of Ruin',short:'Devour',description:'Eat nearby prey. Healing is capped at 25% of maximum health per cast.',symbol:'♜',cooldown:9,radius:160,damage:520,effect:'devour'},
+ maw:{id:'maw',name:'Maw of Ruin',short:'Devour',description:'Eat nearby prey. Healing is capped at 35% of maximum health per cast.',symbol:'♜',cooldown:9,radius:160,damage:520,effect:'devour'},
  execution:{id:'execution',name:'Royal Execution',short:'Execute',description:'Strike the nearest wounded elite within 420 units; otherwise the nearest prey. Double damage below half health.',symbol:'◇',cooldown:11,radius:420,damage:700,effect:'execute'},
- frenzy:{id:'frenzy',name:'Feast of the Unbound',short:'Frenzy',description:'Eight seconds of accelerated claws and damage. Feeding heals at most 20% maximum health in total.',symbol:'✦',cooldown:42,radius:140,damage:1,effect:'frenzy',duration:8},
+ frenzy:{id:'frenzy',name:'Feast of the Unbound',short:'Frenzy',description:'Eight seconds of accelerated claws and damage. Feeding heals at most 25% maximum health in total.',symbol:'✦',cooldown:42,radius:140,damage:1,effect:'frenzy',duration:8},
  worldbreaker:{id:'worldbreaker',name:'World Breaker',short:'Breaker',description:'Shatter nearby ranks and hurl bodies through their allies.',symbol:'◉',cooldown:6,radius:210,damage:145,effect:'shockwave'},
  stampede:{id:'stampede',name:'Iron Stampede',short:'Stampede',description:'Charge in your aim direction, trampling enemies for 0.7 seconds.',symbol:'➤',cooldown:8,radius:85,damage:95,effect:'charge',duration:.7},
  kingfall:{id:'kingfall',name:'Kingfall Throw',short:'Throw',description:'Launch nearby enemies and their remains at extreme speed.',symbol:'♜',cooldown:10,radius:155,damage:150,effect:'launch'},
  heavenfall:{id:'heavenfall',name:'Heavenfall Cataclysm',short:'Heavenfall',description:'A colossal ground impact that scatters entire armies.',symbol:'✦',cooldown:45,radius:580,damage:1800,effect:'blast'},
  rupture:{id:'rupture',name:'Rupture',short:'Rupture',description:'Radial damage and violent knockback.',symbol:'◉',cooldown:6,radius:190,damage:110,effect:'shockwave'},
- devour:{id:'devour',name:'Devour',short:'Devour',description:'Consume nearby prey to heal and enrage.',symbol:'♜',cooldown:10,radius:135,damage:400,effect:'devour'},
+ devour:{id:'devour',name:'Devour',short:'Devour',description:'Consume nearby prey to heal up to 40% maximum health and enrage.',symbol:'♜',cooldown:9,radius:155,damage:400,effect:'devour'},
  beam:{id:'beam',name:'Death Beam',short:'Beam',description:'Sweep a piercing beam with your aim for 2.5 seconds.',symbol:'ϟ',cooldown:13,radius:680,damage:110,effect:'beam',duration:2.5},
  catastrophe:{id:'catastrophe',name:'Catastrophe',short:'Catastrophe',description:'Annihilate the surrounding horde.',symbol:'✦',cooldown:48,radius:630,damage:1800,effect:'blast'}
 };

@@ -1,7 +1,7 @@
 import { FEATS, type FeatContext } from './data.ts';
 import {SCORING,type Metrics} from './content-records.ts';
 export class Score {
- dominance=0; kills=0; carnage=1; peak=1; elites=0; titans=0; largestMulti=0;
+ eliteDevoured=0; dominance=0; kills=0; carnage=1; peak=1; elites=0; titans=0; largestMulti=0;
  feats:Record<string,number>={}; timers:Record<string,number>={};
  quiet=0; noHitKills=0; recent:number[]=[];
  sources:Record<string,number>={};featBest:Record<string,number>={};bestRecent=0;bestNoHit=0;maxStreak=0;currentMaxStreak=0;
@@ -13,7 +13,7 @@ export class Score {
   while(this.recent.length && this.recent[0]<time-5) this.recent.shift();
  }
  kill(base:number,kind:string,time:number,source='direct') {
-  this.kills++; this.noHitKills++; this.quiet=0; this.recent.push(time);
+  if(kind==='elite'&&source==='devour')this.eliteDevoured++;this.kills++; this.noHitKills++; this.quiet=0; this.recent.push(time);
   this.carnage=Math.min(SCORING.maxCarnage,this.carnage+SCORING.killCarnage);this.peak=Math.max(this.peak,this.carnage);this.sources[source]=(this.sources[source]||0)+1;this.bestRecent=Math.max(this.bestRecent,this.recent.length);this.bestNoHit=Math.max(this.bestNoHit,this.noHitKills);
   this.dominance+=Math.round(base*this.carnage);
   if(kind==='elite') this.elites++;

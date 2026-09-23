@@ -1,5 +1,5 @@
 import {MONSTERS,type Palette} from './content-monsters.ts';
-export type RunRecord = {version:1|2;rules:string;phase:number;name:string;title?:string;monsterId?:string;colors?:Palette;newRecords?:string[];sources?:Record<string,number>;seed:number;duration:number;score:number;kills:number;wave:number;elites:number;titans:number;multi:number;peak:number;feats:Record<string,number>;ended:string;reason:'overwhelmed'|'retired'};
+export type RunRecord = {version:1|2;rules:string;phase:number;name:string;title?:string;monsterId?:string;colors?:Palette;newRecords?:string[];newTitles?:string[];sources?:Record<string,number>;seed:number;duration:number;score:number;kills:number;wave:number;elites:number;titans:number;multi:number;peak:number;feats:Record<string,number>;ended:string;reason:'overwhelmed'|'retired'};
 // Public checksum protects against accidental edits only. No client can keep a secret.
 // This envelope is deliberately versioned so a future API can sign server-issued runs.
 async function digest(bytes:Uint8Array) { return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)); }

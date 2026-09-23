@@ -5,6 +5,7 @@ import {createIdentity,type Identity} from './identity.ts';
 import {POWER_HANDLERS} from './powers.ts';
 import {MASSACRES,SCORING} from './content-records.ts';
 import {createServants,updateServants} from './servants.ts';
+import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN} from './balance.ts';
 export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
@@ -17,7 +18,7 @@ export class Game {
  grid=new Map<number,Enemy[]>(); freeBuckets:Enemy[][]=[];
  notice='THE HORDE IS YOURS.';noticeTime=4;shake=0;sound:(kind:string)=>void=()=>{};
  surrounded=0;passiveTimer=0;healBudget=250;beamKills=0;beamPower=ABILITIES.beam;ultimateTime=0;activationBest=0;
- frenzy=0;frenzyHealing=0;
+ frenzy=0;frenzyHealing=0;shield=0;shieldTime=0;sustainCooldown=0;siphonBudget=SUSTAIN.overlord.perSecond;siphonWindow=0;pressure=threatAt(0);pressureTime=0;sustainStats={healed:0,absorbed:0};
  moving=false;resonance=0;servants=createServants();corruptionTick=0;chains:{x:number;y:number}[]=[];
  fields:{kind:string;x:number;y:number;life:number;radius:number;damage:number;tick:number;kills:number}[]=[];
  bolts:{x:number;y:number;vx:number;vy:number;life:number;damage:number;source:string}[]=[];
@@ -29,10 +30,13 @@ export class Game {
  notifications:string[]=[];
  announce(text:string){if(this.noticeTime<=0){this.notice=text;this.noticeTime=2.8;}else if(this.notifications.length<10&&!this.notifications.includes(text))this.notifications.push(text);}
  effect(x:number,y:number,kind:string,radius:number,life=.5,angle=0){if(this.effects.length<180)this.effects.push({x,y,kind,radius,life,max:life,angle});}
- spawn(kind:EnemyKind){
+ seedOpening(){for(let i=0;i<OPENING.count;i++)this.spawn('thrall',true);this.rebuildGrid();}
+ heal(amount:number){if(this.ended||amount<=0)return;const gained=Math.min(amount,this.player.maxHp-this.player.hp);this.player.hp+=gained;this.sustainStats.healed+=gained;if(gained>0)this.sound('heal');}
+ ward(amount:number,cap:number,seconds:number){this.shield=Math.min(cap,this.shield+amount);this.shieldTime=seconds;this.sound('shield');}
+ spawn(kind:EnemyKind,opening=false){
   if(this.alive>=EVENT.maxEnemies-24&&kind!=='elite'&&kind!=='titan')return;
   const e=this.enemies.find(e=>!e.active);if(!e)return;
-  const a=this.random()*Math.PI*2,r=540+this.random()*160,def=ENEMIES[kind];
+  const facing=this.time<60?0:this.time*.045;const a=facing+(this.random()-.5)*this.pressure.arc,r=opening?OPENING.distance+this.random()*OPENING.spread:this.pressure.distance+this.random()*160,def=ENEMIES[kind];
   const hpScale=1+Math.max(0,this.wave-4)*.045;
   Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,corruptUntil:0,rushing:true});this.alive++;
  }
@@ -46,27 +50,28 @@ export class Game {
    const bucket=this.grid.get((ix+4096)*8192+iy+4096);if(bucket)for(const e of bucket)if(e.active)visit(e);
   }
  }
- hurt(damage:number){if(this.player.invuln>0)return;this.player.hp=Math.max(0,this.player.hp-damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.75:1));this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp<=0)this.ended=true;}
+ hurt(damage:number){if(this.player.invuln>0)return;const incoming=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.75:1),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp<=0)this.ended=true;}
  damage(e:Enemy,amount:number,source:string){
   if(!e.active)return false;
   e.hp-=amount;e.flash=.1;
   if(e.hp>0)return false;
   e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time,source);
+  if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
   this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
-  if(this.frenzy>0){const heal=Math.min(8,this.frenzyHealing);this.frenzyHealing-=heal;this.player.hp=Math.min(this.player.maxHp,this.player.hp+heal);}
+  if(this.frenzy>0){const heal=Math.min(8,this.frenzyHealing);this.frenzyHealing-=heal;this.heal(heal);}
   if((e.corruptUntil||0)>this.time&&this.chains.length<128)this.chains.push({x:e.x,y:e.y});
   if(Math.hypot(e.vx,e.vy)>100&&this.debris.length<80)this.debris.push({x:e.x,y:e.y,vx:e.vx,vy:e.vy,life:.6,kills:0});
-  if(source==='devour'){const heal=Math.min(this.healBudget,e.kind==='elite'?120:18);this.healBudget-=heal;this.player.hp=Math.min(this.player.maxHp,this.player.hp+heal);}
+  if(source==='devour'){const heal=Math.min(this.healBudget,e.kind==='elite'?120:18);this.healBudget-=heal;this.heal(heal);}
   return true;
  }
  resolveFeats(extra:Parameters<Score['evaluate']>[1]){const earned=this.score.evaluate(this.time,extra);if(earned.length)this.announce(earned.join(' · '));}
- completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.score.peak=Math.max(this.score.peak,this.score.carnage);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier)this.announce(tier.name+' · '+kills+' SLAIN · +'+(kills*5)+' MULTIKILL');}
+ completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.sustainCooldown<=0){if(this.monster.id==='titan'&&kills>=SUSTAIN.titan.kills){const s=SUSTAIN.titan;this.heal(s.heal);this.ward(s.shield,s.cap,s.seconds);this.sustainCooldown=s.cooldown;}if(this.monster.id==='calamity'&&kills>=SUSTAIN.calamity.kills){const s=SUSTAIN.calamity;this.ward(s.shield,s.cap,s.seconds);this.sustainCooldown=s.cooldown;}}if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.score.peak=Math.max(this.score.peak,this.score.carnage);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier)this.announce(tier.name+' · '+kills+' SLAIN · +'+(kills*5)+' MULTIKILL');}
  area(x:number,y:number,radius:number,damage:number,source:string,knockback=0,settle=true){let kills=0,overkill=0,apex=0;this.nearby(x,y,radius+65,e=>{const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d>radius+ENEMIES[e.kind].radius)return;if(damage*this.powerScale()>e.hp*4)overkill++;if(knockback){e.vx=dx/(d||1)*knockback;e.vy=dy/(d||1)*knockback;}if(this.damage(e,damage*this.powerScale(),source)){kills++;if(e.kind==='elite'&&source==='devour')apex++;}});if(settle)this.completeAttack(kills,{overkill,eliteDevoured:apex});return kills;}
  cast(index:number){if(this.ended||this.cooldowns[index]>0)return false;const power=this.powers[index],handler=power&&POWER_HANDLERS[power.effect];if(!handler)return false;this.cooldowns[index]=power.cooldown;this.sound(index===3?'catastrophe':power.effect==='beam'?'beam':power.effect==='devour'?'devour':'rupture');this.shake=index===3?18:8;this.effect(this.player.x,this.player.y,power.effect==='shockwave'?'rupture':power.effect,power.radius,index===3?1:.5);if(index===3)this.ultimateTime=.85;handler(this,power);return true;}
  powerScale(){return (1+(this.wave-1)*.075)*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
  update(dt:number,input:Input){
   if(this.ended)return;
-  this.time+=dt;this.score.update(dt,this.time);this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length)this.announce(this.notifications.shift()!);this.shake=Math.max(0,this.shake-dt*25);
+  this.time+=dt;this.sustainCooldown=Math.max(0,this.sustainCooldown-dt);this.shieldTime-=dt;if(this.shieldTime<=0)this.shield=0;this.siphonWindow+=dt;if(this.siphonWindow>=1){this.siphonWindow-=1;this.siphonBudget=SUSTAIN.overlord.perSecond;}this.pressureTime-=dt;if(this.pressureTime<=0){this.pressureTime=.5;this.pressure=threatAt(this.time);}this.score.update(dt,this.time);this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length)this.announce(this.notifications.shift()!);this.shake=Math.max(0,this.shake-dt*25);
   this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);
   this.moving=!!(input.x||input.y||this.dash);const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
@@ -76,17 +81,17 @@ export class Game {
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
   else {let nearest:Enemy|null=null,best=500;for(const e of this.enemies)if(e.active){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<best){nearest=e;best=d;}}if(nearest)p.angle=Math.atan2(nearest.y-p.y,nearest.x-p.x);}
   const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[EVENT.phase];
-  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;this.announce(`WAVE ${this.wave} · POWER RISES · +${this.wave*SCORING.waveBonus}`);this.sound('wave');}if(this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.wave%phase.titanEvery===0)this.spawn('titan');}
-  this.spawnBank+=dt*(13+this.wave*2.5+Math.max(0,this.wave-14)*3)*phase.pressure;
+  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;this.announce(`WAVE ${this.wave} · POWER RISES · +${this.wave*SCORING.waveBonus}`);this.sound('wave');}if(this.time>=INTRODUCTIONS.elite&&this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.time>=INTRODUCTIONS.titan&&this.wave%phase.titanEvery===0)this.spawn('titan');}
+  this.spawnBank+=dt*this.pressure.rate*phase.pressure;
   const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];
-  while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=phase.weights[index]){roll-=phase.weights[index];index++;}this.spawn(kinds[index]);}
-  const threat=1+Math.max(0,this.wave-8)*.12;
+  while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=phase.weights[index]){roll-=phase.weights[index];index++;}if(this.alive<this.pressure.cap)this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
+  const threat=1+Math.max(0,this.wave-12)*.10;
   for(const e of this.enemies){if(!e.active)continue;const def=ENEMIES[e.kind];let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;e.timer-=dt;e.flash=Math.max(0,e.flash-dt);
    // Recycle off-screen stragglers around the player without changing their health or identity.
-   if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
+   if(d>1150&&this.time<120){e.active=false;this.alive--;continue;}if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
    let speed=def.speed*(1+this.wave*.025+Math.max(0,this.wave-12)*.10);
    if(d>430)e.rushing=true;if(d<140)e.rushing=false;
-   if(e.rushing)speed=Math.max(speed,this.monster.speed*1.3,235);
+   if(e.rushing)speed=Math.max(speed,this.monster.speed*this.pressure.pursuit,180*this.pressure.pursuit);
    if(def.behavior==='ranged'&&d<380){speed=d<250?-def.speed:0;if(e.timer<=0&&this.shots.length<180){this.shots.push({x:e.x,y:e.y,vx:dx/d*220,vy:dy/d*220,life:4,damage:def.damage*threat});e.timer=2.5;}}
    if(def.behavior==='slam'&&d<220&&e.timer<=0&&e.windup<=0){e.windup=1.2;e.timer=e.kind==='titan'?4:5;}
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.kind==='titan'?240:140;this.effect(e.x,e.y,'slam',r,.45);if(d<r+20)this.hurt(def.damage*threat);}}

@@ -16,7 +16,7 @@ export const PHASES = [
  { name:'THRONE WAR', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
 ];
 // Change only this index to activate an event week. Included in every run code.
-export const EVENT = { phase:0, rules:'2026.10-v2', waveSeconds:30, maxEnemies:1100, arenaRadius:1500 };
+export const EVENT = { phase:0, rules:'2026.10-v3', waveSeconds:30, maxEnemies:1100, arenaRadius:1500 };
 export type FeatContext = { recentKills:number; overkill:number; chain:number; eliteDevoured:number; noHitKills:number; multi:number; corruption:number };
 export const FEATS: { id:string; name:string; metric:keyof FeatContext; threshold:number; bonus:number; cooldown:number }[] = [
  {id:'extinction',name:'EXTINCTION EVENT',metric:'recentKills',threshold:100,bonus:2000,cooldown:30},

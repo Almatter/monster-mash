@@ -59,6 +59,7 @@ export class Renderer {
   for(const b of g.bolts){c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
   for(const b of g.debris){c.fillStyle='#bc9a81';c.save();c.translate(b.x,b.y);c.rotate(time*10);c.fillRect(-8,-8,16,16);c.restore();}
   for(const s of g.shots){c.fillStyle='#ed9bea';c.beginPath();c.arc(s.x,s.y,6,0,7);c.fill();c.strokeStyle='#803f93';c.beginPath();c.moveTo(s.x,s.y);c.lineTo(s.x-s.vx*.06,s.y-s.vy*.06);c.stroke();}
+  if(g.shield>0){c.strokeStyle='#ade7f2';c.lineWidth=2;c.beginPath();c.arc(cx,cy,57*g.monster.visual.scale,0,Math.PI*2);c.stroke();}
   const state=g.ultimateTime>0?'ultimate':g.player.invuln>0?'hurt':g.attack>g.monster.basic.interval*.65?'attack':g.moving?'move':'idle';if(!this.assets.drawGameplay(c,g.identity,cx,cy,time,state,g.monster.visual.scale))this.drawSovereign(c,cx,cy,time,g.player.invuln,g.monster.visual.scale,g.player.rage,g.identity.colors);
   if(g.beam>0){c.save();c.translate(cx,cy);c.rotate(g.player.angle);c.fillStyle='#d6425380';c.fillRect(0,-35,g.beamPower.radius,70);c.fillStyle=g.identity.colors.power;c.fillRect(0,-17,g.beamPower.radius,34);c.fillStyle='#fff0d1';c.fillRect(0,-6,g.beamPower.radius,12);c.restore();}
   const sparse=this.low||this.autoLow;
