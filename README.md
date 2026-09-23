@@ -1,86 +1,98 @@
 # Isekai Hell — Monster Mash
 
-A playable, static browser arcade game for the October 2026 community event. One boss monster, four powers, seven enemies, escalating waves, Carnage feats, Discord result cards, and a run-code inspector. No accounts, tracking, server, or runtime dependencies.
+Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Name/title/palette are cosmetic identity, not progression. No accounts, tracking, external assets, server or runtime dependencies are required.
 
-## Play and build
+## Run and deploy
 
-Requires **Node 24.19 or newer**. npm is optional.
+Requires Node **24.19+**. npm is optional.
 
 ```sh
 node tools/serve.mjs
-```
-
-Open http://127.0.0.1:4173. The server builds on startup; after source edits run `node tools/build.mjs`, then refresh. This is a local development server, not a public production server.
-
-```sh
+# http://127.0.0.1:4173
 node tools/build.mjs
-node --test tests/logic.test.mjs
+node --test tests/*.test.mjs
 ```
 
-Upload the **contents of `dist/`** to any HTTPS static host. All asset paths are relative, including the service worker, so repository subpaths work. Use `node tools/build.mjs` as the host build command and `dist` as its output directory. No environment variables or backend are needed. Nothing has been published or connected to a remote repository.
+The server builds once at startup. Rebuild after source changes. Upload the **contents of `dist/`** to an HTTPS static host. Build command: `node tools/build.mjs`; output: `dist`. Relative asset paths support repository subpaths. No remote repository, infrastructure or public deployment has been created.
 
-The build uses Node's native TypeScript stripping, currently marked experimental by Node. It erases types; it does **not** type-check. Keep the source within erasable TypeScript syntax (no enums, namespaces, or parameter properties). Browser logic is exercised with the tests below.
+Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-## Controls
+**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version and `EVENT.rules`. Do not compare scores across rules versions. Current rules: `2026.10-v2`.
 
-- Move: WASD / arrows; touch: left thumb stick.
-- Q / 1: Rupture. Area damage and knockback; collisions kill lesser prey.
-- E / 2: Devour. Nearby kills restore health and grant six seconds of rage.
-- R / 3: Death beam. Aim with mouse during the 2.5-second beam. Touch aim follows movement, then nearby prey when stationary.
-- Space / 4: Catastrophe. Large-area destruction, 48-second cooldown.
-- P / Escape: pause. Backgrounding or changing to touch portrait pauses combat.
-- Basic claws attack automatically. Mute, shake, and low-effects preferences persist locally.
+## Play
 
-Rotate phones to landscape. Desktop portrait remains usable. Touch ability buttons support simultaneous movement. Clipboard and offline features need HTTPS or localhost.
+Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM2 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
 
-## Competition
+- WASD / arrows or left thumb stick: move. Mouse: aim; touch aim follows movement and nearby prey when stationary.
+- Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attack is automatic.
+- P/Escape: pause. Backgrounding or entering touch portrait pauses combat. Menus work in portrait; combat requests landscape.
+- Mute, shake and low-effects toggles remain available. Repeated runs grant no statistical advantage.
 
-Dominance is the sum of rounded enemy base scores multiplied by current Carnage, plus wave and feat bonuses. Body Count is unweighted kills. Each kill adds 0.018 Carnage, capped at ×5. After 1.6 seconds without a kill, it decays at 0.24 per second toward ×1. Attacks killing at least five enemies add five points per kill. Waves after the first add `wave × 100`. Feat definitions expose thresholds and bonuses in `src/data.ts`.
+| Archetype | Distinct mechanics |
+|---|---|
+| Titan | Slower, durable melee; surrounding enemies reduce damage; shockwave, charge, launched bodies and ground impact |
+| Devourer | Fast melee; kill momentum, lunge, capped feeding, wounded-elite execution and temporary frenzy |
+| Calamity | Vulnerable ranged caster; aimable beam, delayed meteor, pulling vortex, enormous detonation and bounded cooldown refunds |
+| Overlord | Control up to 32 pooled servants; curse damage, conversion, summons and iterative corruption cascades |
+| Sovereign | Preserved original mixed claw/shockwave/devour/beam/catastrophe package |
 
-The result screen includes all run statistics, notable feats, a PNG card, copyable text, and a run code. Players manually post to Discord. There is no web leaderboard or statistical progression between runs.
+## Feats versus records
 
-Organizer tool: **`verify.html`**. MM1 codes encode UTF-8 JSON as base64url and carry a truncated SHA-256 integrity checksum. This prevents accidental edits and casual direct text editing; it is **not cryptographic anti-cheat**, a signature, or a replay validator. Anyone who modifies the client can forge a code. The inspector verifies the checksum and basic consistency, not honest gameplay. Retired runs are explicitly labeled. Decide whether your event accepts them.
+**Run Feats** repeat under defined conditions and cooldowns, award Dominance and reset every run. Their counts and exact conditions appear in the result report. The Records screen also lists every feat's condition and bonus.
 
-Compare scores only within the same `phase` and `rules` version. Seeds differ per run and are recorded; scores are comparable distributions, not identical encounters. Organizer policy should use each player's best run per phase. Future server verification can replace the serialization boundary in `src/run-code.ts` with server-issued IDs and signed results.
+**Monster Records** persist only in the current browser. The registry shows locked/unlocked status, exact conditions, best measurable progress, related archetype, unlock date, earning monster name and any title reward. Progress is best-per-run or best short interval, never a sum that disguises a single-run requirement. NEWLY UNLOCKED lists every new record and why it unlocked. Titles are the only current rewards, and are cosmetic.
 
-## Content and architecture
+`mm-profile` version 2 stores identity, palettes per archetype, record progress and unlock metadata. Old `mm-name` is migrated; existing `mm-mute`, `mm-shake`, `mm-lowFX` preferences remain. Version-1 identity/profile fields migrate; invalid/missing fields are normalized and unknown schema versions reset safely. If storage is blocked, play and in-memory records continue for the session. Clearing browser data removes local accomplishments. These are not official competition records.
 
-| File | Responsibility |
-| --- | --- |
-| `src/data.ts` | Enemy stats/behavior selection, power stats, four phase spawn tables, feat configuration, event version |
-| `src/simulation.ts` | Seeded fixed-step combat, pooled enemies, spatial hash, projectiles, waves, powers |
-| `src/scoring.ts` | Carnage, kill values, multikills, data-driven feat evaluation |
-| `src/renderer.ts` | Final procedural stone arena, sprite atlas, monsters, telegraphs, bounded effects |
-| `src/main.ts` | Application lifecycle, keyboard/pointer controls, HUD, results, PNG export, preferences |
-| `src/audio.ts` | Gesture-unlocked procedural sound and mute |
-| `src/run-code.ts`, `src/verify.ts` | Versioned run envelope and organizer inspector |
-| `public/` | HTML/CSS, original icon, manifest, offline cache |
+## Scoring and competition
 
-Change `EVENT.phase` from 0 to 3 to select a week; phase activation is explicit, not tied to an untrusted local calendar. Bump `EVENT.rules` after balance changes. Week 1 is the implemented baseline; the other tables are starting configurations needing playtesting.
+Enemy base score × current Carnage, rounded per kill, earns Dominance. Kills add 0.018 Carnage to a maximum of ×5. After 1.6 seconds without a kill, it decays by 0.24 per second toward ×1. Multikills of at least five add five points per kill; later waves add `wave × 100`; feats add explicit bonuses. Aggregate/held abilities settle their multikill on completion. Exact tuning lives in content modules.
 
-Enemy additions can reuse existing `chase`, `weave`, `ranged`, or `slam` behavior. New behavior requires a simulation handler. Powers expose their tuning in data; entirely new mechanics need a handler and input binding. Feats using existing metrics require only a data row. Future monster archetypes can replace the player stats/attack setup; no character creator is included.
+All damage routes credit the player once. Source totals distinguish direct, devour, execution, lunge/trample, beam, meteor/vortex, collisions, controlled/summoned servants, curse damage, corruption chains and ultimates. Conversion itself awards no kill. Summon expiration awards no kill. The Titan's collision credit requires actual launched-body contact, replacing the prototype's outer damage annulus.
 
-The renderer creates deliberate final vector-like art and reusable rasterized enemy sprites. Audio is synthesized; no external assets or third-party licenses are needed. Effects adapt under slow frames without changing enemy counts, simulation, or scoring. Enemy capacity is 1,100 with reserved boss slots. Projectiles and effects cap at 180 each. Collision queries use 80-unit spatial buckets. The simulation runs at 60 fixed steps per second, with bounded catch-up; severe sustained stalls slow game time rather than awarding skipped combat.
+Players post their PNG card and run code manually to Discord. `verify.html` reads legacy MM1 and identity-aware MM2 codes. The SHA-256 checksum detects damaged/simple edits; it **does not prove honest play**, provide a signature, or validate a replay. A modified client can forge results. Codes include rules, week, seed, name/title/archetype/colors, statistics, run feats, new local records and source counts. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
 
-## Verification
+## Content map
 
-`tests/logic.test.mjs` covers Carnage, bonuses, feat cooldowns, all powers, healing, death/reset isolation, seeded determinism, Unicode serialization, tamper detection, and a 12-minute high-density soak. The soak deliberately restores health to test long-lived systems; it is not evidence that a normal player survives 12 minutes.
+| File | Edit here for |
+|---|---|
+| `src/content-monsters.ts` | Monster stats, fixed kits, passives, ability metadata/tuning, palette channels, swatches, titles and animation references |
+| `src/powers.ts` | Reusable ability-effect handlers; new behavior is added once here, not by copying a player class |
+| `src/data.ts` | Enemy stats/behavior selection, phase spawn tables, event activation/version, run feats |
+| `src/content-records.ts` | Persistent achievement definitions, exact feat explanations, score constants and massacre tiers |
+| `src/identity.ts`, `src/profile.ts` | Canonical identity, sanitization, cosmetic validation, storage/migration and progress |
+| `src/scoring.ts` | Carnage, source counters, multikills and feat evaluation |
+| `src/simulation.ts` | Fixed-step combat, enemy pool, spatial hash, waves, shared attack lifecycle |
+| `src/servants.ts` | Bounded indirect-damage/ownership subsystem |
+| `src/selection.ts`, `src/results.ts`, `src/main.ts` | Registry/Records, shareable results and app/input lifecycle |
+| `src/assets.ts`, `src/renderer.ts` | Cached layered artwork and retained procedural fallback |
+| `public/assets/catalog.json` | Opt-in real-art entries; empty until final assets are supplied |
 
-Optional browser tests require Playwright and an installed Chromium-family browser:
+Adding a monster that uses existing effects requires a definition, stats, four ability references, passive choice and palette/art references. A genuinely new mechanic or passive requires a small handler; this is intentionally not a freeform ability builder. New achievements using existing aggregated metrics and new feats using existing contexts require data rows. Keep the plain-language condition and implementation threshold synchronized.
+
+Change `EVENT.phase` (0–3) to activate a week. Week 1 remains the baseline; later phase tables remain starting configurations. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. No new placeholder illustrations have been manufactured.
+
+## Performance contracts
+
+60 fixed simulation steps/second, bounded catch-up; 1,100 enemies with boss capacity reserved, 180 hostile projectiles, 180 transient effects, 80 friendly bolts, 80 launched remains, 8 fields, 32 pooled servants, 128 queued corruption blasts (16 processed/step), 10 queued notifications. Enemy bucket arrays are reused. Servant target searches run at 4 Hz. Records consume aggregate counters at HUD cadence, not entity scans. Cosmetic art composites on palette change with four cached packs and at most two pending packs. Low/adaptive FX changes rendering only, not density or score.
+
+## Tests and remaining validation
+
+Logic: `node --test tests/*.test.mjs`. Long-run/cap/memory checks: `node --expose-gc tests/stress-event.mjs`.
+
+Optional Playwright scripts (requires Playwright and a Chromium-family browser):
 
 ```sh
 node tests/browser.mjs
+node tests/event-browser.mjs
+node tests/event-mobile.mjs
+node tests/records-browser.mjs
+node tests/death-browser.mjs
+node tests/assets-browser.mjs
 node tests/performance.mjs
+node tests/performance-event.mjs
 ```
 
-Set `PLAYWRIGHT_PATH` to the absolute path of Playwright's `index.mjs` when it is installed outside this project. Set `BROWSER_PATH` to an installed browser executable if Playwright's bundled browser is unavailable. Smoke tests cover desktop controls, touch input, pause, restarts, result/PNG generation, verifier, and resizing. Screenshots are written to ignored `test-results/`.
+Set `PLAYWRIGHT_PATH` to an external Playwright `index.mjs`, and `BROWSER_PATH` to an installed executable if needed. Screenshots/cards go in ignored `test-results/`. See **[TESTING.md](TESTING.md)** for observed results and their limits.
 
-## Before October 1
-
-- Human-playtest the 8–12 minute difficulty target, especially titan bursts and late wave speed.
-- Check real iOS Safari and Android browsers, audio loudness, thumb comfort, and sustained thermal performance. Emulation is not a substitute for hardware.
-- Choose a host and obtain approval to publish. Upload the production build and smoke-test its public URL and verifier.
-- Freeze the rules version and explain accepted run types and checksum limitations to organizers.
-- For offline updates, bump the cache version in `public/sw.js`; old tabs retain their version until closed. Close all game tabs and reopen after an event update. During local development, unregister the service worker if testing changed assets under the same cache version.
-
-No remote deployment, account creation, or external messaging has been performed.
+Still required before public competition: human balance/playstyle tuning for broadly comparable Dominance opportunities and 8–12 minute runs, real iOS/Android browser and thermal checks, supplied final anime art, organizer eligibility rules, and user approval to publish. Automated immortality soaks prove stability, not fairness or ordinary-player survival time.

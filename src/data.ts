@@ -9,12 +9,6 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
  elite: { name:'Blood herald', hp:620, speed:52, radius:26, damage:70, score:250, color:'#e36971', behavior:'slam' },
  titan: { name:'The Hollow King', hp:6500, speed:27, radius:62, damage:150, score:1500, color:'#c592a7', behavior:'slam' }
 };
-export const POWERS = [
- { id:'rupture', name:'Rupture', key:'Q', symbol:'◉', cooldown:6, radius:190, damage:110 },
- { id:'devour', name:'Devour', key:'E', symbol:'♜', cooldown:10, radius:135, damage:400 },
- { id:'beam', name:'Death beam', key:'R', symbol:'ϟ', cooldown:13, radius:680, damage:110 },
- { id:'catastrophe', name:'Catastrophe', key:'␣', symbol:'✦', cooldown:48, radius:630, damage:1800 }
-] as const;
 export const PHASES = [
  { name:'THE SWARM', pressure:1, weights:[72,13,4,5,6], eliteEvery:4, titanEvery:8 },
  { name:'ADAPTATION', pressure:1.08, weights:[40,20,16,14,10], eliteEvery:3, titanEvery:7 },
@@ -23,12 +17,13 @@ export const PHASES = [
 ];
 // Change only this index to activate an event week. Included in every run code.
 export const EVENT = { phase:0, rules:'2026.10-v2', waveSeconds:30, maxEnemies:1100, arenaRadius:1500 };
-export type FeatContext = { recentKills:number; overkill:number; chain:number; eliteDevoured:number; noHitKills:number; multi:number };
+export type FeatContext = { recentKills:number; overkill:number; chain:number; eliteDevoured:number; noHitKills:number; multi:number; corruption:number };
 export const FEATS: { id:string; name:string; metric:keyof FeatContext; threshold:number; bonus:number; cooldown:number }[] = [
  {id:'extinction',name:'EXTINCTION EVENT',metric:'recentKills',threshold:100,bonus:2000,cooldown:30},
  {id:'overkill',name:'OVERKILL',metric:'overkill',threshold:20,bonus:500,cooldown:20},
  {id:'chain',name:'BOWLING FOR GOBLINS',metric:'chain',threshold:8,bonus:800,cooldown:15},
  {id:'apex',name:'APEX PREDATOR',metric:'eliteDevoured',threshold:1,bonus:1500,cooldown:20},
  {id:'untouchable',name:'UNTOUCHABLE',metric:'noHitKills',threshold:150,bonus:1500,cooldown:40},
+ {id:'chainreaction',name:'CHAIN REACTION',metric:'corruption',threshold:12,bonus:1000,cooldown:15},
  {id:'massacre',name:'MASSACRE',metric:'multi',threshold:40,bonus:1000,cooldown:20}
 ];

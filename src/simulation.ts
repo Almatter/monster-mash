@@ -1,11 +1,11 @@
-import { ENEMIES, EVENT, PHASES, POWERS, type EnemyKind } from './data.ts';
+import { ENEMIES, EVENT, PHASES, type EnemyKind } from './data.ts';
 import { Score } from './scoring.ts';
 import {ABILITIES,MONSTERS} from './content-monsters.ts';
 import {createIdentity,type Identity} from './identity.ts';
 import {POWER_HANDLERS} from './powers.ts';
-import {MASSACRES} from './content-records.ts';
+import {MASSACRES,SCORING} from './content-records.ts';
 import {createServants,updateServants} from './servants.ts';
-export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number};
+export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
 export type Input={x:number;y:number;aimX:number;aimY:number;aiming:boolean};
@@ -18,7 +18,7 @@ export class Game {
  notice='THE HORDE IS YOURS.';noticeTime=4;shake=0;sound:(kind:string)=>void=()=>{};
  surrounded=0;passiveTimer=0;healBudget=250;beamKills=0;beamPower=ABILITIES.beam;ultimateTime=0;activationBest=0;
  frenzy=0;frenzyHealing=0;
- resonance=0;servants=createServants();corruptionTick=0;chains:{x:number;y:number}[]=[];
+ moving=false;resonance=0;servants=createServants();corruptionTick=0;chains:{x:number;y:number}[]=[];
  fields:{kind:string;x:number;y:number;life:number;radius:number;damage:number;tick:number;kills:number}[]=[];
  bolts:{x:number;y:number;vx:number;vy:number;life:number;damage:number;source:string}[]=[];
  debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
@@ -34,7 +34,7 @@ export class Game {
   const e=this.enemies.find(e=>!e.active);if(!e)return;
   const a=this.random()*Math.PI*2,r=540+this.random()*160,def=ENEMIES[kind];
   const hpScale=1+Math.max(0,this.wave-4)*.045;
-  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,corruptUntil:0});this.alive++;
+  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,corruptUntil:0,rushing:true});this.alive++;
  }
  rebuildGrid(){
   for(const bucket of this.grid.values()){bucket.length=0;this.freeBuckets.push(bucket);}this.grid.clear();
@@ -60,7 +60,7 @@ export class Game {
   return true;
  }
  resolveFeats(extra:Parameters<Score['evaluate']>[1]){const earned=this.score.evaluate(this.time,extra);if(earned.length)this.announce(earned.join(' · '));}
- completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier)this.announce(tier.name+' · '+kills+' SLAIN · +'+(kills*5)+' MULTIKILL');}
+ completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.score.peak=Math.max(this.score.peak,this.score.carnage);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier)this.announce(tier.name+' · '+kills+' SLAIN · +'+(kills*5)+' MULTIKILL');}
  area(x:number,y:number,radius:number,damage:number,source:string,knockback=0,settle=true){let kills=0,overkill=0,apex=0;this.nearby(x,y,radius+65,e=>{const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d>radius+ENEMIES[e.kind].radius)return;if(damage*this.powerScale()>e.hp*4)overkill++;if(knockback){e.vx=dx/(d||1)*knockback;e.vy=dy/(d||1)*knockback;}if(this.damage(e,damage*this.powerScale(),source)){kills++;if(e.kind==='elite'&&source==='devour')apex++;}});if(settle)this.completeAttack(kills,{overkill,eliteDevoured:apex});return kills;}
  cast(index:number){if(this.ended||this.cooldowns[index]>0)return false;const power=this.powers[index],handler=power&&POWER_HANDLERS[power.effect];if(!handler)return false;this.cooldowns[index]=power.cooldown;this.sound(index===3?'catastrophe':power.effect==='beam'?'beam':power.effect==='devour'?'devour':'rupture');this.shake=index===3?18:8;this.effect(this.player.x,this.player.y,power.effect==='shockwave'?'rupture':power.effect,power.radius,index===3?1:.5);if(index===3)this.ultimateTime=.85;handler(this,power);return true;}
  powerScale(){return (1+(this.wave-1)*.075)*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
@@ -69,14 +69,14 @@ export class Game {
   this.time+=dt;this.score.update(dt,this.time);this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length)this.announce(this.notifications.shift()!);this.shake=Math.max(0,this.shake-dt*25);
   this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);
-  const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
+  this.moving=!!(input.x||input.y||this.dash);const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
   if(this.dash){const d=this.dash;p.x+=Math.cos(d.angle)*d.speed*dt;p.y+=Math.sin(d.angle)*d.speed*dt;d.remaining-=dt;}
   const fromCenter=Math.hypot(p.x,p.y);if(fromCenter>EVENT.arenaRadius){p.x*=EVENT.arenaRadius/fromCenter;p.y*=EVENT.arenaRadius/fromCenter;}
   if(input.aiming)p.angle=Math.atan2(input.aimY-p.y,input.aimX-p.x);
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
   else {let nearest:Enemy|null=null,best=500;for(const e of this.enemies)if(e.active){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<best){nearest=e;best=d;}}if(nearest)p.angle=Math.atan2(nearest.y-p.y,nearest.x-p.x);}
   const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[EVENT.phase];
-  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*100;this.announce(`WAVE ${this.wave} · POWER RISES · +${this.wave*100}`);this.sound('wave');}if(this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.wave%phase.titanEvery===0)this.spawn('titan');}
+  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;this.announce(`WAVE ${this.wave} · POWER RISES · +${this.wave*SCORING.waveBonus}`);this.sound('wave');}if(this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.wave%phase.titanEvery===0)this.spawn('titan');}
   this.spawnBank+=dt*(13+this.wave*2.5+Math.max(0,this.wave-14)*3)*phase.pressure;
   const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];
   while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=phase.weights[index]){roll-=phase.weights[index];index++;}this.spawn(kinds[index]);}
@@ -85,7 +85,8 @@ export class Game {
    // Recycle off-screen stragglers around the player without changing their health or identity.
    if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
    let speed=def.speed*(1+this.wave*.025+Math.max(0,this.wave-12)*.10);
-   if(d>430)speed=Math.max(speed,235);
+   if(d>430)e.rushing=true;if(d<140)e.rushing=false;
+   if(e.rushing)speed=Math.max(speed,this.monster.speed*1.3,235);
    if(def.behavior==='ranged'&&d<380){speed=d<250?-def.speed:0;if(e.timer<=0&&this.shots.length<180){this.shots.push({x:e.x,y:e.y,vx:dx/d*220,vy:dy/d*220,life:4,damage:def.damage*threat});e.timer=2.5;}}
    if(def.behavior==='slam'&&d<220&&e.timer<=0&&e.windup<=0){e.windup=1.2;e.timer=e.kind==='titan'?4:5;}
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.kind==='titan'?240:140;this.effect(e.x,e.y,'slam',r,.45);if(d<r+20)this.hurt(def.damage*threat);}}

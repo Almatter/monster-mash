@@ -12,5 +12,5 @@ export function updateServants(g:Game,dt:number){
  }
  g.corruptionTick-=dt;if(g.corruptionTick<=0){g.corruptionTick=.5;for(const e of g.enemies)if(e.active&&(e.corruptUntil||0)>g.time)g.damage(e,18*g.powerScale(),'dot');}
  // An iterative capped queue prevents recursive chain overflows and frame spikes.
- for(let count=0;count<16&&g.chains.length;count++){const b=g.chains.shift()!;g.nearby(b.x,b.y,150,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<105){e.corruptUntil=g.time+5;g.damage(e,65*g.powerScale(),'chain');}});g.effect(b.x,b.y,'corruption',105,.35);}
+ let chainKills=0;for(let count=0;count<16&&g.chains.length;count++){const b=g.chains.shift()!;g.nearby(b.x,b.y,150,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<105){e.corruptUntil=g.time+5;if(g.damage(e,65*g.powerScale(),'chain'))chainKills++;}});g.effect(b.x,b.y,'corruption',105,.35);}if(chainKills)g.resolveFeats({corruption:chainKills});
 }

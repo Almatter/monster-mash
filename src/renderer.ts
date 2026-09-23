@@ -2,9 +2,10 @@ import { ENEMIES, EVENT } from './data.ts';
 import { Game } from './simulation.ts';
 import {createIdentity,type Identity} from './identity.ts';
 import {MONSTERS,type Palette} from './content-monsters.ts';
+import {AssetLibrary} from './assets.ts';
 export class Renderer {
  canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;
- previewIdentity:Identity=createIdentity();
+ assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
  sprites=new Map<string,HTMLCanvasElement>(); background:HTMLCanvasElement;
  constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.resize();for(const [kind,def] of Object.entries(ENEMIES))this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
@@ -58,17 +59,18 @@ export class Renderer {
   for(const b of g.bolts){c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
   for(const b of g.debris){c.fillStyle='#bc9a81';c.save();c.translate(b.x,b.y);c.rotate(time*10);c.fillRect(-8,-8,16,16);c.restore();}
   for(const s of g.shots){c.fillStyle='#ed9bea';c.beginPath();c.arc(s.x,s.y,6,0,7);c.fill();c.strokeStyle='#803f93';c.beginPath();c.moveTo(s.x,s.y);c.lineTo(s.x-s.vx*.06,s.y-s.vy*.06);c.stroke();}
-  this.drawSovereign(c,cx,cy,time,g.player.invuln,g.monster.visual.scale,g.player.rage,g.identity.colors);
-  if(g.beam>0){c.save();c.translate(cx,cy);c.rotate(g.player.angle);c.fillStyle='#d6425380';c.fillRect(0,-35,680,70);c.fillStyle=g.identity.colors.power;c.fillRect(0,-17,680,34);c.fillStyle='#fff0d1';c.fillRect(0,-6,680,12);c.restore();}
+  const state=g.ultimateTime>0?'ultimate':g.player.invuln>0?'hurt':g.attack>g.monster.basic.interval*.65?'attack':g.moving?'move':'idle';if(!this.assets.drawGameplay(c,g.identity,cx,cy,time,state,g.monster.visual.scale))this.drawSovereign(c,cx,cy,time,g.player.invuln,g.monster.visual.scale,g.player.rage,g.identity.colors);
+  if(g.beam>0){c.save();c.translate(cx,cy);c.rotate(g.player.angle);c.fillStyle='#d6425380';c.fillRect(0,-35,g.beamPower.radius,70);c.fillStyle=g.identity.colors.power;c.fillRect(0,-17,g.beamPower.radius,34);c.fillStyle='#fff0d1';c.fillRect(0,-6,g.beamPower.radius,12);c.restore();}
   const sparse=this.low||this.autoLow;
   for(const e of g.effects){const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
    if(e.kind==='blood'){if(sparse)continue;c.fillStyle='#b74345';for(let i=0;i<5;i++){const a=i*2.4+e.x;c.beginPath();c.ellipse(e.x+Math.cos(a)*t*e.radius,e.y+Math.sin(a)*t*e.radius,4*(1-t)+1,2,a,0,7);c.fill();}}
    else if(e.kind==='claw'){c.strokeStyle='#f5d6a0';for(let i=0;i<3;i++){c.beginPath();c.arc(e.x,e.y,e.radius-i*12,e.angle-.9+t,e.angle+1.8+t);c.stroke();}}
    else {const colors:Record<string,string>={devour:'#bfe4a5',catastrophe:'#ffd39a',rupture:'#f1b169',slam:'#ff6265'};c.strokeStyle=e.kind==='slam'?colors.slam:g.identity.colors.power;c.lineWidth=e.kind==='catastrophe'?14:5;c.beginPath();c.arc(e.x,e.y,e.radius*(e.kind==='devour'?1-t:t),0,7);c.stroke();if(!sparse){c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.radius*t*.8,0,7);c.stroke();}}
   }c.globalAlpha=1;c.restore();
-  if(g.player.hp<250){c.strokeStyle='#dc494b88';c.lineWidth=12;c.strokeRect(0,0,w,h);}
+  if(g.ultimateTime>0&&!this.low&&!this.autoLow){const cutin=this.assets.get(g.identity)?.cutin;if(cutin){c.globalAlpha=Math.min(1,g.ultimateTime*3);c.drawImage(cutin,w*.62,h*.3,w*.36,w*.18);c.globalAlpha=1;}}
+  if(g.player.hp<g.player.maxHp*.25){c.strokeStyle='#dc494b88';c.lineWidth=12;c.strokeRect(0,0,w,h);}
  }
- drawPreview(canvas:HTMLCanvasElement,time:number){const c=canvas.getContext('2d')!;c.clearRect(0,0,canvas.width,canvas.height);this.drawSovereign(c,canvas.width/2,canvas.height*.56,time,0,2.6*MONSTERS[this.previewIdentity.monsterId].visual.scale,0,this.previewIdentity.colors);}
+ drawPreview(canvas:HTMLCanvasElement,time:number){const c=canvas.getContext('2d')!;c.clearRect(0,0,canvas.width,canvas.height);const pack=this.assets.get(this.previewIdentity),portrait=pack?.selection||pack?.portrait;if(portrait){const scale=Math.min(canvas.width/portrait.width,canvas.height/portrait.height);c.drawImage(portrait,(canvas.width-portrait.width*scale)/2,0,portrait.width*scale,portrait.height*scale);}else if(!this.assets.drawGameplay(c,this.previewIdentity,canvas.width/2,canvas.height*.56,time,'idle',2.6))this.drawSovereign(c,canvas.width/2,canvas.height*.56,time,0,2.6*MONSTERS[this.previewIdentity.monsterId].visual.scale,0,this.previewIdentity.colors);}
  drawSovereign(c:CanvasRenderingContext2D,x:number,y:number,time:number,hit:number,scale=1,rage=0,palette:Palette=MONSTERS.sovereign.palette){
   c.save();c.translate(x,y);c.scale(scale,scale);const breath=Math.sin(time*2)*1.2;c.translate(0,breath);
   c.fillStyle='#08080bd0';c.beginPath();c.ellipse(0,31,47,16,0,0,7);c.fill();

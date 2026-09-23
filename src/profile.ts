@@ -9,7 +9,7 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
  const raw=object(value)&&(value.version===2||value.version===1)?value:{};
  const identity=createIdentity(object(raw.identity)?raw.identity:{name:legacyName});const records:Profile['records']={},palettes:Profile['palettes']={};
  for(const m of Object.values(MONSTERS))palettes[m.id]=paletteFor(m,object(raw.palettes)?raw.palettes[m.id]:undefined);
- for(const a of ACHIEVEMENTS){const r=object(raw.records)?raw.records[a.id]:null;if(object(r)){const best=Number.isFinite(r.best)?Math.max(0,Math.min(1e9,r.best)):0;records[a.id]={best};if(typeof r.unlockedAt==='string'&&Number.isFinite(Date.parse(r.unlockedAt))&&best>=a.target){records[a.id].unlockedAt=r.unlockedAt;records[a.id].name=sanitizeName(r.name);records[a.id].monsterId=MONSTERS[r.monsterId]?r.monsterId:'sovereign';}}}
+ for(const a of ACHIEVEMENTS){const r=object(raw.records)?raw.records[a.id]:null;if(object(r)){const best=Number.isFinite(r.best)?Math.max(0,Math.min(1e9,r.best)):0;records[a.id]={best};if(typeof r.unlockedAt==='string'&&Number.isFinite(Date.parse(r.unlockedAt))&&best>=a.target){records[a.id].unlockedAt=r.unlockedAt;records[a.id].name=sanitizeName(r.name);records[a.id].monsterId=Object.hasOwn(MONSTERS,r.monsterId)?r.monsterId:'sovereign';}}}
  const profile:Profile={version:2,identity,palettes,records};identity.colors={...palettes[identity.monsterId]};if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
 }
 export function availableTitles(profile:Profile){return [...BASE_TITLES,...ACHIEVEMENTS.filter(a=>a.title&&profile.records[a.id]?.unlockedAt).map(a=>a.title!)];}

@@ -24,9 +24,10 @@ export class Score {
   if(count>=SCORING.multiMinimum)this.dominance+=count*SCORING.multiBonus;
  }
  evaluate(time:number,extra:Partial<FeatContext>) {
-  const context:FeatContext={recentKills:this.recent.length,noHitKills:this.noHitKills,overkill:0,chain:0,eliteDevoured:0,multi:0,...extra};
+  const context:FeatContext={recentKills:this.recent.length,noHitKills:this.noHitKills,overkill:0,chain:0,eliteDevoured:0,multi:0,corruption:0,...extra};
   const earned:string[]=[];
   for(const feat of FEATS) if(context[feat.metric]>=feat.threshold && time>=(this.timers[feat.id]??-1)) {
+   if((feat.metric==='noHitKills'||feat.metric==='recentKills')&&context[feat.metric]<=(this.featBest[feat.id]||0))continue;
    this.timers[feat.id]=time+feat.cooldown; this.feats[feat.id]=(this.feats[feat.id]??0)+1;
    this.dominance+=feat.bonus;this.featBest[feat.id]=Math.max(this.featBest[feat.id]||0,context[feat.metric]);earned.push(`RUN FEAT · ${feat.name} · ${context[feat.metric]} / ${feat.threshold} · +${feat.bonus.toLocaleString()}`);
   }

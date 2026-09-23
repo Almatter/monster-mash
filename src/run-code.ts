@@ -17,7 +17,7 @@ export async function decodeRun(code:string):Promise<RunRecord> {
  if(hex((await digest(bytes)).slice(0,12))!==checksum) throw Error('Checksum mismatch: damaged or edited run code.');
  const run=JSON.parse(new TextDecoder().decode(bytes));
  if(prefix!=='MM'+run.version||typeof run.name!=='string'||Array.from(run.name).length>32||typeof run.rules!=='string'||!['overwhelmed','retired'].includes(run.reason))throw Error('Invalid run metadata.');
- if(run.version===2){if(!MONSTERS[run.monsterId]||typeof run.title!=='string'||Array.from(run.title).length>32||!run.colors||!['primary','secondary','accent','power'].every(k=>/^#[0-9a-f]{6}$/i.test(run.colors[k])))throw Error('Invalid monster identity.');}
+ if(run.version===2){if(!Object.hasOwn(MONSTERS,run.monsterId)||typeof run.title!=='string'||Array.from(run.title).length>32||!run.colors||!['primary','secondary','accent','power'].every(k=>/^#[0-9a-f]{6}$/i.test(run.colors[k])))throw Error('Invalid monster identity.');}
  for(const field of ['phase','seed','duration','score','kills','wave','elites','titans','multi','peak']) if(!Number.isFinite(run[field])||run[field]<0) throw Error(`Invalid ${field}.`);
  if(!Number.isInteger(run.phase)||run.phase>3||run.peak<1||run.peak>5||run.multi>run.kills||run.elites+run.titans>run.kills) throw Error('Inconsistent run statistics.');
  if(!run.feats||typeof run.feats!=='object'||Array.isArray(run.feats)||Object.values(run.feats).some(n=>!Number.isInteger(n)||Number(n)<0)) throw Error('Invalid feats.');
