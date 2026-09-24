@@ -1,1 +1,152 @@
-{}
+{
+  "sovereign": {
+    "gameplay": {
+      "base": "assets/monsters/sovereign/gameplay-base.webp",
+      "primary": "assets/monsters/sovereign/gameplay-primary.webp",
+      "secondary": "assets/monsters/sovereign/gameplay-secondary.webp",
+      "accent": "assets/monsters/sovereign/gameplay-accent.webp",
+      "power": "assets/monsters/sovereign/gameplay-power.webp"
+    },
+    "selection": {
+      "base": "assets/monsters/sovereign/selection-base.webp",
+      "primary": "assets/monsters/sovereign/selection-primary.webp",
+      "secondary": "assets/monsters/sovereign/selection-secondary.webp",
+      "accent": "assets/monsters/sovereign/selection-accent.webp",
+      "power": "assets/monsters/sovereign/selection-power.webp"
+    },
+    "portrait": {
+      "base": "assets/monsters/sovereign/portrait-base.webp",
+      "primary": "assets/monsters/sovereign/portrait-primary.webp",
+      "secondary": "assets/monsters/sovereign/portrait-secondary.webp",
+      "accent": "assets/monsters/sovereign/portrait-accent.webp",
+      "power": "assets/monsters/sovereign/portrait-power.webp"
+    },
+    "cutin": {
+      "base": "assets/monsters/sovereign/cutin-base.webp",
+      "primary": "assets/monsters/sovereign/cutin-primary.webp",
+      "secondary": "assets/monsters/sovereign/cutin-secondary.webp",
+      "accent": "assets/monsters/sovereign/cutin-accent.webp",
+      "power": "assets/monsters/sovereign/cutin-power.webp"
+    }
+  },
+  "titan": {
+    "gameplay": {
+      "base": "assets/monsters/titan/gameplay-base.webp",
+      "primary": "assets/monsters/titan/gameplay-primary.webp",
+      "secondary": "assets/monsters/titan/gameplay-secondary.webp",
+      "accent": "assets/monsters/titan/gameplay-accent.webp",
+      "power": "assets/monsters/titan/gameplay-power.webp"
+    },
+    "selection": {
+      "base": "assets/monsters/titan/selection-base.webp",
+      "primary": "assets/monsters/titan/selection-primary.webp",
+      "secondary": "assets/monsters/titan/selection-secondary.webp",
+      "accent": "assets/monsters/titan/selection-accent.webp",
+      "power": "assets/monsters/titan/selection-power.webp"
+    },
+    "portrait": {
+      "base": "assets/monsters/titan/portrait-base.webp",
+      "primary": "assets/monsters/titan/portrait-primary.webp",
+      "secondary": "assets/monsters/titan/portrait-secondary.webp",
+      "accent": "assets/monsters/titan/portrait-accent.webp",
+      "power": "assets/monsters/titan/portrait-power.webp"
+    },
+    "cutin": {
+      "base": "assets/monsters/titan/cutin-base.webp",
+      "primary": "assets/monsters/titan/cutin-primary.webp",
+      "secondary": "assets/monsters/titan/cutin-secondary.webp",
+      "accent": "assets/monsters/titan/cutin-accent.webp",
+      "power": "assets/monsters/titan/cutin-power.webp"
+    }
+  },
+  "devourer": {
+    "selection": {
+      "power": "assets/monsters/devourer/selection-power.webp",
+      "accent": "assets/monsters/devourer/selection-accent.webp",
+      "primary": "assets/monsters/devourer/selection-primary.webp",
+      "secondary": "assets/monsters/devourer/selection-secondary.webp",
+      "base": "assets/monsters/devourer/selection-base.webp"
+    },
+    "portrait": {
+      "power": "assets/monsters/devourer/portrait-power.webp",
+      "accent": "assets/monsters/devourer/portrait-accent.webp",
+      "primary": "assets/monsters/devourer/portrait-primary.webp",
+      "secondary": "assets/monsters/devourer/portrait-secondary.webp",
+      "base": "assets/monsters/devourer/portrait-base.webp"
+    },
+    "gameplay": {
+      "power": "assets/monsters/devourer/gameplay-power.webp",
+      "accent": "assets/monsters/devourer/gameplay-accent.webp",
+      "primary": "assets/monsters/devourer/gameplay-primary.webp",
+      "secondary": "assets/monsters/devourer/gameplay-secondary.webp",
+      "base": "assets/monsters/devourer/gameplay-base.webp"
+    },
+    "cutin": {
+      "power": "assets/monsters/devourer/cutin-power.webp",
+      "accent": "assets/monsters/devourer/cutin-accent.webp",
+      "primary": "assets/monsters/devourer/cutin-primary.webp",
+      "secondary": "assets/monsters/devourer/cutin-secondary.webp",
+      "base": "assets/monsters/devourer/cutin-base.webp"
+    }
+  },
+  "calamity": {
+    "gameplay": {
+      "accent": "assets/monsters/calamity/gameplay-accent.webp",
+      "power": "assets/monsters/calamity/gameplay-power.webp",
+      "base": "assets/monsters/calamity/gameplay-base.webp",
+      "secondary": "assets/monsters/calamity/gameplay-secondary.webp",
+      "primary": "assets/monsters/calamity/gameplay-primary.webp"
+    },
+    "portrait": {
+      "accent": "assets/monsters/calamity/portrait-accent.webp",
+      "power": "assets/monsters/calamity/portrait-power.webp",
+      "base": "assets/monsters/calamity/portrait-base.webp",
+      "secondary": "assets/monsters/calamity/portrait-secondary.webp",
+      "primary": "assets/monsters/calamity/portrait-primary.webp"
+    },
+    "cutin": {
+      "accent": "assets/monsters/calamity/cutin-accent.webp",
+      "power": "assets/monsters/calamity/cutin-power.webp",
+      "base": "assets/monsters/calamity/cutin-base.webp",
+      "secondary": "assets/monsters/calamity/cutin-secondary.webp",
+      "primary": "assets/monsters/calamity/cutin-primary.webp"
+    },
+    "selection": {
+      "accent": "assets/monsters/calamity/selection-accent.webp",
+      "power": "assets/monsters/calamity/selection-power.webp",
+      "base": "assets/monsters/calamity/selection-base.webp",
+      "secondary": "assets/monsters/calamity/selection-secondary.webp",
+      "primary": "assets/monsters/calamity/selection-primary.webp"
+    }
+  },
+  "overlord": {
+    "cutin": {
+      "power": "assets/monsters/overlord/cutin-power.webp",
+      "base": "assets/monsters/overlord/cutin-base.webp",
+      "accent": "assets/monsters/overlord/cutin-accent.webp",
+      "secondary": "assets/monsters/overlord/cutin-secondary.webp",
+      "primary": "assets/monsters/overlord/cutin-primary.webp"
+    },
+    "gameplay": {
+      "power": "assets/monsters/overlord/gameplay-power.webp",
+      "base": "assets/monsters/overlord/gameplay-base.webp",
+      "accent": "assets/monsters/overlord/gameplay-accent.webp",
+      "secondary": "assets/monsters/overlord/gameplay-secondary.webp",
+      "primary": "assets/monsters/overlord/gameplay-primary.webp"
+    },
+    "selection": {
+      "power": "assets/monsters/overlord/selection-power.webp",
+      "base": "assets/monsters/overlord/selection-base.webp",
+      "accent": "assets/monsters/overlord/selection-accent.webp",
+      "secondary": "assets/monsters/overlord/selection-secondary.webp",
+      "primary": "assets/monsters/overlord/selection-primary.webp"
+    },
+    "portrait": {
+      "power": "assets/monsters/overlord/portrait-power.webp",
+      "base": "assets/monsters/overlord/portrait-base.webp",
+      "accent": "assets/monsters/overlord/portrait-accent.webp",
+      "secondary": "assets/monsters/overlord/portrait-secondary.webp",
+      "primary": "assets/monsters/overlord/portrait-primary.webp"
+    }
+  }
+}

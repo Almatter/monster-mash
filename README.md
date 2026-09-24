@@ -17,7 +17,7 @@ The server builds once at startup. Rebuild after source changes. Upload the **co
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version and `EVENT.rules`. Do not compare scores across rules versions. Current rules: `2026.10-v3`.
+**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v3`.
 
 ## Play
 
@@ -40,7 +40,7 @@ Choose a name, one of five packages, an optional title and four tint channels. T
 
 Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 26 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect stats. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
 
-See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) defines final layered anime deliveries and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) defines the three-bus mix, loop/crossfade states and missing commissioned audio. No final anime assets or music are bundled.
+See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) documents the shipped layered anime art and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) documents the master/three-bus mix, synthesized sound effects, loop/crossfade states and music delivery slots. Original music masters are still needed.
 
 ## Scoring and competition
 
@@ -64,15 +64,15 @@ Players post their PNG card and run code manually to Discord. `verify.html` read
 | `src/servants.ts` | Bounded indirect-damage/ownership subsystem |
 | `src/selection.ts`, `src/results.ts`, `src/main.ts` | Registry/Records, shareable results and app/input lifecycle |
 | `src/assets.ts`, `src/renderer.ts` | Cached layered artwork and retained procedural fallback |
-| `public/assets/catalog.json` | Opt-in real-art entries; empty until final assets are supplied |
+| `public/assets/catalog.json` | Shipped five-character layered art catalog |
 
 Adding a monster that uses existing effects requires a definition, stats, four ability references, passive choice and palette/art references. A genuinely new mechanic or passive requires a small handler; this is intentionally not a freeform ability builder. New achievements using existing aggregated metrics and new feats using existing contexts require data rows. Keep the plain-language condition and implementation threshold synchronized.
 
-Change `EVENT.phase` (0–3) to activate a week. Week 1 remains the baseline; later phase tables remain starting configurations. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. No new placeholder illustrations have been manufactured.
+Change `EVENT.phase` (0–3) to activate a week. Week 1 remains the baseline; later phase tables remain starting configurations. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. Production character and enemy art is bundled under `public/assets/`; editable original images stay in `art-source/`.
 
 ## Performance contracts
 
-60 fixed simulation steps/second, bounded catch-up; 1,100 enemies with boss capacity reserved, 180 hostile projectiles, 180 transient effects, 80 friendly bolts, 80 launched remains, 8 fields, 32 pooled servants, 128 queued corruption blasts (16 processed/step), 10 queued notifications. Enemy bucket arrays are reused. Servant target searches run at 4 Hz. Records consume aggregate counters at HUD cadence, not entity scans. Cosmetic art composites on palette change with four cached packs and at most two pending packs. Low/adaptive FX changes rendering only, not density or score.
+60 fixed simulation steps/second, bounded catch-up; 1,100 enemies with boss capacity reserved, 180 hostile projectiles, 180 transient effects, 80 friendly bolts, 80 launched remains, 8 fields, 32 pooled servants, 128 queued corruption blasts (16 processed/step), 10 queued notifications. Enemy bucket arrays are reused. Servant target searches run at 4 Hz. Records consume aggregate counters at HUD cadence, not entity scans. Cosmetic art composites on palette change with four cached packs and at most two pending set loads; selection, combat, cut-ins and results load on demand. Low/adaptive FX changes rendering only, not density or score.
 
 ## Tests and remaining validation
 
@@ -93,4 +93,12 @@ node tests/performance-event.mjs
 
 Set `PLAYWRIGHT_PATH` to an external Playwright `index.mjs`, and `BROWSER_PATH` to an installed executable if needed. Screenshots/cards go in ignored `test-results/`. See **[TESTING.md](TESTING.md)** for observed results and their limits.
 
-Still required before public competition: human balance/playstyle tuning for broadly comparable Dominance opportunities and 8–12 minute runs, real iOS/Android browser and thermal checks, supplied final anime art, organizer eligibility rules, and user approval to publish. Automated immortality soaks prove stability, not fairness or ordinary-player survival time.
+Still required before public competition: human balance/playstyle tuning for broadly comparable Dominance opportunities and 8–12 minute runs, real iOS/Android browser and thermal checks, a commissioned/original music score, organizer eligibility rules, and user approval to publish. Automated immortality soaks prove stability, not fairness or ordinary-player survival time.
+
+## Production presentation assets
+
+All five leads have distinct silhouettes and separate selection, portrait, cut-in and 5-row gameplay sheets with primary/secondary/accent/power masks. The new enemies are ash goblin, grave hound, Hex Spitter, Carrion Wing, Iron Ogre, Blood Herald and Hollow King; a low-contrast medieval stone arena tile supports them. Twenty distinct vector skill icons replace repeated generic glyphs. The old procedural sprites remain loading/error fallbacks.
+
+Character art ships as 100 lossless WebP layers totaling about 18.2 MiB, loaded one screen-set at a time. Source masters and processing scripts live in `art-source/` and `tools/process-*-art.mjs`; run `node tools/pack-character-art.mjs --prune-png` after regenerating PNG layers. The processing scripts require Sharp (`SHARP_PATH` may point to an installation); the built game has no runtime dependency on Sharp. The public game uses compressed enemy WebP sprites and a roughly 10 KiB floor tile.
+
+The mobile landscape HUD is compact (49 px on the tested 915×412, 844×390, 667×375 and 568×320 viewports), with Dominance, slain, Carnage, wave, health, name and pause visible. MASTER, MUSIC, COMBAT/SFX and INTERFACE levels persist locally. Original synthesized SFX cover every semantic hook, with supplied clips taking precedence; the music catalog and five adaptive states await finished original tracks.

@@ -5,3 +5,58 @@
 @media(max-height:500px) and (orientation:landscape){.registry-header{margin-bottom:14px;padding-bottom:12px}.identity-preview canvas{height:180px}#kit p{font-size:11px}.health-block{width:180px}#hudName{font-size:10px}#hudClass{font-size:9px}.result-panel{margin:0 auto!important}#notice{max-width:450px;font-size:10px}#combatInfo{top:90px}.swatch{min-height:44px}}
 .records-section{margin:38px 0;border-top:1px solid #564037;padding-top:24px}.record-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:15px}#titleList>section{margin:28px 0}.record h4{font-size:17px;color:#ddc292;margin:0 0 12px}#newTitles{border:1px solid #c39c62;padding:16px;margin:18px 0}#resultPortrait{float:right;width:128px;height:128px;object-fit:contain}
 #audioSettings{z-index:30}#audioSettings input[type=range]{width:100%;min-height:44px}#audioSettings label{display:flex;justify-content:space-between}#audioButton{padding:4px 8px;font-size:10px;min-height:28px}#recordPortrait{width:96px;height:96px;float:right}#recordList{grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))}
+
+#mobileCarnage{display:none}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:650px){
+ #hud{inset:max(0px,env(safe-area-inset-top)) 0 auto;min-height:clamp(44px,11vh,52px);padding:2px max(8px,env(safe-area-inset-right)) 2px max(8px,env(safe-area-inset-left));display:grid;grid-template-columns:minmax(90px,1fr) auto auto;gap:clamp(5px,1vw,12px);align-items:center;background:linear-gradient(90deg,#130f1eea,#211725df 55%,#130f1eea);border-bottom:1px solid #a9835366;box-shadow:0 3px 14px #0008}
+ #hud .health-block{width:auto;min-width:0}
+ #hudName{font-size:clamp(9px,1.55vw,11px);letter-spacing:.3px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:100%;height:13px}
+ #hud .health-track{height:7px;margin:3px 0 0}
+ #hud #healthText,#hud #hudClass,#hud #phaseLabel,#hud #clock{display:none}
+ #hud .score-block{display:flex;align-items:baseline;gap:clamp(5px,1.2vw,13px);white-space:nowrap;text-align:left}
+ #hud .score-block>.eyebrow{display:none}
+ #hud .score-block strong{display:inline;font-size:clamp(12px,1.8vw,16px);letter-spacing:0;font-variant-numeric:tabular-nums}
+ #hud .score-block strong::before{content:'DOM ';color:#c9a56c;font-size:clamp(8px,1.2vw,10px);letter-spacing:.3px}
+ #hud .score-block>span:last-of-type{display:inline}
+ #hud .score-block>span:nth-of-type(2){font-size:0;letter-spacing:0}
+ #hud .score-block>span:nth-of-type(2)::before{content:'SLAIN ';font-size:clamp(8px,1.2vw,10px);color:#c9a56c}
+ #hud .score-block b{font-size:clamp(11px,1.65vw,14px);letter-spacing:0;margin-left:0;font-variant-numeric:tabular-nums}
+ #mobileCarnage{display:inline!important;font-size:clamp(11px,1.65vw,14px)!important;color:#f0c180!important;font-weight:bold;letter-spacing:0!important;font-variant-numeric:tabular-nums}
+ #hud .stage-block{display:flex;width:auto;align-items:center;gap:clamp(4px,.8vw,9px);white-space:nowrap}
+ #hud .stage-block strong{font-size:clamp(10px,1.45vw,13px);margin:0;letter-spacing:0}
+ #hud .stage-block button{min-width:44px;min-height:44px;margin:0;padding:5px;font-size:18px}
+ #combatInfo{top:calc(max(0px,env(safe-area-inset-top)) + clamp(44px,11vh,52px) + 3px)}
+ #combatInfo #carnage{display:none}
+ #notice{max-width:min(60%,500px);margin:0 auto;font-size:clamp(9px,1.25vw,11px);line-height:1.2;min-height:0;padding:2px 4px;background:#120d16aa}
+ #boss{font-size:10px;background:#120d16bb;display:inline-block;padding:2px 8px}
+ #abilities{right:max(8px,env(safe-area-inset-right));bottom:calc(36px + env(safe-area-inset-bottom));gap:clamp(3px,.8vw,6px)}
+ #abilities .ability{width:clamp(52px,9.6vw,86px);height:clamp(52px,14vh,64px);min-height:48px;padding:4px}
+ #abilities .ability .symbol{font-size:20px;line-height:22px}
+ #abilities .ability .title{font-size:8px;line-height:9px;overflow:hidden;text-overflow:ellipsis}
+ #joystick{left:max(10px,env(safe-area-inset-left));bottom:calc(37px + env(safe-area-inset-bottom));width:clamp(88px,25vh,110px);height:clamp(88px,25vh,110px)}
+ #joystick div{width:44px;height:44px;left:calc(50% - 22px);top:calc(50% - 22px)}
+ #preferences{left:max(6px,env(safe-area-inset-left));right:max(6px,env(safe-area-inset-right));bottom:env(safe-area-inset-bottom);height:29px;padding:0 5px;gap:clamp(4px,1vw,12px);font-size:9px}
+ #preferences label{white-space:nowrap}
+ #preferences #performance{font-size:8px;white-space:nowrap}
+ #preferences #audioButton{min-height:28px}
+}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:380px){
+ #hud .score-block strong{font-size:12px}
+ #hud .score-block b,#mobileCarnage{font-size:11px!important}
+ #hud .score-block{gap:5px}
+ #preferences #performance{display:none}
+}
+
+.identity-preview canvas{height:clamp(320px,42vh,460px)}
+.result-hero{display:grid;grid-template-columns:minmax(0,1fr) 220px;align-items:center;gap:20px;min-height:220px;border-bottom:1px solid #6a4a3e}
+.result-copy{text-align:left}
+.result-copy #resultName{margin:8px 0}
+.result-copy .result-score{border:0;margin:14px 0 10px;padding:0}
+#resultPortrait{float:none;width:220px;height:220px;object-fit:contain;align-self:end;filter:drop-shadow(0 3px 18px #895d713d)}
+@media(max-width:650px){.result-hero{grid-template-columns:minmax(0,1fr) 116px;gap:8px;min-height:140px}#resultPortrait{width:116px;height:140px}.result-copy #resultName{font-size:26px}.result-copy .result-score strong{font-size:40px}}
+@media(max-height:500px) and (orientation:landscape){.identity-preview canvas{height:240px}.result-hero{grid-template-columns:minmax(0,1fr) 120px;min-height:140px}#resultPortrait{width:120px;height:140px}}
+
+.identity-preview canvas{width:min(100%,460px);height:auto;display:block;margin-inline:auto}
+@media(max-height:500px) and (orientation:landscape){.identity-preview canvas{width:min(100%,240px);height:auto}}
+
+.ability .symbol svg{display:block;width:29px;height:29px;margin:0 auto;fill:none;stroke:currentColor;stroke-width:2.35;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px #cc8d5270)}.ability:last-child .symbol{color:#f4c88f}.ability:last-child .symbol svg{stroke-width:2.6}

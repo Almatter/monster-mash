@@ -1,4 +1,9 @@
-# Monster Mash — final art delivery contract
+## Shipped production art (September 2026)
+
+All five playable characters now have original distinct-anatomy selection key art, portraits, cut-ins and gameplay sheets. Sovereign is the armored horned incarnation; Titan is a broad basalt beast; Devourer is a lean ivory predator; Calamity is a floating many-armed rune caster; Overlord is a skeletal ossuary commander with coffin wings. Each set has neutral base and four grayscale shaded tint layers. The public catalog points to 100 lossless WebP files (18.2 MiB total), and source masters remain under `art-source/`. `tools/process-*-art.mjs` regenerates layers from those masters; `tools/pack-character-art.mjs --prune-png` losslessly repacks them. Sharp is needed only for regeneration.
+
+The runtime also loads seven original compressed enemy sprites from `public/assets/enemies/` and a subdued medieval floor tile from `public/assets/arena/`; code-native graphics remain safe loading fallbacks. Enemy sprites are static with subtle bob/telegraph effects, not multi-frame attack atlases. The seven-asset group and all five playable sets have been checked in desktop and mobile browser scenes. Four extreme palette combinations were checked per playable monster. The 5-row player sheets derive motion states from one painted gameplay view per character, so expressive frame-by-frame acting remains a future polish opportunity.
+# Monster Mash — production art delivery contract
 
 Create original modern isekai anime dark fantasy designs: cel shading, expressive dangerous faces, medieval costumes, memorable monstrous silhouettes and dramatic supernatural power. Do not copy a particular anime character, outfit, logo or UI. Keep horde enemies substantially simpler than the player. The current procedural renderer remains a supported fallback; do not supply placeholder illustrations.
 
@@ -6,7 +11,7 @@ Create original modern isekai anime dark fantasy designs: cel shading, expressiv
 
 `public/assets/catalog.json` maps monster IDs to optional `gameplay`, `portrait`, `selection` and `cutin` layer sets. An absent set uses existing code-native presentation. Each set contains `base`, `primary`, `secondary`, `accent`, `power` file paths beginning with `assets/`. Missing/broken supplied art fails back safely.
 
-Example structure (paths describe required future deliveries, not existing artwork):
+Example structure (the shipped catalog now contains all five playable monster entries):
 
 ```json
 {
@@ -68,9 +73,9 @@ The individual player's chosen name and title are rendered by UI, never baked in
 - Ultimate cut-in: 1024×512, upper body/action expression, transparent; important face within central 70%. Fast overlay lasts about 0.85 seconds. Name and signature ability are separate text. No cutscene frames needed.
 - Keep small versions legible. Clean silhouettes matter more than fine fabric detail. All three image types may be delivered independently.
 
-## Other deliveries and current integration boundary
+## Enemy, arena and other deliveries
 
-These are art specifications for later content; the current drop-in catalog directly supports **player** layers only. Enemy/icon/background atlas rendering needs its small respective renderer adapter when those deliveries arrive; do not expect an unused filename alone to replace them.
+The player layer catalog, seven enemy WebP sprites, procedural enemy fallback, low-contrast arena tile and twenty code-native SVG skill icons are now integrated. The table below specifies optional future animation and icon-master upgrades; its atlas sizes are not a claim that these additional animations are already shipped.
 
 | Asset | Delivery | View / states / anchor |
 |---|---|---|
@@ -82,15 +87,15 @@ These are art specifications for later content; the current drop-in catalog dire
 | Achievement/title/rank icons | Original 128×128 transparent PNG/WebP; 16px inner safe margin | Clear grayscale/gold silhouette at 32px, no text; stable achievement IDs as names |
 | Optional beam/vortex/impact effects | 256×256 RGBA grayscale sheets, 6–8 frames; beams may be 512×128 | Center origin; tint by power color; additive-looking highlights on transparent black-free alpha |
 
-Current procedural ability effects are reusable final fallbacks, so external VFX are optional. No throwaway replacements are required. Prioritize player monsters → portraits/cut-ins → enemy Titans → elites → records/title icons → common horde → environment.
+Current procedural ability effects are reusable final fallbacks, so external VFX are optional. Record/title icon masters and frame-by-frame enemy acting remain later polish.
 
 ## Delivery checklist
 
-Add files under `public/assets/monsters/<id>/`, update only the corresponding catalog entry, run `node tools/build.mjs`, then inspect default plus ivory, cobalt and crimson palettes in preview and gameplay. Check transparency against dark stone, movement origin, four tint channels, hostile readability and mobile memory. New files under assets are cached after a successful load; bump the service-worker/rules version for public releases and test offline replay. Keep original layered source files outside the web payload.
+Add files under `public/assets/monsters/<id>/`, update only the corresponding catalog entry, run `node tools/build.mjs`, then inspect default plus ivory, cobalt and crimson palettes in preview and gameplay. Check transparency against dark stone, movement origin, four tint channels, hostile readability and mobile memory. New files under assets are cached after a successful load; bump the service-worker cache version for public releases (and the rules version only for gameplay/scoring changes) and test offline replay. Keep original layered source files outside the web payload.
 
 ## v3 enforced contract and validation workflow
 
-The loader now enforces exact dimensions **before compositing**: gameplay 1536x1280, portrait 512x512, selection 768x1024, cutin 1024x512. Every layer must match its base. No texture exceeds 2048 pixels on either axis. Keep unused atlas cells transparent. This engine uses cached Canvas sprite sheets; it does not require a skeletal runtime or shrink presentation key art into gameplay.
+The loader now enforces exact dimensions **before compositing**: gameplay 1536x1280, portrait 512x512, selection 768x1024, cutin 1024x512. Every layer must match its base. No texture exceeds 2048 pixels on either axis. Keep unused atlas cells transparent. This engine loads only the presentation set needed by the current screen and caches composited Canvas sprite sheets; it does not require a skeletal runtime or shrink presentation key art into gameplay.
 
 Presentation crop safety:
 - Selection: keep face/torso within x=96..672 and y=80..880; preserve at least 40px outer transparency. Contain-fit preview does not crop, but these margins protect future tighter layouts.

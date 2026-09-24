@@ -7,11 +7,24 @@ function loadImage(url:string){return new Promise<HTMLImageElement>((resolve,rej
 export function tintLayer(image:CanvasImageSource,width:number,height:number,color:string){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d')!;ctx.drawImage(image,0,0);ctx.globalCompositeOperation='multiply';ctx.fillStyle=color;ctx.fillRect(0,0,width,height);ctx.globalCompositeOperation='destination-in';ctx.drawImage(image,0,0);ctx.globalCompositeOperation='source-over';return c;}
 export const ART_DIMENSIONS={gameplay:[1536,1280],portrait:[512,512],selection:[768,1024],cutin:[1024,512]} as const;
 export async function compose(set:LayerSet,colors:Palette,type:keyof ArtEntry,loader=loadImage){const base=await loader(set.base);const dims=ART_DIMENSIONS[type];if(base.width!==dims[0]||base.height!==dims[1])throw Error(type+' must be '+dims.join(' × ')+' pixels');const canvas=document.createElement('canvas');canvas.width=base.width;canvas.height=base.height;const c=canvas.getContext('2d')!;for(const key of ['primary','secondary','accent','power'] as Channel[]){if(!set[key])continue;const layer=await loader(set[key]!);if(layer.width!==base.width||layer.height!==base.height)throw Error('Tint layers must share identical dimensions');c.drawImage(tintLayer(layer,base.width,base.height,colors[key]),0,0);}c.drawImage(base,0,0);return canvas;}
-// One composited atlas per palette, reused by preview and combat. Failed or absent art
-// uses the existing procedural renderer. The LRU bounds retained texture memory.
+// Compose only the art needed by the current screen. The procedural renderer remains a loading fallback.
 export class AssetLibrary {
- catalog:Record<string,ArtEntry>={};ready=false;cache=new Map<string,ArtPack|null>();pending=new Set<string>();
+ catalog:Record<string,ArtEntry>={};ready=false;cache=new Map<string,ArtPack>();pending=new Set<string>();failed=new Set<string>();
  constructor(){fetch('assets/catalog.json').then(r=>r.ok?r.json():{}).then(v=>{this.catalog=v&&typeof v==='object'&&!Array.isArray(v)?v:{};}).catch(()=>{}).finally(()=>{this.ready=true;});}
- get(identity:Identity):ArtPack|null{const key=identity.monsterId+Object.values(identity.colors).join('');if(this.cache.has(key)){const pack=this.cache.get(key)!;this.cache.delete(key);this.cache.set(key,pack);return pack;}const entry=this.catalog[identity.monsterId];if(!this.ready||!entry||this.pending.has(key)||this.pending.size>=2)return null;this.pending.add(key);void (async()=>{const pack:ArtPack={};for(const type of ['gameplay','portrait','selection','cutin'] as (keyof ArtEntry)[]){if(entry[type])try{const image=await compose(entry[type]!,identity.colors,type);if(type==='gameplay'){const spec=MONSTERS[identity.monsterId].visual;const columns=Math.max(...Object.values(spec.states).map(s=>s.frames)),rows=Math.max(...Object.values(spec.states).map(s=>s.row))+1;if(image.width!==spec.frameSize*columns||image.height!==spec.frameSize*rows)throw Error('Gameplay atlas dimensions do not match monster animation metadata');}pack[type]=image;}catch(error){console.warn('Art fallback:',identity.monsterId,type,error);}}this.cache.set(key,pack);this.pending.delete(key);while(this.cache.size>4)this.cache.delete(this.cache.keys().next().value!);})();return null;}
- drawGameplay(ctx:CanvasRenderingContext2D,identity:Identity,x:number,y:number,time:number,state:string,scale=1){const atlas=this.get(identity)?.gameplay;if(!atlas)return false;const v=MONSTERS[identity.monsterId].visual,animation=v.states[state]||v.states.idle,frame=Math.floor(time*animation.fps)%animation.frames;ctx.save();ctx.fillStyle='#0005';ctx.beginPath();ctx.ellipse(x,y+12*scale,38*scale,12*scale,0,0,Math.PI*2);ctx.fill();ctx.restore();ctx.drawImage(atlas,frame*v.frameSize,animation.row*v.frameSize,v.frameSize,v.frameSize,x-64*scale,y-80*scale,128*scale,128*scale);return true;}
+ get(identity:Identity,type:keyof ArtEntry='selection'):ArtPack|null{
+  const key=identity.monsterId+Object.values(identity.colors).join(''),entry=this.catalog[identity.monsterId];
+  if(!this.ready||!entry||!entry[type])return null;
+  let pack=this.cache.get(key);if(pack){this.cache.delete(key);this.cache.set(key,pack);}else{pack={};this.cache.set(key,pack);}
+  while(this.cache.size>4)this.cache.delete(this.cache.keys().next().value!);
+  const request=key+':'+type;
+  if(!pack[type]&&!this.pending.has(request)&&!this.failed.has(request)&&this.pending.size<2){
+   this.pending.add(request);const target=pack;
+   void compose(entry[type]!,identity.colors,type).then(image=>{
+    if(type==='gameplay'){const spec=MONSTERS[identity.monsterId].visual,columns=Math.max(...Object.values(spec.states).map(s=>s.frames)),rows=Math.max(...Object.values(spec.states).map(s=>s.row))+1;if(image.width!==spec.frameSize*columns||image.height!==spec.frameSize*rows)throw Error('Gameplay atlas dimensions do not match monster animation metadata');}
+    target[type]=image;
+   }).catch(error=>{console.warn('Art fallback:',identity.monsterId,type,error);this.failed.add(request);}).finally(()=>this.pending.delete(request));
+  }
+  return pack;
+ }
+ drawGameplay(ctx:CanvasRenderingContext2D,identity:Identity,x:number,y:number,time:number,state:string,scale=1){const atlas=this.get(identity,'gameplay')?.gameplay;if(!atlas)return false;const v=MONSTERS[identity.monsterId].visual,animation=v.states[state]||v.states.idle,frame=Math.floor(time*animation.fps)%animation.frames;ctx.save();ctx.fillStyle='#0005';ctx.beginPath();ctx.ellipse(x,y+12*scale,38*scale,12*scale,0,0,Math.PI*2);ctx.fill();ctx.restore();ctx.drawImage(atlas,frame*v.frameSize,animation.row*v.frameSize,v.frameSize,v.frameSize,x-64*scale,y-80*scale,128*scale,128*scale);return true;}
 }

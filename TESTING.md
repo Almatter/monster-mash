@@ -56,3 +56,15 @@ Rendered stress in headless installed Edge, 1440x900:
 - These measure CPU work, not GPU presentation, sustained device FPS or thermal behavior. No actual final-art/audio payload was available for resource profiling.
 
 Additional scripts: node tests/audio-browser.mjs and node tests/art-validation-browser.mjs. All browser scripts accept PLAYWRIGHT_PATH and BROWSER_PATH as described above. Generated screenshots remain under ignored test-results/.
+
+## September 23 production presentation pass (current)
+
+The previous sections record earlier builds. The current build ships all five original lead characters with selection, portrait, cut-in and gameplay WebP layers, seven enemy sprites, an arena floor tile, twenty code-native ability icons, compact mobile HUD and synthesized SFX. The empty music catalog still needs original finished tracks.
+
+- `node tools/build.mjs` and all 23 logic tests passed. No balance rules changed.
+- Desktop 1440×900 and mobile 844×390 browser flows passed for each lead: selection art, alternate palette, combat, all four abilities, result portrait and no page errors. Four extreme palettes per lead produced distinct art; Overlord skull/bone remained neutral in a green/black/magenta visual review.
+- All seven enemy files loaded and rendered together in a browser scene on 1440×900 and 844×390. The Hollow King remained much larger than the common horde; the arena floor stayed below combatant contrast.
+- Mobile HUD checks passed at 915×412, 844×390, 667×375 and 568×320: 49px tall (12%, 13%, 13%, 15% respectively), separate joystick and abilities, and 44px+ pause target. The 320px-height case cannot reach 12% while retaining a 44px touch control.
+- Audio browser test passed gesture unlock, master and three-bus volume persistence, cue-burst 12-voice cap, two-track crossfade cap, looping, background pause/resume and cleanup. The results music state is wired, but the test uses a diagnostic buffer; no finished music is claimed.
+- Lossless character layer packing reduced the public payload from 28.4 MiB PNG to 18.2 MiB WebP. Sets load only when the current screen needs them; a composed gameplay atlas is 7.5 MiB. Enemy sprites total about 304 KiB; the floor tile is about 10 KiB.
+- Loaded-art 525-enemy render profile in headless Edge: desktop p95 ranged 1.5–5.2ms across kits; 844×390 mobile viewport p95 ranged 1.6–5.0ms. These are CPU Canvas submission measurements, not device GPU/thermal guarantees. Hardware iOS/Android and offline-cache acceptance remain open.

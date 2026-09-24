@@ -1,6 +1,6 @@
 # Monster Mash audio delivery contract
 
-The runtime is ready for owned or commissioned audio. No music or physical recordings are bundled. The empty public/assets/audio/catalog.json is intentional. Do not copy a named soundtrack or download unlicensed clips.
+The runtime is ready for owned or commissioned audio. No music masters or physical recordings are bundled. The empty public/assets/audio/catalog.json is intentional. Original synthesized cues now cover every runtime sound hook; commissioned or owned clips can replace them through the catalog. Do not copy a named soundtrack or download unlicensed clips.
 
 ## Music
 
@@ -10,6 +10,7 @@ The runtime is ready for owned or commissioned audio. No music or physical recor
 | combat | Confident isekai battle rhythm, monstrous swagger, clear melody with space for attacks | 90-150s, medium |
 | escalation | More urgent percussion, dramatic modern orchestral layers, dense horde pressure | 90-150s, high |
 | titan | Weight, ominous brass/choir textures and an intelligible pulse | 60-120s, extreme |
+| results | Brief triumphant/ominous appraisal flourish, looping if the player remains | 20-60s, low |
 
 Deliver stereo 44.1/48kHz Ogg Vorbis plus MP3 alternate masters for platforms that need them. Catalog selects ONE tested file per state; there is no automatic codec fallback. MP3 is the safest single-delivery baseline. Retain lossless WAV masters outside public/. Target about -18 LUFS integrated, true peak <= -1 dBTP. Match perceived loudness between states. Avoid long intro silence. Maximum decoded track length 180 seconds; compressed file cap 24 MiB.
 
@@ -32,7 +33,7 @@ Required deliveries:
 
 Use 2-4 interchangeable variants for frequent impacts. Runtime chooses at most eight variants and varies playback rate by +/-3%. Enemy deaths are throttled to one event per 180ms; collision 200ms, mass-kill 1.5s, low-health 6s. Maximum ten SFX plus two UI voices, with priority replacement and explicit cleanup. Lower-priority deaths cannot evict title/defeat cues. A compressor guards peaks; it does not replace proper mastering.
 
-The bundled procedural sine-envelope cues cover restrained UI, healing/ward and selected magic. Physical attacks/deaths remain silent until supplied. These are prepared semantic hooks, not a claim that a final soundtrack or full SFX set exists.
+The bundled procedural synthesizer uses short tonal, filtered-noise, impact, rumble, horn and chime designs for all semantic hooks, including physical attacks/deaths. Two deterministic variants per cue, playback-rate variation, priority caps and throttling limit repetition and mass-kill overload. Catalog files override synthesized cues. These original cues are functional production-intent feedback; a custom recorded/sampled SFX master pass and finished music score would improve the final mix.
 
 ## Catalog example
 
@@ -54,4 +55,4 @@ Paths must remain under assets/audio/. Example only; the files below are not bun
 }
 ```
 
-Music/SFX/UI gains and master mute are saved in mm-audio. Context creation/resume requires user interaction. Storage/decode/autoplay errors leave gameplay functional. Loading is limited to two simultaneous requests; decoded buffer cache is capped at approximately 100 MiB (active crossfade sources may temporarily retain additional buffers). Late unloaded SFX are dropped rather than replayed out of sync. Rebuild and test online, offline after successful loading, mute, background/resume, rapid restart, low-end Android and iOS. Browser codec support and final-asset memory remain delivery acceptance checks.
+Master/Music/SFX/UI gains and mute are saved in mm-audio. Context creation/resume requires user interaction. Storage/decode/autoplay errors leave gameplay functional. Loading is limited to two simultaneous requests; decoded buffer cache is capped at approximately 100 MiB (active crossfade sources may temporarily retain additional buffers). Late unloaded SFX are dropped rather than replayed out of sync. Rebuild and test online, offline after successful loading, mute, background/resume, rapid restart, low-end Android and iOS. Browser codec support and final-asset memory remain delivery acceptance checks.
