@@ -87,3 +87,29 @@ Current procedural ability effects are reusable final fallbacks, so external VFX
 ## Delivery checklist
 
 Add files under `public/assets/monsters/<id>/`, update only the corresponding catalog entry, run `node tools/build.mjs`, then inspect default plus ivory, cobalt and crimson palettes in preview and gameplay. Check transparency against dark stone, movement origin, four tint channels, hostile readability and mobile memory. New files under assets are cached after a successful load; bump the service-worker/rules version for public releases and test offline replay. Keep original layered source files outside the web payload.
+
+## v3 enforced contract and validation workflow
+
+The loader now enforces exact dimensions **before compositing**: gameplay 1536x1280, portrait 512x512, selection 768x1024, cutin 1024x512. Every layer must match its base. No texture exceeds 2048 pixels on either axis. Keep unused atlas cells transparent. This engine uses cached Canvas sprite sheets; it does not require a skeletal runtime or shrink presentation key art into gameplay.
+
+Presentation crop safety:
+- Selection: keep face/torso within x=96..672 and y=80..880; preserve at least 40px outer transparency. Contain-fit preview does not crop, but these margins protect future tighter layouts.
+- Portrait: face in central 384x384 region, avoid horns/eyes on edges. Portrait is used by the results panel, downloaded result card, and current-incarnation Records view.
+- Cut-in: reserve the top 40% for the separate name/ability overlay; keep the focal face toward x=300..850, y=240..460. Transparent margins around limbs/hair. One illustration fades into the existing 0.85s cut-in; no video, embedded lettering, or additional animation atlas.
+
+The contact hitbox is a **23-world-unit circle**, fixed independently of visual scale. Frame contact origin (128,160) maps exactly to player (x,y); default drawn size is 128x128 times visual.scale. At scale 1, screen placement is (x-64,y-80). Do not enlarge the hitbox when drawing large horns, capes or magic. Enemy warning circles remain red and projectiles hostile pink regardless of player palette.
+
+Do not bake a ground shadow into the atlas: runtime draws an inexpensive ellipse below the imported sprite. Keep local cel shading in grayscale tint layers and neutral facial shading/linework in base. Base is composited last, so opaque armor in base would hide its tint layer. Four regions are supported today; an extra channel requires an intentional schema/UI change, not an unrecognized extra filename. Selected power color also feeds procedural beams, spell rings, bolts, servant markings and corruption.
+
+A complete composited set retains about 13.5 MiB of RGBA pixels; four cached palettes retain about 54 MiB, excluding decoded source images, Canvas backing stores and transient tint canvases. At most two packs load simultaneously. Keep individual compressed layers below 16 MiB for the validator and prefer much smaller files. Imported full-roster/device memory must still be measured with actual deliveries. Do not include PSD/Krita masters in public/.
+
+### Test one real set
+
+1. Put catalog.json and a single intended monster set under an assets folder, matching the relative paths above.
+2. Build/run the project and open http://127.0.0.1:4173/art-lab.html directly. This page is intentionally absent from player navigation.
+3. Choose the assets folder itself. Nothing uploads; files are read through local File objects and object URLs are revoked after decoding.
+4. Select the monster, cycle all five states, test all four color inputs, scale 0.5-3, light/dark backgrounds, and origin/hitbox guides. The preview shows gameplay, selection, portrait and cut-in separately.
+5. Check that face/skin/line art stay unchanged while shaded clothing responds; inspect transparent fringes, feet drift, silhouette, glow and hostile telegraph readability.
+6. Copy accepted files into public/assets/, update the catalog, rebuild, then play on desktop and a real phone. Inspect selection, results/card, Records and ultimate cut-in. Test cold load and offline reload.
+
+The tool rejects missing files, misregistered dimensions, unsupported file extensions and oversized files. It cannot judge anatomy, frame continuity, mask overlap, clean linework, lossless encoding or artistic readability automatically. Automated tests use diagnostic pixels to verify alpha, shading, neutral base preservation and folder import; they do not represent a delivered final character.

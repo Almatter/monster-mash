@@ -17,7 +17,7 @@ The server builds once at startup. Rebuild after source changes. Upload the **co
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version and `EVENT.rules`. Do not compare scores across rules versions. Current rules: `2026.10-v2`.
+**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version and `EVENT.rules`. Do not compare scores across rules versions. Current rules: `2026.10-v3`.
 
 ## Play
 
@@ -36,13 +36,11 @@ Choose a name, one of five packages, an optional title and four tint channels. T
 | Overlord | Control up to 32 pooled servants; curse damage, conversion, summons and iterative corruption cascades |
 | Sovereign | Preserved original mixed claw/shockwave/devour/beam/catastrophe package |
 
-## Feats versus records
+## Feats, records and titles
 
-**Run Feats** repeat under defined conditions and cooldowns, award Dominance and reset every run. Their counts and exact conditions appear in the result report. The Records screen also lists every feat's condition and bonus.
+Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 26 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect stats. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
 
-**Monster Records** persist only in the current browser. The registry shows locked/unlocked status, exact conditions, best measurable progress, related archetype, unlock date, earning monster name and any title reward. Progress is best-per-run or best short interval, never a sum that disguises a single-run requirement. NEWLY UNLOCKED lists every new record and why it unlocked. Titles are the only current rewards, and are cosmetic.
-
-`mm-profile` version 2 stores identity, palettes per archetype, record progress and unlock metadata. Old `mm-name` is migrated; existing `mm-mute`, `mm-shake`, `mm-lowFX` preferences remain. Version-1 identity/profile fields migrate; invalid/missing fields are normalized and unknown schema versions reset safely. If storage is blocked, play and in-memory records continue for the session. Clearing browser data removes local accomplishments. These are not official competition records.
+See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) defines final layered anime deliveries and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) defines the three-bus mix, loop/crossfade states and missing commissioned audio. No final anime assets or music are bundled.
 
 ## Scoring and competition
 

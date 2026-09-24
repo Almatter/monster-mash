@@ -1,18 +1,30 @@
+import {CUES,type AudioCatalog,type MusicState} from './content-audio.ts';
+type Preferences={music:number;sfx:number;ui:number;muted:boolean};
+type Voice={source:AudioScheduledSourceNode;gain:GainNode;priority:number;bus:'sfx'|'ui'};
 export class AudioEngine {
- context:AudioContext|null=null; muted=false; last=0;
- unlock(){if(!this.context)this.context=new AudioContext();void this.context.resume();}
- play(kind:string){
-  if(this.muted||!this.context)return;
-  const c=this.context,t=c.currentTime;
-  if(kind==='hit'&&t-this.last<.07)return;
-  this.last=t;
-  const osc=c.createOscillator(),gain=c.createGain();
-  const f:Record<string,number>={hit:110,rupture:80,devour:180,beam:310,catastrophe:48,hurt:145,wave:330};
-  const duration=kind==='catastrophe'?1.1:kind==='beam'?.5:.2;
-  osc.type=kind==='beam'?'sawtooth':'triangle';
-  osc.frequency.setValueAtTime(f[kind]||90,t);osc.frequency.exponentialRampToValueAtTime(kind==='wave'?660:22,t+duration);
-  gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(kind==='hit'?.045:.13,t+.008);gain.gain.exponentialRampToValueAtTime(.001,t+duration);
-  osc.connect(gain);gain.connect(c.destination);osc.start(t);osc.stop(t+duration+.01);
-  osc.onended=()=>{osc.disconnect();gain.disconnect();};
+ context:AudioContext|null=null;preferences:Preferences={music:.45,sfx:.65,ui:.55,muted:false};voices:Voice[]=[];musicVoices:{source:AudioBufferSourceNode;gain:GainNode}[]=[];
+ buses:Partial<Record<'music'|'sfx'|'ui'|'master',GainNode>>={};catalog:AudioCatalog={};buffers=new Map<string,AudioBuffer>();loading=new Map<string,Promise<AudioBuffer|null>>();last=new Map<string,number>();
+ state:MusicState='menu';activeState:MusicState|null=null;pendingState:MusicState|null=null;paused=false;generation=0;catalogReady:Promise<void>|null=null;
+ constructor(){try{const p=JSON.parse(localStorage.getItem('mm-audio')||'null');for(const key of ['music','sfx','ui'] as const)if(Number.isFinite(p?.[key]))this.preferences[key]=Math.max(0,Math.min(1,p[key]));this.preferences.muted=p?.muted===true;}catch{}}
+ get muted(){return this.preferences.muted;}set muted(v:boolean){this.preferences.muted=v;this.apply();}
+ setVolume(bus:'music'|'sfx'|'ui',value:number){this.preferences[bus]=Math.max(0,Math.min(1,Number.isFinite(value)?value:0));this.apply();}
+ apply(){if(this.context){for(const key of ['music','sfx','ui'] as const)this.buses[key]!.gain.setTargetAtTime(this.preferences[key],this.context.currentTime,.03);this.buses.master!.gain.setTargetAtTime(this.muted?0:1,this.context.currentTime,.02);}try{localStorage.setItem('mm-audio',JSON.stringify(this.preferences));}catch{}}
+ unlock(){try{if(!this.context){const c=this.context=new AudioContext();const master=this.buses.master=c.createGain(),limiter=c.createDynamicsCompressor();limiter.threshold.value=-8;limiter.ratio.value=12;master.connect(limiter);limiter.connect(c.destination);for(const key of ['music','sfx','ui'] as const){const bus=this.buses[key]=c.createGain();bus.connect(master);}this.apply();this.catalogReady=fetch('assets/audio/catalog.json').then(r=>r.ok?r.json():{}).then(v=>{if(v&&typeof v==='object'&&!Array.isArray(v))this.catalog=v;}).catch(()=>{});}
+ if(!this.paused)void this.context.resume().catch(()=>{});void this.setMusic(this.state);}catch{/* Audio is optional when browser policy or device blocks it. */}}
+ setPaused(value:boolean){this.paused=value;if(!this.context)return;if(value){for(const v of [...this.voices])this.stopVoice(v);void this.context.suspend().catch(()=>{});}else void this.context.resume().catch(()=>{});}
+ stopVoice(v:Voice){try{v.source.stop();}catch{}v.source.disconnect();v.gain.disconnect();const i=this.voices.indexOf(v);if(i>=0)this.voices.splice(i,1);}
+ async buffer(path:string,music=false){if(!path.startsWith('assets/audio/')||path.includes('..')||!this.context)return null;const cached=this.buffers.get(path);if(cached){this.buffers.delete(path);this.buffers.set(path,cached);return cached;}if(this.loading.has(path))return this.loading.get(path)!;if(this.loading.size>=2)return null;
+ const pending=(async()=>{try{const response=await fetch(path);if(!response.ok)return null;const data=await response.arrayBuffer();if(data.byteLength>(music?24:2)*1048576)return null;const buffer=await this.context!.decodeAudioData(data);if(buffer.duration>(music?180:8))return null;this.buffers.set(path,buffer);let bytes=[...this.buffers.values()].reduce((n,b)=>n+b.length*b.numberOfChannels*4,0);while(bytes>100*1048576&&this.buffers.size>1){const key=this.buffers.keys().next().value!,b=this.buffers.get(key)!;bytes-=b.length*b.numberOfChannels*4;this.buffers.delete(key);}return buffer;}catch{return null;}finally{this.loading.delete(path);}})();this.loading.set(path,pending);return pending;}
+ play(kind:string){const cue=CUES[kind],c=this.context;if(!cue||!c||this.paused||c.state!=='running'||this.muted)return;const t=c.currentTime;if(t-(this.last.get(kind)??-Infinity)<cue.gap)return;this.last.set(kind,t);
+ const variants=this.catalog.sfx?.[kind];if(Array.isArray(variants)&&variants.length){const path=variants[Math.floor(Math.random()*Math.min(variants.length,8))];if(typeof path==='string'){const cached=this.buffers.get(path);if(cached)this.startVoice(kind,cached);else void this.buffer(path);return;}}
+ if(cue.frequency)this.startVoice(kind);
  }
+ startVoice(kind:string,buffer?:AudioBuffer){const c=this.context!,cue=CUES[kind];const group=this.voices.filter(v=>v.bus===cue.bus),cap=cue.bus==='ui'?2:10;if(group.length>=cap){const lowest=group.reduce((a,b)=>a.priority<=b.priority?a:b);if(lowest.priority>cue.priority)return;this.stopVoice(lowest);}
+ const t=c.currentTime,gain=c.createGain(),duration=buffer?buffer.duration:(cue.duration||.2);let source:AudioBufferSourceNode|OscillatorNode;
+ if(buffer){const s=c.createBufferSource();s.buffer=buffer;s.playbackRate.value=.97+Math.random()*.06;source=s;}else{const osc=c.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(cue.frequency!,t);osc.frequency.exponentialRampToValueAtTime(cue.frequency!*.7,t+duration);source=osc;}
+ gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(buffer?.7:.10,t+.008);gain.gain.exponentialRampToValueAtTime(.001,t+duration);source.connect(gain);gain.connect(this.buses[cue.bus]!);const voice={source,gain,priority:cue.priority,bus:cue.bus};this.voices.push(voice);source.onended=()=>this.stopVoice(voice);source.start(t);source.stop(t+duration+.03);
+ }
+ async setMusic(state:MusicState){if(this.state!==state){this.generation++;this.pendingState=null;}this.state=state;if(!this.context||this.activeState===state||this.pendingState===state)return;this.pendingState=state;const generation=++this.generation;await this.catalogReady;if(generation!==this.generation)return;const def=this.catalog.music?.[state];if(!def||typeof def.file!=='string'){this.activeState=state;this.pendingState=null;this.fadeMusic();return;}const buffer=await this.buffer(def.file,true);if(generation!==this.generation)return;if(!buffer){this.pendingState=null;return;}const c=this.context,source=c.createBufferSource(),gain=c.createGain();source.buffer=buffer;source.loop=true;source.loopStart=Math.max(0,Math.min(buffer.duration-.05,Number(def.loopStart)||0));source.loopEnd=Math.max(source.loopStart+.05,Math.min(buffer.duration,Number(def.loopEnd)||buffer.duration));this.fadeMusic();while(this.musicVoices.length>=2){const old=this.musicVoices.shift()!;try{old.source.stop();}catch{}old.source.disconnect();old.gain.disconnect();}gain.gain.setValueAtTime(0,c.currentTime);gain.gain.linearRampToValueAtTime(1,c.currentTime+1.2);source.connect(gain);gain.connect(this.buses.music!);const voice={source,gain};this.musicVoices.push(voice);source.onended=()=>{source.disconnect();gain.disconnect();const i=this.musicVoices.indexOf(voice);if(i>=0)this.musicVoices.splice(i,1);};source.start();this.activeState=state;this.pendingState=null;
+ }
+ fadeMusic(){if(!this.context)return;const t=this.context.currentTime;for(const v of this.musicVoices){v.gain.gain.cancelAndHoldAtTime(t);v.gain.gain.linearRampToValueAtTime(0,t+1.2);try{v.source.stop(t+1.25);}catch{}}}
 }

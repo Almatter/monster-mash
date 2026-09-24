@@ -12,7 +12,7 @@ export function emptyProgress():Progression{return {total:{},best:{},archetypes:
 export function normalizeProfile(value:unknown,legacyName=''):Profile{
  const raw=object(value)&&[1,2,3].includes(value.version)?value:{};
  const identity=createIdentity(object(raw.identity)?raw.identity:{name:legacyName});const records:Profile['records']={},palettes:Profile['palettes']={};
- for(const m of Object.values(MONSTERS))palettes[m.id]=paletteFor(m,object(raw.palettes)?raw.palettes[m.id]:undefined);
+ for(const m of Object.values(MONSTERS))palettes[m.id]=paletteFor(m,(object(raw.palettes)?raw.palettes[m.id]:undefined)??(m.id===identity.monsterId?identity.colors:undefined));
  for(const a of ACHIEVEMENTS){const r=object(raw.records)?raw.records[a.id]:null;if(object(r)){const best=number(r.best);records[a.id]={best};if(typeof r.unlockedAt==='string'&&Number.isFinite(Date.parse(r.unlockedAt))&&best>=a.target){records[a.id].unlockedAt=r.unlockedAt;records[a.id].name=sanitizeName(r.name);records[a.id].monsterId=Object.hasOwn(MONSTERS,r.monsterId)?r.monsterId:'sovereign';}}}
  const progress=emptyProgress(),p=raw.version===3&&object(raw.progress)?raw.progress:{};
  progress.total=totals(p.total);progress.best=totals(p.best);for(const id of Object.keys(MONSTERS))progress.archetypes[id]=totals(p.archetypes?.[id]);
