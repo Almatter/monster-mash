@@ -1,6 +1,7 @@
-// Bump this version with every deployment. Waiting workers activate when old tabs close.
-const CACHE='monster-mash-static-v6';
-const ASSETS=['./','index.html','style.css','icon.svg','manifest.webmanifest','verify.html','src/main.js','src/data.js','src/simulation.js','src/renderer.js','src/scoring.js','src/audio.js','src/run-code.js','src/verify.js'];
-self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
-self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('monster-mash-static-')&&key!==CACHE).map(key=>caches.delete(key))))));
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;event.respondWith(caches.open(CACHE).then(async cache=>(await cache.match(event.request))||fetch(event.request).then(response=>{if(response.ok&&new URL(event.request.url).pathname.includes('/assets/'))cache.put(event.request,response.clone());return response;})));});
+// The build replaces this marker with a digest of every shipped runtime file.
+const CACHE='monster-mash-static-__BUILD_HASH__';
+const ASSETS=['./','index.html'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(path=>new Request(path,{cache:'reload'}))))));
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});
+self.addEventListener('activate',event=>event.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(key=>key.startsWith('monster-mash-static-')&&key!==CACHE).map(key=>caches.delete(key)));await self.clients.claim();})()));
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;event.respondWith((async()=>{const cache=await caches.open(CACHE),hit=await cache.match(event.request);if(hit)return hit;const response=await fetch(event.request,{cache:'no-cache'});if(response.ok&&(new URL(event.request.url).pathname.includes('/assets/')||event.request.mode==='navigate'))await cache.put(event.request,response.clone());return response;})());});

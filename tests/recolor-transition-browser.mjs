@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href);const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
+const page=await browser.newPage({viewport:{width:844,height:390}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:4173/');
+await page.evaluate(async()=>{const {Renderer}=await import('./src/renderer.js');const original=Renderer.prototype.drawSovereign;window.previewFallbacks=0;Renderer.prototype.drawSovereign=function(context,...rest){if(context.canvas.id==='preview')window.previewFallbacks++;return original.call(this,context,...rest);};});
+for(const id of ['sovereign','titan','devourer','calamity','overlord']){await page.locator('[data-monster='+id+']').click();await page.waitForTimeout(1800);await page.evaluate(()=>window.previewFallbacks=0);for(const color of ['#eee5d4','#a83248','#387ccb','#8cb865'])await page.locator('[data-channel=primary][data-color="'+color+'"]').click();await page.waitForTimeout(1300);assert.equal(await page.evaluate(()=>window.previewFallbacks),0,id+' polygon preview flash');console.log(id+' rapid recolor held anime preview with no polygon fallback');}
+assert.deepEqual(errors,[]);await browser.close();

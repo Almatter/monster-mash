@@ -1,34 +1,55 @@
-import {ABILITIES} from './content-monsters.ts';
+import {ABILITIES,MONSTERS} from './content-monsters.ts';
 import {CUES} from './content-audio.ts';
-type Style='impact'|'slash'|'magic'|'chime'|'rumble'|'horn';
-function design(kind:string):{style:Style;duration:number;pitch:number}{
+type Style='tear'|'stone'|'infernal'|'ossuary'|'rift'|'death'|'cataclysm'|'rune';
+type Design={style:Style;duration:number;pitch:number;weight:number};
+function design(kind:string):Design{
  const ability=kind.startsWith('ability.')?ABILITIES[kind.slice(8)]:undefined;
- if(ability){const effect=ability.effect;if(['shockwave','blast','meteor','dominion','launch','execute'].includes(effect))return {style:'impact',duration:effect==='blast'||effect==='dominion'?.65:.35,pitch:95};if(['lunge','charge','frenzy'].includes(effect))return {style:'slash',duration:.3,pitch:230};return {style:'magic',duration:['beam','vortex'].includes(effect)?.38:.32,pitch:240+ability.radius*.08};}
- if(kind.startsWith('basic.'))return {style:['titan','devourer','sovereign'].some(id=>kind.endsWith(id))?'slash':'magic',duration:kind.endsWith('titan')?.26:.13,pitch:kind.endsWith('titan')?100:250};
- if(['enemyDeath','collision'].includes(kind))return {style:'slash',duration:.15,pitch:170};
- if(['heavyDeath','eliteDeath','hurt','ultimateImpact','meteorImpact','multikill'].includes(kind))return {style:'impact',duration:kind==='ultimateImpact'?.65:.32,pitch:kind==='heavyDeath'?85:125};
- if(['titanArrival','titanDeath','defeat','lowHealth'].includes(kind))return {style:'rumble',duration:kind==='lowHealth'?.38:.85,pitch:kind==='lowHealth'?68:58};
- if(['devour','corruption','ultimateStart','shield'].includes(kind))return {style:'magic',duration:kind==='ultimateStart'?.55:.3,pitch:kind==='devour'?130:270};
- if(kind==='wave')return {style:'horn',duration:.48,pitch:180};
- return {style:'chime',duration:Math.max(.1,Math.min(.65,CUES[kind]?.duration||.32)),pitch:CUES[kind]?.frequency||550};
+ const owner=ability?Object.values(MONSTERS).find(m=>m.abilities.includes(ability.id))?.id:kind.startsWith('basic.')?kind.slice(6):'';
+ const styles:Record<string,Style>={devourer:'tear',titan:'stone',sovereign:'infernal',overlord:'ossuary',calamity:'rift'};
+ if(owner){const ultimate=ability&&['blast','dominion','frenzy'].includes(ability.effect);return {style:styles[owner]||'infernal',duration:ultimate?.8:ability?.42:owner==='titan'?.29:.2,pitch:owner==='titan'?62:owner==='devourer'?136:owner==='calamity'?104:86,weight:ultimate?1:.67};}
+ if(kind==='multikill.extinction')return {style:'cataclysm',duration:1.25,pitch:43,weight:1};
+ if(kind==='multikill.annihilation')return {style:'cataclysm',duration:.95,pitch:54,weight:.92};
+ if(kind==='multikill.bloodbath'||kind==='multikill')return {style:'cataclysm',duration:.68,pitch:72,weight:.78};
+ if(['titanArrival','titanDeath','defeat','ultimateImpact','meteorImpact'].includes(kind))return {style:'cataclysm',duration:kind==='titanDeath'?1.2:.8,pitch:kind==='titanDeath'?39:53,weight:1};
+ if(['enemyDeath','heavyDeath','eliteDeath','hurt','collision'].includes(kind))return {style:kind==='heavyDeath'||kind==='eliteDeath'?'stone':'death',duration:kind==='enemyDeath'?.22:.4,pitch:kind==='enemyDeath'?170:90,weight:kind==='enemyDeath'?.4:.75};
+ if(['devour','corruption'].includes(kind))return {style:'tear',duration:.4,pitch:140,weight:.7};
+ if(['ultimateStart','carnage','lowHealth','shield','heal'].includes(kind))return {style:'rift',duration:kind==='ultimateStart'?.7:.42,pitch:89,weight:.6};
+ return {style:'rune',duration:Math.max(.1,Math.min(.65,CUES[kind]?.duration||.32)),pitch:kind==='title'?124:kind==='achievement'?176:218,weight:kind==='title'?.8:.4};
 }
 function hash(value:string){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
- const {style,duration,pitch}=design(kind),sampleRate=context.sampleRate,length=Math.max(128,Math.ceil(duration*sampleRate));
- const buffer=context.createBuffer(1,length,sampleRate),samples=buffer.getChannelData(0);let seed=hash(kind)+variant*91891,phase=0,low=0,peak=0;
- const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296*2-1;};
+ const {style,duration,pitch,weight}=design(kind),rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));
+ const buffer=context.createBuffer(1,length,rate),samples=buffer.getChannelData(0);
+ let seed=hash(kind)+variant*91891,phase=0,subPhase=0,low=0,lowSlow=0,delay=0,peak=0;
+ const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
  for(let i=0;i<length;i++){
-  const t=i/sampleRate,p=i/length,attack=Math.min(1,t/.006),decay=Math.pow(1-p,style==='rumble'?1.4:2.3),n=random();low=low*.86+n*.14;
-  const sweep=style==='magic'?pitch*(1.9-.9*p):style==='slash'?pitch*(1.45-1.1*p):pitch*(1.25-.8*p);phase+=Math.PI*2*sweep/sampleRate;
-  let sound=0;
-  if(style==='impact')sound=.6*low*(1-p)+.75*Math.sin(phase)*Math.exp(-p*7)+.18*n*Math.exp(-p*15);
-  else if(style==='slash')sound=.68*(n-low)*Math.sin(Math.PI*p)+.4*Math.sin(phase)*Math.exp(-p*8);
-  else if(style==='magic')sound=.34*Math.sin(phase)+.22*Math.sin(phase*1.51)+.22*(n-low)*Math.sin(Math.PI*p)+.16*Math.sin(phase*2.2);
-  else if(style==='rumble')sound=.5*low+.45*Math.sin(phase)+.23*Math.sin(phase*.5)+.12*n;
-  else if(style==='horn')sound=.55*Math.sin(phase)+.28*Math.sin(phase*2)+.18*Math.sin(phase*3)+.1*low;
-  else {const note=p<.34?1:p<.67?1.26:1.5;sound=.55*Math.sin(phase*note)+.2*Math.sin(phase*note*2.01)+.13*Math.sin(phase*note*3.02);}
-  const value=sound*attack*decay;samples[i]=value;peak=Math.max(peak,Math.abs(value));
+  const t=i/rate,p=i/length,n=random();low+=.14*(n-low);lowSlow+=.025*(n-lowSlow);
+  const hiss=n-low,grit=low-lowSlow;
+  const unstable=1+.045*Math.sin(47*t+variant)+.018*Math.sin(131*t);
+  const sweep=style==='rift'?.58+1.55*p:style==='tear'?1.8-1.1*p:style==='death'?2.1-1.65*p:1.2-.45*p;
+  phase+=Math.PI*2*pitch*sweep*unstable/rate;subPhase+=Math.PI*2*pitch*.5*(1-.5*p)/rate;
+  const throat=Math.tanh(2.8*(Math.sin(phase)+.33*Math.sin(phase*2.07)+.15*Math.sin(phase*3.7)));
+  const choir=.5*Math.sin(phase*.51+Math.sin(phase*.08)*2.6)+.31*Math.sin(phase*.76)+.19*Math.sin(phase*1.48);
+  const sub=Math.sin(subPhase);
+  const crack=Math.max(0,1-Math.abs(p-.06)/.018)+.7*Math.max(0,1-Math.abs(p-.21)/.015)+.43*Math.max(0,1-Math.abs(p-.43)/.011);
+  const reverse=Math.pow(p,1.7)*Math.pow(1-p,.6)*3;
+  let sample=0;
+  if(style==='tear')sample=.48*throat*Math.sin(phase*.18+1)+.45*hiss*(.4+.6*Math.abs(Math.sin(phase*.11)))+.25*sub+.43*grit*crack;
+  else if(style==='stone')sample=.7*sub*Math.exp(-p*5)+.55*grit+.8*hiss*crack+.12*choir;
+  else if(style==='infernal')sample=.62*choir+.25*throat+.22*sub+.32*grit*crack;
+  else if(style==='ossuary')sample=.64*choir+.31*lowSlow+.32*hiss*Math.abs(Math.sin(phase*.37))+.2*sub;
+  else if(style==='rift')sample=.39*throat+.53*hiss*reverse+.43*sub*Math.exp(-p*2)+.25*grit*crack;
+  else if(style==='death')sample=.43*throat+.55*hiss*Math.pow(1-p,1.5)+.16*sub;
+  else if(style==='cataclysm')sample=.65*sub+.36*choir+.5*grit+.73*hiss*crack;
+  else sample=.32*choir+.18*grit*crack+.22*hiss*Math.exp(-p*11)+.08*sub;
+  const attack=Math.min(1,t/(style==='rift'?.035:.006));
+  const release=Math.pow(1-p,style==='cataclysm'?1.2:style==='rune'?2.4:1.65);
+  const envelope=attack*release*(style==='rift'?.35+.65*Math.min(1,p*4):1);
+  sample=Math.tanh(sample*1.85)*envelope*weight;
+  // A short, filtered ghost reflection adds scale without keeping additional audio voices alive.
+  delay=delay*.985+sample*.015;
+  const value=sample+delay*.16;samples[i]=value;peak=Math.max(peak,Math.abs(value));
  }
- const gain=peak>0?.82/peak:1;for(let i=0;i<length;i++)samples[i]*=gain;
+ const gain=peak>0?.72/peak:1;for(let i=0;i<length;i++)samples[i]*=gain;
  return buffer;
 }

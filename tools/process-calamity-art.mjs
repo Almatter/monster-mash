@@ -15,15 +15,16 @@ async function split(name,keyGreen){
   const i=(y*info.width+x)*4;let r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
   if(keyGreen){const key=clamp((g-Math.max(r,b)-38)/150);a=Math.round(a*(1-key));if(a>0&&key>0){g=Math.max(0,Math.min(255,Math.round((g-key*255)/(1-key))));}}
   if(a<3)continue;
-  const face=keyGreen?x>380&&x<620&&y>195&&y<430:x>380&&x<620&&y>195&&y<430;
+  const [cx,cy,rx,ry]=keyGreen?[500,312,130,150]:[500,312,130,150];
+  const faceDistance=Math.hypot((x-cx)/rx,(y-cy)/ry);
+  const preserve=clamp((1.08-faceDistance)/.3);
   let channel='base',shade=0;
   if(r>155&&b>150&&g<125&&b>g*1.4){channel='power';shade=r/215;}
-  else if(!face&&r>70&&g>55&&r>g*.95&&g>b*1.08&&b<r*.9){channel='accent';shade=r/225;}
-  else if(!face&&b>r*1.12&&b>g*1.22&&r>52){channel='primary';shade=Math.max(r,g)/238;}
-  else if(!face&&b>r*1.08&&g>r*.85&&g>55){channel='secondary';shade=r/160;}
-  counts[channel]++;
-  if(channel==='base'){const target=layers.base;target[i]=r;target[i+1]=g;target[i+2]=b;target[i+3]=a;}
-  else {const target=layers[channel],v=Math.round(Math.max(.22,Math.min(1.3,shade))*220);target[i]=v;target[i+1]=v;target[i+2]=v;target[i+3]=a;}
+  else if(r>70&&g>55&&r>g*.95&&g>b*1.08&&b<r*.9){channel='accent';shade=r/225;}
+  else if(b>r*1.12&&b>g*1.22&&r>52){channel='primary';shade=Math.max(r,g)/238;}
+  else if(b>r*1.08&&g>r*.85&&g>55){channel='secondary';shade=r/160;}
+  const neutral=layers.base;neutral[i]=r;neutral[i+1]=g;neutral[i+2]=b;neutral[i+3]=a;
+  if(channel!=='base'){const target=layers[channel],v=Math.round(Math.max(.22,Math.min(1.3,shade))*220),opacity=Math.round(a*(1-preserve));if(opacity>0){target[i]=v;target[i+1]=v;target[i+2]=v;target[i+3]=opacity;counts[channel]++;}else counts.base++;}else counts.base++;
  }
  return {layers,info,counts};
 }
