@@ -6,7 +6,8 @@ const root = resolve('dist');
 const types = { '.json':'application/json', '.png':'image/png', '.webp':'image/webp', '.ogg':'audio/ogg', '.mp3':'audio/mpeg', '.wav':'audio/wav', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 createServer(async (req, res) => {
   try {
-    const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    const requested = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    const pathname = requested === '/monster-mash' ? '/' : requested.startsWith('/monster-mash/') ? requested.slice('/monster-mash'.length) : requested;
     const file = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname.endsWith('/') ? pathname + 'index.html' : pathname));
     if (!file.startsWith(root + sep)) throw Error('Path outside root');
     res.setHeader('Content-Type', types[extname(file)] || 'application/octet-stream');

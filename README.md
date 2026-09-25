@@ -13,15 +13,15 @@ node tools/build.mjs
 node --test tests/*.test.mjs
 ```
 
-The server builds once at startup. Rebuild after source changes. Upload the **contents of `dist/`** to an HTTPS static host. Build command: `node tools/build.mjs`; output: `dist`. Relative asset paths support repository subpaths. No remote repository, infrastructure or public deployment has been created.
+The server builds once at startup. Rebuild after source changes. The intended permanent project site is `https://Almatter.github.io/monster-mash/`, published from `dist/` by the GitHub Actions workflow on `main`. Relative paths support the `/monster-mash/` subpath. See [DEPLOYMENT.md](DEPLOYMENT.md) for current publication status and setup.
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** close all existing Monster Mash tabs and reopen after a rebuild if an old interface remains. Installed workers retain a coherent old bundle until its tabs close. Public releases must bump `public/sw.js`'s cache version. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v3`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v4-unbound`.
 
 ## Play
 
-Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM2 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
+Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM3 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
 
 - WASD / arrows or left thumb stick: move. Mouse: aim; touch aim follows movement and nearby prey when stationary.
 - Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attack is automatic.
@@ -40,7 +40,7 @@ Choose a name, one of five packages, an optional title and four tint channels. T
 
 Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 26 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect stats. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
 
-See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) documents the shipped layered anime art and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) documents the master/three-bus mix, synthesized sound effects, loop/crossfade states and music delivery slots. Original music masters are still needed.
+See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) documents the shipped layered anime art and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) documents the master/three-bus mix, synthesized sound effects, loop/crossfade states and music delivery slots. Six distinct procedural menu/champion themes ship without external music masters.
 
 ## Scoring and competition
 
@@ -48,7 +48,7 @@ Enemy base score × current Carnage, rounded per kill, earns Dominance. Kills ad
 
 All damage routes credit the player once. Source totals distinguish direct, devour, execution, lunge/trample, beam, meteor/vortex, collisions, controlled/summoned servants, curse damage, corruption chains and ultimates. Conversion itself awards no kill. Summon expiration awards no kill. The Titan's collision credit requires actual launched-body contact, replacing the prototype's outer damage annulus.
 
-Players post their PNG card and run code manually to Discord. `verify.html` reads legacy MM1 and identity-aware MM2 codes. The SHA-256 checksum detects damaged/simple edits; it **does not prove honest play**, provide a signature, or validate a replay. A modified client can forge results. Codes include rules, week, seed, name/title/archetype/colors, statistics, run feats, new local records and source counts. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
+Players post their PNG card and run code manually to Discord. `/verify/` reads current MM3 plus legacy MM1/MM2 codes. The SHA-256 checksum detects damaged/simple edits; it **does not prove honest play**, provide a signature, or validate a replay. A modified client can forge results. Codes include rules, week, seed, name/title/archetype/colors, statistics, run feats, new local records and source counts. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
 
 ## Content map
 
