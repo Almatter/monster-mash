@@ -3,9 +3,9 @@ export const THREAT_CURVE=[
  {at:30,rate:12,cap:150,arc:2.1,distance:560,pursuit:.85},
  {at:60,rate:18,cap:230,arc:3.1,distance:570,pursuit:.95},
  {at:120,rate:28,cap:400,arc:4.6,distance:580,pursuit:1.08},
- {at:300,rate:46,cap:780,arc:Math.PI*2,distance:580,pursuit:1.2},
- {at:480,rate:68,cap:1076,arc:Math.PI*2,distance:560,pursuit:1.3},
- {at:720,rate:100,cap:1076,arc:Math.PI*2,distance:540,pursuit:1.4}
+ {at:300,rate:46,cap:560,arc:Math.PI*2,distance:580,pursuit:1.2},
+ {at:480,rate:68,cap:696,arc:Math.PI*2,distance:560,pursuit:1.3},
+ {at:720,rate:100,cap:696,arc:Math.PI*2,distance:540,pursuit:1.4}
 ];
 export const INTRODUCTIONS:Record<string,number>={thrall:0,hound:45,wing:60,spitter:90,brute:120,elite:180,titan:300};
 export const OPENING={count:28,distance:320,spread:100};

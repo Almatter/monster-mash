@@ -1,3 +1,5 @@
+> Historical checkpoint report. The September 24 crop/mask fixes and procedural score supersede the face-exclusion and music-blocker conclusions below; see UNBOUND_PASS.md.
+
 # Monster Mash final-asset audit
 
 ## Attack checklist

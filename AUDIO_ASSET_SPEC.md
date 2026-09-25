@@ -1,70 +1,28 @@
-# Monster Mash audio delivery contract
+# Monster Mash audio specification
 
-The runtime is ready for owned or commissioned audio. No music masters or physical recordings are bundled. The empty public/assets/audio/catalog.json is intentional. Original distorted, monster-specific synthesized cues now cover every runtime sound hook; commissioned or owned clips can replace them through the catalog. Do not copy a named soundtrack or download unlicensed clips.
+Monster Mash ships original procedural music and original synthesized SFX. No downloaded samples, licensed recordings, runtime library, or external music-generation service are required. `public/assets/audio/catalog.json` can optionally override cues/tracks with owned files.
 
-## Music
+## Six musical identities
 
-| Catalog state | Direction | Length / intensity |
-|---|---|---|
-| menu | Dark fantasy monster gathering: low strings, medieval plucked instruments, ritual percussion, restrained festival energy | 60-120s, low |
-| combat | Confident isekai battle rhythm, monstrous swagger, clear melody with space for attacks | 90-150s, medium |
-| escalation | More urgent percussion, dramatic modern orchestral layers, dense horde pressure | 90-150s, high |
-| titan | Weight, ominous brass/choir textures and an intelligible pulse | 60-120s, extreme |
-| results | Brief triumphant/ominous appraisal flourish, looping if the player remains | 20-60s, low |
+`src/procedural-music.ts` renders one 7-stem theme on demand, then reuses its synchronized looping sources through the entire run. A menu-to-champion or champion-to-menu change renders the next theme asynchronously and replaces the old buffers. Music state changes only automate stem gains. PCM is mono 22.05 kHz; a theme uses 16.5–23.7 MB depending on tempo/bars. All notes and rhythmic choices are deterministic and independent of simulation RNG.
 
-Deliver stereo 44.1/48kHz Ogg Vorbis plus MP3 alternate masters for platforms that need them. Catalog selects ONE tested file per state; there is no automatic codec fallback. MP3 is the safest single-delivery baseline. Retain lossless WAV masters outside public/. Target about -18 LUFS integrated, true peak <= -1 dBTP. Match perceived loudness between states. Avoid long intro silence. Maximum decoded track length 180 seconds; compressed file cap 24 MiB.
+| Theme | BPM | Harmonic character | Primary motif and rhythm | Bass, percussion and texture |
+|---|---:|---|---|---|
+| Monster Mash menu | 104 | D natural minor / festival modal | Sparse dulcimer call with delayed response | Light frame-drum pulse, restrained low drone, occasional bell; 16 bars / 36.9s |
+| Sovereign | 108 | D harmonic minor / royal cadence | Rising crowned interval and bell answers | Stately bass pulses, ritual drum accents and choir-like pad; 16 bars |
+| Overlord | 100 | E Phrygian / funeral march | Tight semitone command figure | Four-beat marching bass/toms, denser choir and dark command pulses; 16 bars |
+| Titan | 84 | G minor / open fifths | Wide hammering figure with rests | Slow massive kick/tom, deep drone and metallic bell resonance; 12 bars |
+| Devourer | 144 | C Phrygian | Semitone predator figure over a 3+3+2 syncopation | Fast warped bass, irregular toms and breath/formant-like tone; 16 bars |
+| Calamity | 132 | A harmonic minor / unstable arcana | Quick arpeggio with chromatic tension | Offbeat explosive drums, high inharmonic magic tone and surging bass; 16 bars |
 
-Author seamless loops with matching endpoints and no baked fade. Provide loopStart and loopEnd in seconds against the decoded file (validate codec padding by listening). The engine uses AudioBufferSourceNode looping with a 1.2s crossfade, at most two live tracks. Crossfades are not beat-synchronized. No abrupt state-dependent tempo switch that requires synchronization.
+Seven reusable stems carry harmony/drone, character bass, character percussion, signature motif, Carnage counterline, Unbound/Final line, and Titan threat/results accents. Mixes cover **menu, base combat, high Carnage, Unbound, Final Release, Titan, and results**. A live Titan takes priority. Final Release adds the densest rhythm and countermelody; results resolves to a quieter cadence. Internal low-pass filtering and conservative stem gains leave room for SFX. Ultimates, Titan death, title/achievement and defeat briefly duck the music. The shared compressor guards peaks.
 
-Menu plays after user interaction. Gameplay chooses combat, escalation at Carnage >=4 or time >=300s, and titan while a Titan is alive. Pause/background suspends the audio clock. Restart and return to registry change state on the same AudioContext.
+Music begins after the browser's required user gesture. Fresh profiles default MUSIC to 100%; a stored volume, including zero, takes precedence. Master, music, SFX, UI and mute remain stored in `mm-audio`. Pause/background suspends the audio clock; page disposal disconnects sources. No per-beat AudioNodes or unbounded scheduled notes are created. The local-only `music-lab.html` allows champion and state audition. `node tools/render-music-preview.mjs <menu|sovereign|overlord|titan|devourer|calamity>` writes an auditionable WAV under ignored `test-results/`.
 
-## SFX and UI
+## SFX and optional replacement files
 
-Catalog event IDs are declared in src/content-audio.ts. Use mono for positional-neutral impacts, stereo sparingly for large magic or reward flourishes. PNG/art naming conventions do not apply. Prefer small Ogg/MP3 clips; PCM WAV is also supported. Target roughly -18 to -14 LUFS for sustained effects, true peak <= -3 dBTP; short transient loudness must be auditioned against the mix. No long reverb tails in basic attacks. Clip cap 8 seconds / 2 MiB compressed; ideally most attacks are 50-400ms.
+`src/content-audio.ts` declares cue IDs. `src/synth-sfx.ts` supplies two original generated variants for every cue. SFX are capped at ten simultaneous voices plus two UI voices with throttling and priority eviction. Distinct sounds cover basic attacks for each monster, all twenty abilities, ultimates, hurt/heal/shield/defeat, enemy deaths, Carnage/multikills, records and menu controls.
 
-Required deliveries:
-- basic.sovereign, basic.titan, basic.devourer, basic.calamity, basic.overlord.
-- ability.<id> for every ID in src/content-monsters.ts (20 distinct ability hooks, including ultimates).
-- ultimateStart, ultimateImpact, meteorImpact.
-- hurt, lowHealth, heal, shield, defeat.
-- enemyDeath (a grouped small-death texture), heavyDeath, eliteDeath, titanArrival, titanDeath.
-- collision, devour, corruption, multikill, carnage, wave.
-- feat, achievement, title, menu, confirm.
+Owned/commissioned files may replace cues in `public/assets/audio/catalog.json`: `sfx` maps cue IDs to up to eight paths under `assets/audio/`; `music` maps menu/combat/escalation/unbound/final/titan/results to a path plus optional loop endpoints. Decode limits are 2 MiB/8s for SFX and 24 MiB/180s for music. Audio remains optional if decode/autoplay fails. This catalog need not be filled for beta/public tests because procedural audio already works.
 
-Use 2-4 interchangeable variants for frequent impacts. Runtime chooses at most eight variants and varies playback rate by +/-3%. Enemy deaths are throttled to one event per 180ms; collision 200ms, mass-kill 1.5s, low-health 6s. Maximum ten SFX plus two UI voices, with priority replacement and explicit cleanup. Lower-priority deaths cannot evict title/defeat cues. A compressor guards peaks; it does not replace proper mastering.
-
-The bundled procedural synthesizer uses original distorted formant, breath, crunch, cracked-stone, cursed-choir, warped-rift, and subdued rune designs for all semantic hooks, including physical attacks/deaths. Two deterministic variants per cue, playback-rate variation, priority caps and throttling limit repetition and mass-kill overload. Catalog files override synthesized cues. Mass-kill cues scale from massacre to extinction without multiplying death voices. Physical headphone and speaker audition plus final music mastering remain launch acceptance checks.
-
-## Catalog example
-
-Paths must remain under assets/audio/. Example only; the files below are not bundled.
-
-```json
-{
-  "music": {
-    "menu": {"file": "assets/audio/music/gathering.mp3", "loopStart": 0.05, "loopEnd": 92.4},
-    "combat": {"file": "assets/audio/music/reign.mp3"},
-    "escalation": {"file": "assets/audio/music/horde.mp3"},
-    "titan": {"file": "assets/audio/music/crown.mp3"}
-  },
-  "sfx": {
-    "basic.titan": ["assets/audio/sfx/titan-slam-01.ogg", "assets/audio/sfx/titan-slam-02.ogg"],
-    "ability.worldbreaker": ["assets/audio/sfx/worldbreaker.ogg"],
-    "title": ["assets/audio/ui/title.ogg"]
-  }
-}
-```
-
-Master/Music/SFX/UI gains and mute are saved in mm-audio. Context creation/resume requires user interaction. Storage/decode/autoplay errors leave gameplay functional. Loading is limited to two simultaneous requests; decoded buffer cache is capped at approximately 100 MiB (active crossfade sources may temporarily retain additional buffers). Late unloaded SFX are dropped rather than replayed out of sync. Rebuild and test online, offline after successful loading, mute, background/resume, rapid restart, low-end Android and iOS. Browser codec support and final-asset memory remain delivery acceptance checks.
-
-## External music-generation briefs (no music-generation tool in this Codex environment)
-
-The catalog's five music entries remain empty until original music is generated externally. Supply five mastered stereo MP3 files under `public/assets/audio/music/`, then add each `file`, `loopStart`, and `loopEnd` in `public/assets/audio/catalog.json`. Keep every track under 180 seconds and 24 MiB, 44.1/48 kHz, about -18 LUFS integrated with true peak at or below -1 dBTP. Export clean seamless loop boundaries without a baked fade; listen to the encoded MP3 loop because padding can shift it. These prompts call for original compositions and must not imitate any named anime, game, composer, or copyrighted soundtrack.
-
-- **Menu / monster selection — `menu`:** Original 96-second seamless loop, 108-116 BPM, 4/4. A dark medieval monster festival preparing for battle: plucked hammered dulcimer motif, low bowed strings, small frame-drum and taiko-like pulse, restrained horn responses, distant nonverbal choir. Confident and expectant from the monsters' perspective, not mournful. Keep the bass and percussion light enough for UI navigation; close on the opening harmony and downbeat. Leave a 1.2-second crossfade-friendly steady groove at the boundary.
-- **Early combat — `combat`:** Original 112-second seamless loop, 142-150 BPM, 4/4. Heroic-villain isekai anime battle drive: aggressive string ostinato, low brass calls, punchy taiko-like drums, nimble fantasy-folk plucks, a memorable original rising theme. Celebratory menace and forward motion, moderate density with transient space for combat SFX. End on the same harmonic pulse and rhythmic grid as the first bar; match menu's tonal center for the unsynchronized 1.2-second transition.
-- **High Carnage — `escalation`:** Original 104-second seamless loop, 158-166 BPM, 4/4. The combat theme intensifies into a triumphant horde massacre: faster strings, distorted modern percussion tucked beneath cinematic drums, brass accents, ritual choir syllables without words, brief unstable magical texture. Dense and exhilarating, never tragic. Keep the same tonal center and a compatible four-on-the-floor emphasis so a 1.2-second crossfade from combat is coherent; exact opening and closing downbeats must match.
-- **Titan / extreme threat — `titan`:** Original 96-second seamless loop, 126-134 BPM, 4/4 or clear half-time 252-268 pulse. Colossal threat with monstrous confidence: sub brass, massive but controlled drums, low choir clusters, stressed strings, ominous bell strikes, short heroic counter-melody. Extreme weight without drowning warning sounds. Retain the common tonal center and pulse subdivisions for immediate crossfades from combat or escalation; match loop endpoints exactly.
-- **Results — `results`:** Original 48-second seamless loop, 100-108 BPM, 4/4. A brief prestige revelation after violent glory: dark fantasy brass resolution, delicate hammered metal and plucks, restrained choir, confident festival motif recalled from menu. Reflective yet victorious, suitable whether the player retired or died. Enter directly without a long intro, settle into a quiet repeating tail, and match the opening harmony at the loop boundary. Compatible with a 1.2-second crossfade from any combat state and back to menu.
-
-The engine already selects menu after interaction, combat on run start, escalation at Carnage >=4 or 300 seconds, Titan while a Titan is alive, results when the run ends, and menu on return. Tracks loop through AudioBufferSourceNode, crossfade over 1.2 seconds, and follow persisted master/music sliders and mute. `tests/audio-browser.mjs` uses synthetic test buffers to verify state changes, looping, crossfades, voice limits, pause/resume, and volume persistence. It does not constitute a listening test of final music.
+Automated browser checks verify six distinct theme signatures, state transitions without source restarts, stable node counts, nonclipping finite PCM, 100% fresh default, saved preference preservation, pause/mute/resume, and disposal. **Human headphone/speaker audition remains a launch acceptance check**; this environment had no listening-capable tool.

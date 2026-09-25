@@ -6,6 +6,16 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
  const [w,h]=dimensions[type]||[];if(!w)continue;
  const base=await sharp('public/'+set.base).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  assert.equal(base.info.width,w,monster+' '+type+' width');assert.equal(base.info.height,h,monster+' '+type+' height');
+ if(type==='gameplay'){
+  let margin=256;
+  for(let row=0;row<5;row++)for(let frame=0;frame<[4,6,6,2,6][row];frame++){
+   let pixels=0;
+   for(let y=0;y<256;y++)for(let x=0;x<256;x++)if(base.data[((row*256+y)*w+frame*256+x)*4+3]>40){pixels++;margin=Math.min(margin,x,y,255-x,255-y);}
+   assert.ok(pixels>100,monster+' missing animation frame '+row+':'+frame);
+  }
+  assert.ok(margin>0,monster+' silhouette touches an atlas frame boundary');
+  console.log(monster+' minimum gameplay crop margin: '+margin+'px');
+ }
  const counts={};
  for(const channel of ['primary','secondary','accent','power']){
   assert.ok(set[channel],monster+' '+type+' missing '+channel);

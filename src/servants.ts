@@ -1,7 +1,7 @@
 import type {Game,Enemy} from './simulation.ts';
 export type Servant={active:boolean;x:number;y:number;life:number;source:'controlled'|'summoned';timer:number;search:number;target:Enemy|null;serial:number};
 export function createServants():Servant[]{return Array.from({length:32},()=>({active:false,x:0,y:0,life:0,source:'summoned',timer:0,search:0,target:null,serial:0}));}
-export function addServant(g:Game,x:number,y:number,source:Servant['source'],life=12){const s=g.servants.find(s=>!s.active);if(!s)return false;Object.assign(s,{active:true,x,y,source,life,timer:0,search:0,target:null,serial:0});return true;}
+export function addServant(g:Game,x:number,y:number,source:Servant['source'],life=12){if(g.servants.filter(s=>s.active).length>=16+g.release*4)return false;const s=g.servants.find(s=>!s.active);if(!s)return false;Object.assign(s,{active:true,x,y,source,life,timer:0,search:0,target:null,serial:0});return true;}
 export function dominate(g:Game,radius:number,count:number){let converted=0;g.nearby(g.player.x,g.player.y,radius,e=>{if(converted>=count||!['thrall','hound','wing'].includes(e.kind)||Math.hypot(e.x-g.player.x,e.y-g.player.y)>radius)return;if(addServant(g,e.x,e.y,'controlled')){e.active=false;g.alive--;converted++;}});return converted;}
 export function corrupt(g:Game,radius:number,duration=8){g.nearby(g.player.x,g.player.y,radius+65,e=>{if(Math.hypot(e.x-g.player.x,e.y-g.player.y)<radius)e.corruptUntil=g.time+duration;});}
 export function updateServants(g:Game,dt:number){
@@ -12,5 +12,5 @@ export function updateServants(g:Game,dt:number){
  }
  g.corruptionTick-=dt;if(g.corruptionTick<=0){g.corruptionTick=.5;for(const e of g.enemies)if(e.active&&(e.corruptUntil||0)>g.time)g.damage(e,18*g.powerScale(),'dot');}
  // An iterative capped queue prevents recursive chain overflows and frame spikes.
- let chainKills=0;for(let count=0;count<16&&g.chains.length;count++){const b=g.chains.shift()!;g.nearby(b.x,b.y,150,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<105){e.corruptUntil=g.time+5;if(g.damage(e,65*g.powerScale(),'chain'))chainKills++;}});g.effect(b.x,b.y,'corruption',105,.35);}if(chainKills)g.resolveFeats({corruption:chainKills});
+ let chainKills=0;for(let count=0;count<16&&g.chains.length;count++){const b=g.chains.shift()!;g.nearby(b.x,b.y,150*g.releaseStats.radius,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<105*g.releaseStats.radius){e.corruptUntil=g.time+5;if(g.damage(e,65*g.powerScale(),'chain'))chainKills++;}});g.effect(b.x,b.y,'corruption',105*g.releaseStats.radius,.35);}if(chainKills)g.resolveFeats({corruption:chainKills});
 }

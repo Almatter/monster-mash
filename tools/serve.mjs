@@ -7,7 +7,7 @@ const types = { '.json':'application/json', '.png':'image/png', '.webp':'image/w
 createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    const file = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+    const file = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname.endsWith('/') ? pathname + 'index.html' : pathname));
     if (!file.startsWith(root + sep)) throw Error('Path outside root');
     res.setHeader('Content-Type', types[extname(file)] || 'application/octet-stream');
     res.setHeader('Cache-Control', 'no-cache');

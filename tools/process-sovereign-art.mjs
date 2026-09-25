@@ -15,14 +15,15 @@ async function split(name,keyGreen){
   const i=(y*info.width+x)*4;let r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
   if(keyGreen){const key=clamp((g-Math.max(r,b)-38)/150);a=Math.round(a*(1-key));if(a>0&&key>0){g=Math.max(0,Math.min(255,Math.round((g-key*255)/(1-key))));}}
   if(a<3)continue;
-  const [cx,cy,rx,ry]=keyGreen?[518,373,145,130]:[522,208,145,130];
-  const faceDistance=Math.hypot((x-cx)/rx,(y-cy)/ry);
-  const preserve=clamp((1.08-faceDistance)/.3);
+  const [cx,cy,rx,ry]=keyGreen?[515,360,52,64]:[512,187,45,50];
+  const skin=r>g*1.04&&g>b*1.02&&r-b<105;
+  const preserve=skin?clamp((1-Math.hypot((x-cx)/rx,(y-cy)/ry))/.15):0;
   let channel='base',shade=0;
   if(g>r*1.35&&b>r*1.45&&g>78&&b>90&&g>b*.77){channel='power';shade=Math.max(g,b)/250;}
   else if(r>103&&g>67&&r>g*1.12&&g>b*1.34){channel='accent';shade=r/235;}
   else if(b>r*1.32&&b>g*1.12&&b>75&&g<155){channel='primary';shade=b/200;}
   else if(b>g*1.34&&r>g*1.23&&b>r*.86&&b+r>115){channel='secondary';shade=Math.max(r,b)/160;}
+  if(Math.max(r,g,b)<32)channel='base'; // Keep ink and deepest occlusion neutral.
   const neutral=layers.base;neutral[i]=r;neutral[i+1]=g;neutral[i+2]=b;neutral[i+3]=a;
   if(channel!=='base'){const target=layers[channel],v=Math.round(Math.max(.22,Math.min(1.3,shade))*220),opacity=Math.round(a*(1-preserve));if(opacity>0){target[i]=v;target[i+1]=v;target[i+2]=v;target[i+3]=opacity;counts[channel]++;}else counts.base++;}else counts.base++;
  }

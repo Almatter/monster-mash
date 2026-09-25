@@ -122,3 +122,11 @@ The tool rejects missing files, misregistered dimensions, unsupported file exten
 ## Mask validation and rebuild
 
 Run `tools/rebuild-character-art.ps1` from PowerShell to regenerate all five packages, pack lossless WebP, clip mask alpha to the corresponding base, and validate all 80 masks. `node tools/validate-masks.mjs` checks dimensions, nonempty channels, grayscale, base-alpha containment, and abrupt horizontal edges. The developer `art-lab.html` offers isolated PRIMARY / SECONDARY / ACCENT / POWER views over the original base. Browser tests exercise four extreme palettes and rapid recolors on every lead. The base-first compositor preserves a completed anime frame during palette changes; only genuine load failures use the procedural fallback.
+
+## Final crop/mask correction, September 24
+
+Calamity's portrait-shaped gameplay source was incorrectly resized with default cover into 216×182, cropping its head before atlas packing. It now uses contain within a tall 154×228 pose envelope; the renderer remains 128 world units with its established origin and 256px frame. All 24 used frames retain the full silhouette, including rotation/ultimate poses. Base-alpha edge audit finds no opaque pixels touching any used frame boundary for any of the five leads (minimum margin: Calamity 2px, Sovereign 7px, Overlord 8px, Titan 13px, Devourer 15px).
+
+The broad face ellipse used in the previous pass also suppressed desired material masks: Devourer carapace, Titan head/armor, and Sovereign helmet/upper armor. Devourer/Titan/Overlord now classify material without that exclusion. Sovereign/Calamity use small skin-color-qualified face exclusions; dark ink under RGB max 32 remains neutral. Calamity's purple classifier now covers dark violet material. Overlord red-cloth classification precedes dark armor classification, keeping selection/gameplay channel identity consistent.
+
+The unlinked loopback-only art lab supports current bundled assets or local folder import, ORIGINAL / four isolated masks / COMPOSITE, authored and hot-pink/cyan/lime/white/channel-separation presets, animation, crop frame guides, origin and contact hitbox. `tests/final-art-browser.mjs` checks true extreme RGB palettes and writes a five-character selection/all-animation contact sheet. This complements visual review; nonempty masks alone cannot prove semantic coverage.

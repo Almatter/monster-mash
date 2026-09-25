@@ -1,3 +1,5 @@
+import {releaseAt,releaseStats,releasedPower} from './unbound.ts';
+import {slideTorches} from './arena.ts';
 import { ENEMIES, EVENT, PHASES, type EnemyKind } from './data.ts';
 import { Score } from './scoring.ts';
 import {ABILITIES,MONSTERS} from './content-monsters.ts';
@@ -11,6 +13,9 @@ export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
 export type Input={x:number;y:number;aimX:number;aimY:number;aiming:boolean};
 export class Game {
+ release=0;releaseTime=0;
+ private releaseCache=releaseStats('sovereign',0);private cachedStage=-1;
+ get releaseStats(){if(this.cachedStage!==this.release){this.cachedStage=this.release;this.releaseCache=releaseStats(this.monster.id,this.release);}return this.releaseCache;}
  seed:number; rng:number; time=0; wave=0; ended=false; score=new Score();
  player={x:0,y:0,hp:1000,maxHp:1000,angle:0,invuln:0,rage:0};
  enemies:Enemy[]=Array.from({length:EVENT.maxEnemies},()=>({active:false,kind:'thrall' as EnemyKind,x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:0}));
@@ -37,7 +42,7 @@ export class Game {
   if(this.alive>=EVENT.maxEnemies-24&&kind!=='elite'&&kind!=='titan')return;
   const e=this.enemies.find(e=>!e.active);if(!e)return;
   const facing=this.time<60?0:this.time*.045;const a=facing+(this.random()-.5)*this.pressure.arc,r=opening?OPENING.distance+this.random()*OPENING.spread:this.pressure.distance+this.random()*160,def=ENEMIES[kind];
-  const hpScale=1+Math.max(0,this.wave-4)*.045;
+  const hpScale=(1+Math.max(0,this.wave-4)*.045)*(1+Math.max(0,this.time-540)*.0015);
   Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,corruptUntil:0,rushing:true});this.alive++;if(kind==='titan')this.sound('titanArrival');
  }
  rebuildGrid(){
@@ -66,16 +71,17 @@ export class Game {
  }
  resolveFeats(extra:Parameters<Score['evaluate']>[1]){const earned=this.score.evaluate(this.time,extra);if(earned.length){this.announce(earned[0]+(earned.length>1?' · +'+(earned.length-1)+' feats':''));this.sound('feat');}}
  completeAttack(kills:number,extra:Parameters<Score['evaluate']>[1]={}){if(this.sustainCooldown<=0){if(this.monster.id==='titan'&&kills>=SUSTAIN.titan.kills){const s=SUSTAIN.titan;this.heal(s.heal);this.ward(s.shield,s.cap,s.seconds);this.sustainCooldown=s.cooldown;}if(this.monster.id==='calamity'&&kills>=SUSTAIN.calamity.kills){const s=SUSTAIN.calamity;this.ward(s.shield,s.cap,s.seconds);this.sustainCooldown=s.cooldown;}}if(this.monster.passive.id==='massacre'&&kills>=20&&this.resonance<=0){this.resonance=1;this.score.carnage=Math.min(5,this.score.carnage+.15);this.score.peak=Math.max(this.score.peak,this.score.carnage);this.cooldowns=this.cooldowns.map(n=>Math.max(0,n-.75));}this.score.multikill(kills);this.activationBest=Math.max(this.activationBest,kills);this.resolveFeats({multi:kills,...extra});const tier=[...MASSACRES].reverse().find(t=>kills>=t.kills);if(tier){this.sound(kills>=100?'multikill.extinction':kills>=60?'multikill.annihilation':kills>=30?'multikill.bloodbath':'multikill');if(this.time-this.massacreNoticeAt>=2.8){this.massacreNoticeAt=this.time;const message=tier.name+' · '+kills+' SLAIN';const queued=this.notifications.findIndex(n=>/^(MASSACRE|BLOODBATH|ANNIHILATION|EXTINCTION EVENT)/.test(n));if(queued>=0)this.notifications[queued]=message;else this.announce(message);}}}
- area(x:number,y:number,radius:number,damage:number,source:string,knockback=0,settle=true){let kills=0,overkill=0,apex=0;this.nearby(x,y,radius+65,e=>{const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d>radius+ENEMIES[e.kind].radius)return;if(damage*this.powerScale()>e.hp*4)overkill++;if(knockback){e.vx=dx/(d||1)*knockback;e.vy=dy/(d||1)*knockback;}if(this.damage(e,damage*this.powerScale(),source)){kills++;if(e.kind==='elite'&&source==='devour')apex++;}});if(settle)this.completeAttack(kills,{overkill,eliteDevoured:apex});return kills;}
- cast(index:number){if(this.ended||this.cooldowns[index]>0)return false;const power=this.powers[index],handler=power&&POWER_HANDLERS[power.effect];if(!handler)return false;this.cooldowns[index]=power.cooldown;this.sound('ability.'+power.id);if(index===3)this.sound('ultimateStart');this.shake=index===3?18:8;this.effect(this.player.x,this.player.y,power.effect==='shockwave'?'rupture':power.effect,power.radius,index===3?1:.5);if(index===3)this.ultimateTime=.85;handler(this,power);return true;}
- powerScale(){return (1+(this.wave-1)*.075)*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
+ area(x:number,y:number,radius:number,damage:number,source:string,knockback=0,settle=true){let kills=0,overkill=0,apex=0;this.nearby(x,y,radius+65,e=>{const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy);if(d>radius+ENEMIES[e.kind].radius)return;if(damage*this.powerScale()>e.hp*4)overkill++;if(knockback){e.vx=dx/(d||1)*knockback*this.releaseStats.knockback;e.vy=dy/(d||1)*knockback*this.releaseStats.knockback;}if(this.damage(e,damage*this.powerScale(),source)){kills++;if(e.kind==='elite'&&source==='devour')apex++;}});if(settle)this.completeAttack(kills,{overkill,eliteDevoured:apex});return kills;}
+ cast(index:number){if(this.ended||this.cooldowns[index]>0)return false;const base=this.powers[index];if(!base)return false;const power=releasedPower(base,this.monster.id,this.release),handler=power&&POWER_HANDLERS[power.effect];if(!handler)return false;this.cooldowns[index]=power.cooldown;this.sound('ability.'+power.id);if(index===3)this.sound('ultimateStart');this.shake=index===3?18:8;this.effect(this.player.x,this.player.y,power.effect==='shockwave'?'rupture':power.effect,power.radius,index===3?1:.5);if(index===3)this.ultimateTime=.85;handler(this,power);return true;}
+ powerScale(){return this.releaseStats.damage*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
  update(dt:number,input:Input){
   if(this.ended)return;
-  this.time+=dt;this.sustainCooldown=Math.max(0,this.sustainCooldown-dt);this.shieldTime-=dt;if(this.shieldTime<=0)this.shield=0;this.siphonWindow+=dt;if(this.siphonWindow>=1){this.siphonWindow-=1;this.siphonBudget=SUSTAIN.overlord.perSecond;}this.pressureTime-=dt;if(this.pressureTime<=0){this.pressureTime=.5;this.pressure=threatAt(this.time);}this.score.update(dt,this.time);const tier=Math.floor(this.score.carnage);if(tier>this.lastCarnageTier)this.sound('carnage');this.lastCarnageTier=tier;this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length){this.notice=this.notifications.shift()!;this.noticeTime=2.8;}this.shake=Math.max(0,this.shake-dt*25);
+  this.time+=dt;this.releaseTime=Math.max(0,this.releaseTime-dt);const release=releaseAt(this.time);if(release!==this.release){this.release=release;this.releaseTime=2.8;this.sound('ultimateStart');this.shake=12;this.effect(this.player.x,this.player.y,'release',320,1);}this.sustainCooldown=Math.max(0,this.sustainCooldown-dt);this.shieldTime-=dt;if(this.shieldTime<=0)this.shield=0;this.siphonWindow+=dt;if(this.siphonWindow>=1){this.siphonWindow-=1;this.siphonBudget=SUSTAIN.overlord.perSecond;}this.pressureTime-=dt;if(this.pressureTime<=0){this.pressureTime=.5;this.pressure=threatAt(this.time);}this.score.update(dt,this.time);const tier=Math.floor(this.score.carnage);if(tier>this.lastCarnageTier)this.sound('carnage');this.lastCarnageTier=tier;this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length){this.notice=this.notifications.shift()!;this.noticeTime=2.8;}this.shake=Math.max(0,this.shake-dt*25);
   this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);
-  this.moving=!!(input.x||input.y||this.dash);const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
+  this.moving=!!(input.x||input.y||this.dash);const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*this.releaseStats.move*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*this.releaseStats.move*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
   if(this.dash){const d=this.dash;p.x+=Math.cos(d.angle)*d.speed*dt;p.y+=Math.sin(d.angle)*d.speed*dt;d.remaining-=dt;}
+  slideTorches(p,23);
   const fromCenter=Math.hypot(p.x,p.y);if(fromCenter>EVENT.arenaRadius){p.x*=EVENT.arenaRadius/fromCenter;p.y*=EVENT.arenaRadius/fromCenter;}
   if(input.aiming)p.angle=Math.atan2(input.aimY-p.y,input.aimX-p.x);
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
@@ -83,9 +89,9 @@ export class Game {
   const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[EVENT.phase];
   if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;this.announce(`WAVE ${this.wave} · THE HORDE GROWS`);this.sound('wave');}if(this.time>=INTRODUCTIONS.elite&&this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.time>=INTRODUCTIONS.titan&&this.wave%phase.titanEvery===0)this.spawn('titan');}
   this.spawnBank+=dt*this.pressure.rate*phase.pressure;
-  const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];
-  while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=phase.weights[index]){roll-=phase.weights[index];index++;}if(this.alive<this.pressure.cap)this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
-  const threat=1+Math.max(0,this.wave-12)*.10;
+  const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];const heavy=Math.min(12,Math.max(0,this.time-420)*.04),weights=phase.weights.map((v,i)=>v+(i===0?-heavy:i===4?heavy:0));
+  while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=weights[index]){roll-=weights[index];index++;}if(this.alive<this.pressure.cap)this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
+  const threat=1+Math.max(0,this.wave-12)*.10+Math.max(0,this.time-540)*.004+Math.max(0,this.time-660)*.025;
   for(const e of this.enemies){if(!e.active)continue;const def=ENEMIES[e.kind];let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;e.timer-=dt;e.flash=Math.max(0,e.flash-dt);
    // Recycle off-screen stragglers around the player without changing their health or identity.
    if(d>1150&&this.time<120){e.active=false;this.alive--;continue;}if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
@@ -97,8 +103,9 @@ export class Game {
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.kind==='titan'?240:140;this.effect(e.x,e.y,e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(d<r+20)this.hurt(def.damage*threat);}}
    const weave=def.behavior==='weave'?Math.sin(this.time*5+e.serial)*45:0;
    e.x+=(dx/d*speed-dy/d*weave+e.vx)*dt;e.y+=(dy/d*speed+dx/d*weave+e.vy)*dt;
+   slideTorches(e,def.radius);
    e.vx*=Math.exp(-dt*4);e.vy*=Math.exp(-dt*4);
-   if(d<def.radius+23){this.hurt(def.damage*threat);e.x-=dx/d*12;e.y-=dy/d*12;}
+   if(d<def.radius+23){this.hurt(def.damage*threat);e.x-=dx/d*12;e.y-=dy/d*12;slideTorches(e,def.radius);}
   }
   this.rebuildGrid();
   updateServants(this,dt);
@@ -107,10 +114,10 @@ export class Game {
   for(let i=this.debris.length-1;i>=0;i--){const b=this.debris[i];b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;this.nearby(b.x,b.y,35,e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<ENEMIES[e.kind].radius+18&&this.damage(e,100*this.powerScale(),'collision'))b.kills++;});if(b.life<=0){this.resolveFeats({chain:b.kills});this.debris.splice(i,1);}}
   for(const e of this.enemies)if(e.active&&Math.hypot(e.vx,e.vy)>180){let chain=0;this.nearby(e.x,e.y,40,other=>{if(other!==e&&other.active&&Math.hypot(e.x-other.x,e.y-other.y)<ENEMIES[e.kind].radius+ENEMIES[other.kind].radius&&this.damage(other,80*this.powerScale(),'collision'))chain++;});if(chain){this.score.multikill(chain);this.resolveFeats({chain});}}
   for(let i=this.fields.length-1;i>=0;i--){const f=this.fields[i];f.life-=dt;f.tick-=dt;if(f.kind==='vortex'){this.nearby(f.x,f.y,f.radius+60,e=>{const dx=f.x-e.x,dy=f.y-e.y,d=Math.hypot(dx,dy);if(d<f.radius&&d>8){e.vx=dx/d*140;e.vy=dy/d*140;}});if(f.tick<=0){f.tick=.25;f.kills+=this.area(f.x,f.y,f.radius,f.damage,'vortex',0,false);}}if(f.life<=0){if(f.kind==='meteor'){f.kills+=this.area(f.x,f.y,f.radius,f.damage,'meteor',0,false);this.effect(f.x,f.y,'catastrophe',f.radius,.8);this.sound('meteorImpact');}this.completeAttack(f.kills);this.fields.splice(i,1);}}
-  for(let i=this.bolts.length-1;i>=0;i--){const b=this.bolts[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let hit=false;this.nearby(b.x,b.y,65,e=>{if(!hit&&Math.hypot(e.x-b.x,e.y-b.y)<ENEMIES[e.kind].radius+10){this.damage(e,b.damage,b.source);hit=true;}});if(hit||b.life<=0)this.bolts.splice(i,1);}
+  for(let i=this.bolts.length-1;i>=0;i--){const b=this.bolts[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let hit=false;this.nearby(b.x,b.y,65,e=>{if(!hit&&Math.hypot(e.x-b.x,e.y-b.y)<ENEMIES[e.kind].radius+10*this.releaseStats.radius){this.damage(e,b.damage,b.source);hit=true;}});if(hit||b.life<=0)this.bolts.splice(i,1);}
   this.attack-=dt;
-  if(this.attack<=0){this.sound('basic.'+this.monster.id);const basic=this.monster.basic;this.attack=basic.interval*(this.frenzy>0?.5:1);let kills=0;if(basic.ranged){if(this.bolts.length<80)this.bolts.push({x:p.x,y:p.y,vx:Math.cos(p.angle)*800,vy:Math.sin(p.angle)*800,life:basic.radius/800,damage:basic.damage*this.powerScale(),source:'direct'});}else this.nearby(p.x,p.y,basic.radius+65,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<basic.radius+ENEMIES[e.kind].radius&&this.damage(e,basic.damage*this.powerScale(),'direct'))kills++;});if(!basic.ranged)this.effect(p.x,p.y,'claw',basic.radius+15,.22,p.angle);if(kills){this.completeAttack(kills);if(this.frenzy>0)this.sound('ultimateImpact');}}
-  if(this.beam>0){this.beam-=dt;this.beamTick-=dt;if(this.beamTick<=0){this.beamTick=.1;let kills=0;const ax=Math.cos(p.angle),ay=Math.sin(p.angle);this.nearby(p.x,p.y,720,e=>{const dx=e.x-p.x,dy=e.y-p.y,along=dx*ax+dy*ay,side=Math.abs(dx*ay-dy*ax);if(along>0&&along<this.beamPower.radius&&side<30+ENEMIES[e.kind].radius&&this.damage(e,this.beamPower.damage*this.powerScale(),'beam'))kills++;});this.beamKills+=kills;}if(this.beam<=0)this.completeAttack(this.beamKills);}
+  if(this.attack<=0){this.sound('basic.'+this.monster.id);const basic={...this.monster.basic,radius:this.monster.basic.radius*this.releaseStats.radius};this.attack=basic.interval*this.releaseStats.attack*(this.frenzy>0?.5:1);let kills=0;if(basic.ranged){if(this.bolts.length<80)this.bolts.push({x:p.x,y:p.y,vx:Math.cos(p.angle)*800,vy:Math.sin(p.angle)*800,life:basic.radius/800,damage:basic.damage*this.powerScale(),source:'direct'});}else this.nearby(p.x,p.y,basic.radius+65,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<basic.radius+ENEMIES[e.kind].radius&&this.damage(e,basic.damage*this.powerScale(),'direct'))kills++;});if(!basic.ranged)this.effect(p.x,p.y,'claw',basic.radius+15,.22,p.angle);if(kills){this.completeAttack(kills);if(this.frenzy>0)this.sound('ultimateImpact');}}
+  if(this.beam>0){this.beam-=dt;this.beamTick-=dt;if(this.beamTick<=0){this.beamTick=.1;let kills=0;const ax=Math.cos(p.angle),ay=Math.sin(p.angle);this.nearby(p.x,p.y,this.beamPower.radius+65,e=>{const dx=e.x-p.x,dy=e.y-p.y,along=dx*ax+dy*ay,side=Math.abs(dx*ay-dy*ax);if(along>0&&along<this.beamPower.radius&&side<30*this.releaseStats.beam+ENEMIES[e.kind].radius&&this.damage(e,this.beamPower.damage*this.powerScale(),'beam'))kills++;});this.beamKills+=kills;}if(this.beam<=0)this.completeAttack(this.beamKills);}
   for(let i=this.shots.length-1;i>=0;i--){const s=this.shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(Math.hypot(s.x-p.x,s.y-p.y)<28){this.hurt(s.damage);s.life=0;}if(s.life<=0)this.shots.splice(i,1);}
   for(let i=this.effects.length-1;i>=0;i--){this.effects[i].life-=dt;if(this.effects[i].life<=0)this.effects.splice(i,1);}
   this.resolveFeats({});

@@ -15,14 +15,13 @@ async function split(name,keyGreen){
   const i=(y*info.width+x)*4;let r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
   if(keyGreen){const key=clamp((g-Math.max(r,b)-38)/150);a=Math.round(a*(1-key));if(a>0&&key>0){g=Math.max(0,Math.min(255,Math.round((g-key*255)/(1-key))));}}
   if(a<3)continue;
-  const [cx,cy,rx,ry]=keyGreen?[732,305,100,115]:[700,265,105,140];
-  const faceDistance=Math.hypot((x-cx)/rx,(y-cy)/ry);
-  const preserve=clamp((1.08-faceDistance)/.3);
+  const preserve=0; // Bone carapace and metal faces are customizable material, not human skin.
   let channel='base',shade=0;
   if(g>r*1.35&&g>b*1.2&&g>90){channel='power';shade=r/215;}
   else if(r>80&&g>50&&r>g*1.08&&g>b*1.16){channel='accent';shade=r/225;}
+  else if(r>g*1.25&&r>b*1.08&&r>35){channel='secondary';shade=r/160;}
   else if(r<115&&g<110&&b<110&&r>g*.95&&g>b*.75){channel='primary';shade=Math.max(r,g)/238;}
-  else if(r>g*1.35&&r>b*1.1&&r>45){channel='secondary';shade=r/160;}
+  if(Math.max(r,g,b)<32)channel='base'; // Keep ink and deepest occlusion neutral.
   const neutral=layers.base;neutral[i]=r;neutral[i+1]=g;neutral[i+2]=b;neutral[i+3]=a;
   if(channel!=='base'){const target=layers[channel],v=Math.round(Math.max(.22,Math.min(1.3,shade))*220),opacity=Math.round(a*(1-preserve));if(opacity>0){target[i]=v;target[i+1]=v;target[i+2]=v;target[i+3]=opacity;counts[channel]++;}else counts.base++;}else counts.base++;
  }

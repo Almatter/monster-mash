@@ -15,14 +15,15 @@ async function split(name,keyGreen){
   const i=(y*info.width+x)*4;let r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
   if(keyGreen){const key=clamp((g-Math.max(r,b)-38)/150);a=Math.round(a*(1-key));if(a>0&&key>0){g=Math.max(0,Math.min(255,Math.round((g-key*255)/(1-key))));}}
   if(a<3)continue;
-  const [cx,cy,rx,ry]=keyGreen?[500,312,130,150]:[500,312,130,150];
-  const faceDistance=Math.hypot((x-cx)/rx,(y-cy)/ry);
-  const preserve=clamp((1.08-faceDistance)/.3);
+  const [cx,cy,rx,ry]=keyGreen?[508,275,48,60]:[508,275,48,60];
+  const skin=r>g&&g>b&&r-b<100;
+  const preserve=skin?clamp((1-Math.hypot((x-cx)/rx,(y-cy)/ry))/.15):0;
   let channel='base',shade=0;
   if(r>155&&b>150&&g<125&&b>g*1.4){channel='power';shade=r/215;}
   else if(r>70&&g>55&&r>g*.95&&g>b*1.08&&b<r*.9){channel='accent';shade=r/225;}
-  else if(b>r*1.12&&b>g*1.22&&r>52){channel='primary';shade=Math.max(r,g)/238;}
+  else if(b>r*.98&&b>g*1.15&&r>28){channel='primary';shade=b/205;}
   else if(b>r*1.08&&g>r*.85&&g>55){channel='secondary';shade=r/160;}
+  if(Math.max(r,g,b)<32)channel='base'; // Keep ink and deepest occlusion neutral.
   const neutral=layers.base;neutral[i]=r;neutral[i+1]=g;neutral[i+2]=b;neutral[i+3]=a;
   if(channel!=='base'){const target=layers[channel],v=Math.round(Math.max(.22,Math.min(1.3,shade))*220),opacity=Math.round(a*(1-preserve));if(opacity>0){target[i]=v;target[i+1]=v;target[i+2]=v;target[i+3]=opacity;counts[channel]++;}else counts.base++;}else counts.base++;
  }
@@ -41,9 +42,9 @@ for(const channel of channels){
  for(let row=0;row<5;row++)for(let frame=0;frame<[4,6,6,2,6][row];frame++){
   const count=[4,6,6,2,6][row],phase=frame/count*Math.PI*2;
   const move=row===1,attack=row===2,hurt=row===3,ultimate=row===4;
-  const sw=Math.round(216*(ultimate?1.06:attack?1.03:1)),sh=Math.round(182*(ultimate?1.06:attack?1.03:1));
+  const sw=Math.round(154*(ultimate?1.06:attack?1.03:1)),sh=Math.round(228*(ultimate?1.06:attack?1.03:1));
   const angle=hurt?(frame?8:-8):attack?Math.sin(phase)*7:move?Math.sin(phase)*4:0;
-  const tile=await original.clone().resize(sw,sh).rotate(angle,{background:{r:0,g:0,b:0,alpha:0}}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+  const tile=await original.clone().resize(sw,sh,{fit:'contain',background:{r:0,g:0,b:0,alpha:0}}).rotate(angle,{background:{r:0,g:0,b:0,alpha:0}}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   const tileW=tile.info.width,tileH=tile.info.height,ox=frame*256+Math.round((256-tileW)/2+(move?Math.sin(phase)*3:attack?Math.sin(phase)*4:0)),oy=row*256+Math.round(10+(256-tileH)/2-10+(move?Math.abs(Math.sin(phase))*3:ultimate?-6:0));
   for(let y=0;y<tileH;y++){const dy=oy+y;if(dy<row*256||dy>=(row+1)*256)continue;for(let x=0;x<tileW;x++){const dx=ox+x;if(dx<frame*256||dx>=(frame+1)*256)continue;const si=(y*tileW+x)*4,di=(dy*1536+dx)*4;tile.data.copy(atlas,di,si,si+4);}}
  }
