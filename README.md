@@ -13,7 +13,7 @@ node tools/build.mjs
 node --test tests/*.test.mjs
 ```
 
-The server builds once at startup. Rebuild after source changes. The intended permanent project site is `https://Almatter.github.io/monster-mash/`, published from `dist/` by the GitHub Actions workflow on `main`. Relative paths support the `/monster-mash/` subpath. See [DEPLOYMENT.md](DEPLOYMENT.md) for current publication status and setup.
+The server builds once at startup. Rebuild after source changes. The permanent public project site is `https://Almatter.github.io/monster-mash/`, published from `dist/` by the GitHub Actions workflow on `main`. Relative paths support the `/monster-mash/` subpath. See [DEPLOYMENT.md](DEPLOYMENT.md) for Pages setup, updates, and rollback.
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 

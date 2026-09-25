@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href);
 const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
-const origin='http://127.0.0.1:4173',base='/monster-mash/';
+const origin=process.env.SITE_ORIGIN||'http://127.0.0.1:4173',base='/monster-mash/';
 try{
  const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'allow'}),page=await context.newPage(),errors=[],paths=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>errors.push(r.url()+': '+r.failure()?.errorText));page.on('response',r=>{if(r.status()>=400)errors.push(r.url()+': '+r.status());});page.on('request',r=>paths.push(new URL(r.url()).pathname));
