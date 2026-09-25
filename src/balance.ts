@@ -14,7 +14,7 @@ export const SUSTAIN={
  titan:{kills:10,heal:30,shield:80,cap:260,cooldown:4,seconds:8},
  calamity:{kills:20,shield:320,cap:480,cooldown:2.5,seconds:12},
  overlord:{perKill:8,perSecond:42},
- devourer:{devourCap:.35,frenzyCap:.25},
+ devourer:{devourCap:.35,frenzyBaseCap:.25,frenzyCapPerRelease:.1,frenzyHealBase:8,frenzyHealPerRelease:1.5,guardKills:20,guardBaseSeconds:1.5,guardSecondsPerRelease:.25,guardBaseReduction:.4,guardReductionPerRelease:.05},
  sovereign:{devourCap:.4}
 };
-export const SUSTAIN_TEXT:Record<string,string>={titan:'Shattering ten foes with one attack restores 30 health and grants 80 armor barrier (max 260, 8s). Once every 4s.',calamity:'A 20+ multikill restores up to 320 ward (max 480, 12s). Once every 2.5s. Rebuild it with well-placed spells.',overlord:'Controlled and summoned kills siphon 8 health each, limited to 42 health per second. Keep servants fighting.',devourer:'Devour heals up to 35% maximum health per cast. Frenzy feeding heals up to 25% maximum health in total.',sovereign:'Successful Devour kills heal up to 40% maximum health per cast and grant Feeding Rage.'};
+export const SUSTAIN_TEXT:Record<string,string>={titan:'Shattering ten foes with one attack restores 30 health and grants 80 armor barrier (max 260, 8s). Once every 4s.',calamity:'A 20+ multikill restores up to 320 ward (max 480, 12s). Once every 2.5s. Rebuild it with well-placed spells.',overlord:'Controlled and summoned kills siphon 8 health each, limited to 42 health per second. Keep servants fighting.',devourer:'Devour heals up to 35% maximum health per cast. Frenzy kills heal 8–14 each, capped at 25–65% maximum health per cast as Release rises. Every 20 Frenzy kills grants 1.5–2.5s of 40–60% damage reduction.',sovereign:'Successful Devour kills heal up to 40% maximum health per cast and grant Feeding Rage.'};

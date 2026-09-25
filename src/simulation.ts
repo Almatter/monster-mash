@@ -23,7 +23,7 @@ export class Game {
  grid=new Map<number,Enemy[]>(); freeBuckets:Enemy[][]=[];
  notice='THE HORDE IS YOURS.';noticeTime=4;shake=0;massacreNoticeAt=-10;lastCarnageTier=1;sound:(kind:string)=>void=()=>{};
  surrounded=0;passiveTimer=0;healBudget=250;beamKills=0;beamPower=ABILITIES.beam;ultimateTime=0;activationBest=0;
- frenzy=0;frenzyHealing=0;shield=0;shieldTime=0;sustainCooldown=0;siphonBudget=SUSTAIN.overlord.perSecond;siphonWindow=0;pressure=threatAt(0);pressureTime=0;sustainStats={healed:0,absorbed:0};
+ frenzy=0;frenzyHealing=0;frenzyKills=0;frenzyGuard=0;shield=0;shieldTime=0;sustainCooldown=0;siphonBudget=SUSTAIN.overlord.perSecond;siphonWindow=0;pressure=threatAt(0);pressureTime=0;sustainStats={healed:0,absorbed:0};
  moving=false;resonance=0;servants=createServants();corruptionTick=0;chains:{x:number;y:number}[]=[];
  fields:{kind:string;x:number;y:number;life:number;radius:number;damage:number;tick:number;kills:number}[]=[];
  bolts:{x:number;y:number;vx:number;vy:number;life:number;damage:number;source:string}[]=[];
@@ -55,7 +55,7 @@ export class Game {
    const bucket=this.grid.get((ix+4096)*8192+iy+4096);if(bucket)for(const e of bucket)if(e.active)visit(e);
   }
  }
- hurt(damage:number){if(this.player.invuln>0)return;const incoming=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.75:1),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp>0&&this.player.hp/this.player.maxHp<.25)this.sound('lowHealth');if(this.player.hp<=0){this.ended=true;this.sound('defeat');}}
+ hurt(damage:number){if(this.player.invuln>0)return;const raw=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.75:1),s=SUSTAIN.devourer,guard=this.monster.id==='devourer'&&this.frenzyGuard>0?s.guardBaseReduction+s.guardReductionPerRelease*this.release:0,incoming=raw*(1-guard),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=raw-incoming+blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp>0&&this.player.hp/this.player.maxHp<.25)this.sound('lowHealth');if(this.player.hp<=0){this.ended=true;this.sound('defeat');}}
  damage(e:Enemy,amount:number,source:string){
   if(!e.active)return false;
   e.hp-=amount;e.flash=.1;
@@ -63,7 +63,7 @@ export class Game {
   e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time,source);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath');if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
   if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
   this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
-  if(this.frenzy>0){const heal=Math.min(8,this.frenzyHealing);this.frenzyHealing-=heal;this.heal(heal);}
+  if(this.frenzy>0){const s=SUSTAIN.devourer;this.frenzyKills++;const heal=Math.min(s.frenzyHealBase+s.frenzyHealPerRelease*this.release,this.frenzyHealing,this.player.maxHp-this.player.hp);this.frenzyHealing-=heal;this.heal(heal);if(this.frenzyKills%s.guardKills===0){if(this.frenzyGuard<=0)this.announce('FEAST GUARD · KEEP FEEDING');this.frenzyGuard=Math.max(this.frenzyGuard,s.guardBaseSeconds+s.guardSecondsPerRelease*this.release);this.effect(this.player.x,this.player.y,'feast',90,.35);}}
   if((e.corruptUntil||0)>this.time&&this.chains.length<128)this.chains.push({x:e.x,y:e.y});
   if(Math.hypot(e.vx,e.vy)>100&&this.debris.length<80)this.debris.push({x:e.x,y:e.y,vx:e.vx,vy:e.vy,life:.6,kills:0});
   if(source==='devour'){const heal=Math.min(this.healBudget,e.kind==='elite'?120:18);this.healBudget-=heal;this.heal(heal);}
@@ -77,7 +77,7 @@ export class Game {
  update(dt:number,input:Input){
   if(this.ended)return;
   this.time+=dt;this.releaseTime=Math.max(0,this.releaseTime-dt);const release=releaseAt(this.time);if(release!==this.release){this.release=release;this.releaseTime=2.8;this.sound('ultimateStart');this.shake=12;this.effect(this.player.x,this.player.y,'release',320,1);}this.sustainCooldown=Math.max(0,this.sustainCooldown-dt);this.shieldTime-=dt;if(this.shieldTime<=0)this.shield=0;this.siphonWindow+=dt;if(this.siphonWindow>=1){this.siphonWindow-=1;this.siphonBudget=SUSTAIN.overlord.perSecond;}this.pressureTime-=dt;if(this.pressureTime<=0){this.pressureTime=.5;this.pressure=threatAt(this.time);}this.score.update(dt,this.time);const tier=Math.floor(this.score.carnage);if(tier>this.lastCarnageTier)this.sound('carnage');this.lastCarnageTier=tier;this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length){this.notice=this.notifications.shift()!;this.noticeTime=2.8;}this.shake=Math.max(0,this.shake-dt*25);
-  this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
+  this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.frenzyGuard=Math.max(0,this.frenzyGuard-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);
   this.moving=!!(input.x||input.y||this.dash);const length=Math.hypot(input.x,input.y)||1;p.x+=input.x/Math.max(1,length)*this.monster.speed*this.releaseStats.move*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;p.y+=input.y/Math.max(1,length)*this.monster.speed*this.releaseStats.move*(this.monster.passive.id==='hunger'?1+Math.min(.15,this.score.recent.length*.003):1)*dt;
   if(this.dash){const d=this.dash;p.x+=Math.cos(d.angle)*d.speed*dt;p.y+=Math.sin(d.angle)*d.speed*dt;d.remaining-=dt;}

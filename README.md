@@ -17,7 +17,7 @@ The server builds once at startup. Rebuild after source changes. The permanent p
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v4-unbound`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v5-feast`.
 
 ## Play
 
