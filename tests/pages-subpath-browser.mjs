@@ -23,6 +23,7 @@ try{
  assert.match(await page.locator('#status').textContent(),/VALID MONSTER MASH RUN CODE/);
  assert.ok(paths.every(p=>p.startsWith(base)),`Request escaped project path: ${paths.filter(p=>!p.startsWith(base))}`);
  assert.ok(paths.some(p=>p.includes('/assets/monsters/')));assert.deepEqual(errors,[]);
+ await page.goto(origin+'/');const rootController=await page.evaluate(()=>navigator.serviceWorker.controller?.scriptURL||'');assert.ok(!rootController.includes('/monster-mash/'),'Project worker controlled the account-root page');
  await context.close();
  const mobile=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,serviceWorkers:'allow'}),touch=await mobile.newPage();
  await touch.goto(origin+base);assert.equal(await touch.locator('#menu').isVisible(),true);await touch.locator('[data-monster=devourer]').tap();await touch.locator('#startForm button[type=submit]').tap();assert.equal(await touch.locator('#hud').isVisible(),true);await touch.setViewportSize({width:390,height:844});assert.equal(await touch.locator('#rotate').isVisible(),true);await touch.goto(origin+base+'verify/');assert.equal(await touch.title(),'Verify a Run · Monster Mash');await mobile.close();
