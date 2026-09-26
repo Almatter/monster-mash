@@ -11,6 +11,10 @@ export const CUES:Record<string,Cue>={
  defeat:{bus:'sfx',priority:8,gap:1},wave:{bus:'sfx',priority:3,gap:2,frequency:330,duration:.25},
  ultimateStart:{bus:'sfx',priority:6,gap:.5,frequency:110,duration:.45},ultimateImpact:{bus:'sfx',priority:7,gap:.4},meteorImpact:{bus:'sfx',priority:5,gap:.3}
 };
+for(const kind of ['thrall','hound','wing','spitter'])CUES['enemyDeath.'+kind]={...CUES.enemyDeath};
+export const isDeathCue=(kind:string)=>kind==='enemyDeath'||kind.startsWith('enemyDeath.')||['heavyDeath','eliteDeath','titanDeath','defeat'].includes(kind);
+export const isOrganicCue=(kind:string)=>kind==='basic.devourer'||isDeathCue(kind)||['heal','shield','collision','devour','corruption','ultimateImpact'].includes(kind);
+export const cueVariantCount=(kind:string)=>kind==='basic.devourer'||kind==='enemyDeath'||kind.startsWith('enemyDeath.')?12:isDeathCue(kind)?8:isOrganicCue(kind)?6:kind.startsWith('basic.')?4:2;
 for(const [i,a] of Object.values(ABILITIES).entries())CUES['ability.'+a.id]={bus:'sfx',priority:4,gap:.15,...(['beam','curse','vortex','dominion'].includes(a.effect)?{frequency:180+i*17,duration:.3}:{})};
 for(const m of Object.values(MONSTERS))CUES['basic.'+m.id]={bus:'sfx',priority:1,gap:.15,...(m.basic.ranged?{frequency:m.id==='calamity'?290:220,duration:.07}:{})};
 export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'results';

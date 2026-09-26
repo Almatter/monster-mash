@@ -60,7 +60,7 @@ export class Game {
   if(!e.active)return false;
   e.hp-=amount;e.flash=.1;
   if(e.hp>0)return false;
-  e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time,source);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath');if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
+  e.active=false;this.alive--;this.score.kill(ENEMIES[e.kind].score,e.kind,this.time,source);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath.'+e.kind);if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
   if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
   this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
   if(this.frenzy>0){const s=SUSTAIN.devourer;this.frenzyKills++;const heal=Math.min(s.frenzyHealBase+s.frenzyHealPerRelease*this.release,this.frenzyHealing,this.player.maxHp-this.player.hp);this.frenzyHealing-=heal;this.heal(heal);if(this.frenzyKills%s.guardKills===0){if(this.frenzyGuard<=0)this.announce('FEAST GUARD · KEEP FEEDING');this.frenzyGuard=Math.max(this.frenzyGuard,s.guardBaseSeconds+s.guardSecondsPerRelease*this.release);this.effect(this.player.x,this.player.y,'feast',90,.35);}}

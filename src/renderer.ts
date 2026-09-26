@@ -1,3 +1,5 @@
+import {CHAMPION_VFX} from './content-vfx.ts';
+import {SUSTAIN} from './balance.ts';
 import {RELEASES} from './unbound.ts';
 import {TORCHES} from './arena.ts';
 import { ENEMIES, EVENT } from './data.ts';
@@ -9,10 +11,23 @@ export class Renderer {
  targeting:{x:number;y:number;radius:number;valid:boolean}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
- sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>(); background:HTMLCanvasElement;brazier:HTMLImageElement|null=null;
- constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.loadFloor();const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('sovereign');this.loadVfx('titan');this.loadVfx('devourer');this.loadVfx('devourer-claw');this.loadVfx('devourer-unbound-aura');this.loadVfx('calamity');this.loadVfx('overlord');this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
- loadVfx(kind:string){const image=new Image();image.onload=()=>this.vfx.set(kind,image);image.onerror=()=>console.warn('VFX load failed:',kind);image.src='assets/vfx/'+kind+'.webp';}
+ sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;brazier:HTMLImageElement|null=null;
+ constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.loadFloor();const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('sovereign');this.loadVfx('titan');this.loadVfx('devourer');this.loadVfx('calamity');this.loadVfx('overlord');this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
+ loadVfx(kind:string){if(this.requestedVfx.has(kind))return;this.requestedVfx.add(kind);const image=new Image();image.onload=()=>this.vfx.set(kind,image);image.onerror=()=>console.warn('VFX load failed:',kind);image.src='assets/vfx/'+kind+'.webp';}
  drawVfx(c:CanvasRenderingContext2D,kind:string,x:number,y:number,size:number,angle=0,alpha=1){const image=this.vfx.get(kind);if(!image)return false;c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha*=alpha;c.drawImage(image,-size/2,-size/2,size,size);c.restore();return true;}
+ loadChampionVfx(id:string){const pack=CHAMPION_VFX[id];if(pack)for(const name of [pack.unbound,...pack.perks])this.loadVfx(name);}
+ drawChampionAuras(c:CanvasRenderingContext2D,g:Game,time:number){
+  const id=g.monster.id,scale=g.monster.visual.scale,x=g.player.x,y=g.player.y;
+  const perk=g.shield>0||g.frenzy>0||g.frenzyGuard>0||id==='sovereign'&&g.player.rage>0;
+  if(g.release>0){const size=(172+g.release*25)*scale*(1+Math.sin(time*2.1)*.02);this.drawVfx(c,CHAMPION_VFX[id].unbound,x,y,size,time*(id==='titan'?.035:.10),(.17+g.release*.05)*(perk?.75:1));}
+  if(g.shield>0&&(id==='titan'||id==='calamity')){const cap=id==='titan'?SUSTAIN.titan.cap:SUSTAIN.calamity.cap,ratio=Math.min(1,g.shield/cap);this.drawVfx(c,id==='titan'?'titan-barrier':'calamity-ward',x,y,(id==='titan'?194:184)*scale,time*.035,.35+.3*ratio);}
+  if(id==='sovereign'&&g.player.rage>0)this.drawVfx(c,'sovereign-rage',x,y,182*scale,time*.09,.46+Math.sin(time*5)*.035);
+  if(id==='devourer'){
+   if(g.frenzyGuard>0)this.drawVfx(c,'devourer-guard',x,y,196*scale,time*.045,.6);
+   else if(g.frenzy>0)this.drawVfx(c,'devourer-frenzy',x,y,190*scale,-time*.3,.53+Math.sin(time*7)*.045);
+   if(g.dodgeInvuln>0)this.drawVfx(c,'devourer-dodge',x,y,180*scale,g.player.angle,.75);
+  }
+ }
  loadFloor(){const image=new Image();image.onload=()=>{const c=this.background.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);};image.src='assets/arena/floor.webp';}
  loadEnemy(kind:string){const image=new Image();image.onload=()=>this.sprites.set(kind,image);image.src='assets/enemies/'+kind+'.webp';}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
@@ -53,7 +68,7 @@ export class Renderer {
   for(let i=0;i<24;i++){const a=i*Math.PI/12;c.save();c.rotate(a);c.translate(0,475);c.fillStyle='#a77c4f50';c.font='20px Georgia';c.fillText(['ᛉ','ᚷ','ᛟ','ᚹ'][i%4],-6,0);c.restore();}
   for(let i=0;i<TORCHES.length;i++){const {x}=TORCHES[i],y=TORCHES[i].y-31;if(this.brazier){c.drawImage(this.brazier,x-42,y-80,84,126);c.fillStyle='#ff9d4e';c.globalAlpha=.12+Math.sin(time*7+i)*.035;c.beginPath();c.arc(x,y-43,35,0,7);c.fill();c.globalAlpha=1;}}
   if(!g){this.drawSovereign(c,0,0,time,0,3.5);c.restore();return;}
-  const detail=this.low?3:this.fxLevel;
+  const detail=this.low?3:this.fxLevel;this.loadChampionVfx(g.monster.id);
   const halfW=w/this.scale/2+100,halfH=h/this.scale/2+100;
   for(const e of g.enemies){if(!e.active||Math.abs(e.x-cx)>halfW||Math.abs(e.y-cy)>halfH)continue;const def=ENEMIES[e.kind],size=def.radius*4;
    if(e.windup>0){c.strokeStyle='#ff5a56';c.fillStyle='#e6404030';c.lineWidth=3;const r=e.kind==='titan'?240:140;c.beginPath();c.arc(e.x,e.y,r,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(e.x,e.y,r*(1-e.windup/1.2),0,Math.PI*2);c.stroke();}
@@ -67,14 +82,12 @@ export class Renderer {
   for(const b of g.bolts){if(this.drawVfx(c,g.monster.id,b.x,b.y,32,Math.atan2(b.vy,b.vx)+time*5))continue;c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
   for(const b of g.debris){if(this.drawVfx(c,'titan',b.x,b.y,26,time*10))continue;c.fillStyle='#bc9a81';c.fillRect(b.x-7,b.y-7,14,14);}
   for(const s of g.shots){if(this.drawVfx(c,'hostile-bolt',s.x,s.y,28,Math.atan2(s.vy,s.vx)))continue;c.fillStyle='#ed9bea';c.beginPath();c.arc(s.x,s.y,6,0,7);c.fill();}
-  if(g.release>0){if(g.monster.id==='devourer'&&this.vfx.has('devourer-unbound-aura')){const size=(158+g.release*22)*(1+Math.sin(time*2.2)*.025);this.drawVfx(c,'devourer-unbound-aura',cx,cy,size,time*.13,.25+g.release*.06);if(g.release>=3&&detail<2)this.drawVfx(c,'devourer-unbound-aura',cx,cy,size*1.1,-time*.08,.08);}else{c.strokeStyle=g.identity.colors.power;c.globalAlpha=.35+g.release*.1;c.lineWidth=1+g.release;c.beginPath();c.ellipse(cx,cy+20,45+g.release*7,16+g.release*3,0,0,7);c.stroke();if(detail<2){c.beginPath();c.arc(cx,cy,56+g.release*8,time*.4,time*.4+Math.PI*(1+g.release*.2));c.stroke();}c.globalAlpha=1;}}
-  if(g.shield>0){c.strokeStyle='#ade7f2';c.lineWidth=2;c.beginPath();c.arc(cx,cy,57*g.monster.visual.scale,0,Math.PI*2);c.stroke();}
-  if(g.dodgeInvuln>0){c.strokeStyle='#fff2cf';c.lineWidth=3;c.beginPath();c.arc(cx,cy,54*g.monster.visual.scale,0,7);c.stroke();}if(g.frenzyGuard>0){c.strokeStyle=g.identity.colors.power;c.lineWidth=3;c.beginPath();c.arc(cx,cy,65*g.monster.visual.scale,time*2,time*2+Math.PI*1.7);c.stroke();}
+  this.drawChampionAuras(c,g,time);
   const state=g.ultimateTime>0?'ultimate':g.player.invuln>0?'hurt':g.attack>g.monster.basic.interval*.65?'attack':g.moving?'move':'idle';if(!this.assets.drawGameplay(c,g.identity,cx,cy,detail>=3?Math.floor(time*5)/5:time,state,g.monster.visual.scale)){if(this.assets.status(g.identity,'gameplay')==='failed')this.drawSovereign(c,cx,cy,time,g.player.invuln,g.monster.visual.scale,g.player.rage,g.identity.colors);else this.drawLoading(c,cx,cy,time,70*g.monster.visual.scale);}
   if(g.beam>0){c.save();c.translate(cx,cy);c.rotate(g.player.angle);if(detail<2&&this.vfx.has(g.monster.id)){for(let x=45;x<g.beamPower.radius;x+=90)this.drawVfx(c,g.monster.id,x,0,(g.monster.id==='calamity'?42:48)*g.releaseStats.beam,time*2+x*.02,.68);}else{c.fillStyle='#d6425380';c.fillRect(0,-(g.monster.id==='calamity'?11:13)*g.releaseStats.beam,g.beamPower.radius,(g.monster.id==='calamity'?22:26)*g.releaseStats.beam);c.fillStyle=g.identity.colors.power;c.fillRect(0,-7*g.releaseStats.beam,g.beamPower.radius,14*g.releaseStats.beam);c.fillStyle='#fff0d1';c.fillRect(0,-3,g.beamPower.radius,6);}c.restore();}
   if(this.targeting){const t=this.targeting;c.save();c.strokeStyle=t.valid?g.identity.colors.power:'#ff625d';c.fillStyle=t.valid?'#e0b67b24':'#ff444424';c.lineWidth=3;c.setLineDash([10,7]);c.beginPath();c.arc(t.x,t.y,t.radius,0,7);c.fill();c.stroke();c.setLineDash([]);c.beginPath();c.moveTo(t.x-16,t.y);c.lineTo(t.x+16,t.y);c.moveTo(t.x,t.y-16);c.lineTo(t.x,t.y+16);c.stroke();c.restore();}
   const sparse=detail>=1;
-  for(const e of g.effects){const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
+  for(const e of g.effects){if(g.monster.id==='devourer'&&(e.kind==='frenzy'||e.kind==='feast'))continue;const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
    if(e.kind==='slam-titan'&&this.drawVfx(c,'hostile-titan',e.x,e.y,e.radius*2.1*(.7+t*.3),time*.08,1)){}
    else if(e.kind==='slam-elite'&&this.drawVfx(c,'hostile-elite',e.x,e.y,e.radius*2.1*(.72+t*.28),time*.13,1)){}
    else if(e.kind==='blood'){if(sparse)continue;c.fillStyle='#b74345';for(let i=0;i<5;i++){const a=i*2.4+e.x;c.beginPath();c.ellipse(e.x+Math.cos(a)*t*e.radius,e.y+Math.sin(a)*t*e.radius,4*(1-t)+1,2,a,0,7);c.fill();}}
@@ -87,12 +100,11 @@ export class Renderer {
   if(g.releaseTime>0){c.save();c.globalAlpha=Math.min(1,g.releaseTime*2);c.fillStyle='#100b18c9';c.fillRect(w*.12,h*.2,w*.76,64);c.textAlign='center';c.fillStyle=g.identity.colors.power;c.font='bold '+Math.min(30,w*.042)+'px Georgia';c.fillText(RELEASES[g.release].name,w/2,h*.2+28);c.fillStyle='#eee7d8';c.font='14px Georgia';c.fillText(g.identity.name,w/2,h*.2+51);c.restore();}
   if(g.player.hp<g.player.maxHp*.25){c.strokeStyle='#dc494b88';c.lineWidth=12;c.strokeRect(0,0,w,h);}
  }
- drawPreview(canvas:HTMLCanvasElement,time:number){const c=canvas.getContext('2d')!;c.clearRect(0,0,canvas.width,canvas.height);const pack=this.assets.get(this.previewIdentity,'selection'),portrait=pack?.selection;if(portrait){const scale=Math.min(canvas.width/portrait.width,canvas.height/portrait.height);c.drawImage(portrait,(canvas.width-portrait.width*scale)/2,0,portrait.width*scale,portrait.height*scale);}else if(this.assets.status(this.previewIdentity,'selection')==='failed')this.drawSovereign(c,canvas.width/2,canvas.height*.56,time,0,2.6*MONSTERS[this.previewIdentity.monsterId].visual.scale,0,this.previewIdentity.colors);else this.drawLoading(c,canvas.width/2,canvas.height*.48,time,Math.min(canvas.width,canvas.height)*.23);}
+ drawPreview(canvas:HTMLCanvasElement,time:number){this.loadChampionVfx(this.previewIdentity.monsterId);const c=canvas.getContext('2d')!;c.clearRect(0,0,canvas.width,canvas.height);const pack=this.assets.get(this.previewIdentity,'selection'),portrait=pack?.selection;if(portrait){const scale=Math.min(canvas.width/portrait.width,canvas.height/portrait.height);c.drawImage(portrait,(canvas.width-portrait.width*scale)/2,0,portrait.width*scale,portrait.height*scale);}else if(this.assets.status(this.previewIdentity,'selection')==='failed')this.drawSovereign(c,canvas.width/2,canvas.height*.56,time,0,2.6*MONSTERS[this.previewIdentity.monsterId].visual.scale,0,this.previewIdentity.colors);else this.drawLoading(c,canvas.width/2,canvas.height*.48,time,Math.min(canvas.width,canvas.height)*.23);}
  drawLoading(c:CanvasRenderingContext2D,x:number,y:number,time:number,r:number){c.save();c.translate(x,y);c.fillStyle='#17141c';c.beginPath();c.ellipse(0,0,r*.62,r,0,0,7);c.fill();c.strokeStyle='#bd8b6b99';c.lineWidth=2;for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,r*(.65+i*.13),time*(i%2?-.5:.6)+i*2,time*(i%2?-.5:.6)+i*2+1.5);c.stroke();}c.fillStyle='#d3aa84';c.font=Math.max(12,r*.13)+'px Georgia';c.textAlign='center';c.fillText('REFORMING…',0,r*1.3);c.restore();}
  drawSovereign(c:CanvasRenderingContext2D,x:number,y:number,time:number,hit:number,scale=1,rage=0,palette:Palette=MONSTERS.sovereign.palette){
   c.save();c.translate(x,y);c.scale(scale,scale);const breath=Math.sin(time*2)*1.2;c.translate(0,breath);
   c.fillStyle='#08080bd0';c.beginPath();c.ellipse(0,31,47,16,0,0,7);c.fill();
-  if(rage>0){c.strokeStyle='#e7bc75';c.lineWidth=2;c.beginPath();c.arc(0,0,58,0,7);c.stroke();}
   const poly=(p:number[],fill:string)=>{c.fillStyle=fill;c.strokeStyle='#100c13';c.lineWidth=2;c.beginPath();for(let i=0;i<p.length;i+=2){if(!i)c.moveTo(p[i],p[i+1]);else c.lineTo(p[i],p[i+1]);}c.closePath();c.fill();c.stroke();};
   poly([-25,4,-38,49,-10,38,0,48,10,38,38,49,25,4],palette.secondary);
   poly([-20,12,-24,38,-10,36,-5,14],palette.primary);poly([20,12,24,38,10,36,5,14],palette.primary);
