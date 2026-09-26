@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';import {mkdir} from 'node:fs/promises';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href);
+const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});await mkdir('test-results',{recursive:true});
+try{
+ for(const [width,height] of [[1440,900],[390,844],[844,390]]){
+  const page=await browser.newPage({viewport:{width,height},isMobile:width===844,hasTouch:width===844}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:4173/');await page.waitForSelector('#roster button');
+  assert.equal(await page.locator('#preparation').evaluate(e=>e.open),true);
+  assert.match(await page.locator('#scenarioName').textContent(),/WEEK 1.*THE SWARM/);
+  await page.locator('#preparation summary').click();
+  if(width===390){const order=await page.evaluate(()=>({form:document.querySelector('.creation').getBoundingClientRect().top,art:document.querySelector('.identity-preview').getBoundingClientRect().top}));assert.ok(order.form<order.art);}
+  await page.locator('#name').fill('Night Crown');await page.locator('#title').selectOption({index:1});const title=await page.locator('#title').inputValue();assert.ok(title);assert.equal(await page.locator('#selectionTitle').textContent(),title);
+  await page.locator('#audioButton').click();assert.ok(await page.locator('#lowFX').isVisible());await page.locator('#lowFX').check();await page.locator('#shake').uncheck();await page.locator('#closeAudio').click();
+  await page.locator('[data-monster="calamity"]').click();await page.locator('#menu').evaluate(e=>e.scrollTop=0);await page.waitForTimeout(800);await page.screenshot({path:`test-results/clarity-menu-${width}.png`});
+  await page.evaluate(async()=>{const {Game}=await import('./src/simulation.js');const update=Game.prototype.update;Game.prototype.update=function(...args){window.testGame=this;if(window.forceFinish){window.forceFinish=false;this.ended=true;return;}return update.apply(this,args);};const {Renderer}=await import('./src/renderer.js');const draw=Renderer.prototype.drawVfx;window.drawn=[];Renderer.prototype.drawVfx=function(...args){const ok=draw.apply(this,args);if(ok)drawn.push(args[1]);return ok;};});
+  await page.locator('#startForm button.primary').click();assert.ok(await page.locator('#hud').isVisible());assert.match(await page.locator('#releaseCountdown').textContent(),/UNBOUND I IN/);assert.ok((await page.locator('#hudClass').textContent()).includes(title));assert.ok(await page.locator('#hudClass').isVisible());
+  await page.locator('#pause').click();assert.match(await page.locator('#pauseTip').textContent(),/Fight at range/);await page.screenshot({path:`test-results/clarity-pause-${width}.png`});await page.locator('#resume').click();
+  if(width!==390){
+   for(const [index,asset] of [[1,'calamity-starfall-preview'],[2,'calamity-vortex-preview']]){
+    await page.locator('#abilities button').nth(index).dispatchEvent('pointerdown',{pointerType:'mouse'});await page.waitForTimeout(500);
+    assert.ok((await page.evaluate(()=>drawn)).includes(asset),asset);await page.screenshot({path:`test-results/clarity-${asset}-${width}.png`});
+    await page.locator('#cancelTarget').click();assert.equal(await page.locator('#targetHint').isVisible(),false);
+   }
+  }
+  await page.locator('#pause').click();await page.evaluate(()=>{const g=testGame;g.time=90;g.wave=4;g.release=0;g.score.dominance=100;g.score.kills=12;g.score.largestMulti=7;g.player.invuln=100;});
+  await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));
+  assert.match(await page.locator('#resultComparison').textContent(),/First practice/);assert.match(await page.locator('#resultContext').textContent(),/2026.10-v6-tester.*PRACTICE/);assert.ok((await page.locator('#resultIdentity').textContent()).includes(title));await page.screenshot({path:`test-results/clarity-results-${width}.png`});
+  const code=await page.locator('#runCode').inputValue();await page.evaluate(async()=>{const {resultCard}=await import('./src/results.js');const {decodeRun}=await import('./src/run-code.js');const run=await decodeRun(document.querySelector('#runCode').value);run.comparison={previous:50,delta:50,status:'record'};const {compose}=await import('./src/assets.js');const catalog=await fetch('assets/catalog.json').then(r=>r.json());const portrait=await compose(catalog[run.monsterId].portrait,run.colors,'portrait');window.card=resultCard(run,portrait);});
+  const data=await page.evaluate(()=>card.toDataURL().split(',')[1]);const {writeFile}=await import('node:fs/promises');await writeFile(`test-results/clarity-card-${width}.png`,Buffer.from(data,'base64'));
+  await page.locator('#back').click();assert.equal(await page.locator('#preparation').evaluate(e=>e.open),false);
+  await page.locator('#startForm button.primary').click();await page.locator('#pause').click();await page.evaluate(()=>{const g=testGame;g.time=90;g.wave=4;g.release=0;g.score.dominance=150;g.score.kills=12;g.player.invuln=100;});await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));assert.match(await page.locator('#resultComparison').textContent(),/New practice best.*50/);
+  await page.locator('#resultRecords').click();assert.ok((await page.locator('#recordIdentity').textContent()).includes(title));assert.match(await page.locator('#personalBestList').textContent(),/Practice.*150/);assert.match(await page.locator('#personalBestList').textContent(),/Completed runs.*No run yet/);
+  await page.locator('#closeRecords').click();await page.locator('#back').click();await page.locator('#startForm button.primary').click();await page.locator('#pause').click();await page.evaluate(()=>{testGame.time=90;testGame.wave=4;testGame.release=0;testGame.score.dominance=250;testGame.score.kills=12;window.forceFinish=true;});await page.locator('#resume').click();await page.waitForSelector('#result:not([hidden])');await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));assert.match(await page.locator('#resultComparison').textContent(),/First completed/);await page.locator('#back').click();assert.match(await page.locator('#menuPersonalBest').textContent(),/250 Dominance/);await page.reload();await page.waitForSelector('#roster button');assert.equal(await page.locator('#preparation').evaluate(e=>e.open),false);
+  await page.goto('http://127.0.0.1:4173/verify/');await page.locator('#code').fill(code);await page.locator('#verify').click();await page.waitForSelector('#output:not([hidden])');assert.match(await page.locator('#output').textContent(),/Week 1.*THE SWARM/);assert.match(await page.locator('#output').textContent(),/Practice \/ manually ended/);
+  assert.deepEqual(errors,[]);console.log(`${width}x${height}: first-time guide, settings, title prestige, countdown, Calamity art, scoped practice PB, reload, card and verifier pass`);await page.close();
+ }
+ // Exercise actual cast placement and persistent field previews independently of overlays.
+ const page=await browser.newPage({viewport:{width:1200,height:760}});await page.goto('http://127.0.0.1:4173/verify.html');
+ await page.evaluate(async()=>{const [{Game},{Renderer}]=await Promise.all([import('./src/simulation.js'),import('./src/renderer.js')]);document.body.replaceChildren();const canvas=document.createElement('canvas');document.body.append(canvas);window.r=new Renderer(canvas);window.g=new Game(77,{monsterId:'calamity'});r.loadChampionVfx('calamity');});
+ await page.waitForFunction(()=>r.vfx.has('calamity-starfall-preview')&&r.vfx.has('calamity-vortex-preview'));
+ const fields=await page.evaluate(()=>{const seen=[],old=r.drawVfx;r.drawVfx=function(...a){const ok=old.apply(this,a);if(ok)seen.push(a[1]);return ok;};g.cast(1,{x:180,y:20});g.cast(2,{x:-180,y:20});r.low=true;r.draw(g,2);return {fields:g.fields.map(f=>f.kind),seen};});assert.ok(fields.fields.includes('meteor')&&fields.fields.includes('vortex'));assert.ok(fields.seen.includes('calamity-starfall-preview')&&fields.seen.includes('calamity-vortex-preview'));await page.screenshot({path:'test-results/clarity-active-fields.png'});const patterns=await page.evaluate(()=>{let created=0;const original=r.ctx.createPattern;r.ctx.createPattern=function(...args){created++;return original.apply(this,args);};r.groundPattern=null;for(let i=0;i<30;i++)r.draw(g,2);return created;});assert.equal(patterns,1,'Floor pattern should be reused instead of allocated every draw');await page.evaluate(()=>{r.targeting={x:0,y:0,radius:200,kind:'vortex',valid:false};r.draw(g,2);});await page.screenshot({path:'test-results/clarity-invalid-target.png'});
+ await page.close();
+}finally{await browser.close();}

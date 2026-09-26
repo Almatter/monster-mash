@@ -8,13 +8,21 @@ import {createIdentity,type Identity} from './identity.ts';
 import {MONSTERS,type Palette} from './content-monsters.ts';
 import {AssetLibrary} from './assets.ts';
 export class Renderer {
- targeting:{x:number;y:number;radius:number;valid:boolean}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
+ targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
- sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;brazier:HTMLImageElement|null=null;
+ sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
  constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.loadFloor();const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('sovereign');this.loadVfx('titan');this.loadVfx('devourer');this.loadVfx('calamity');this.loadVfx('overlord');this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
  loadVfx(kind:string){if(this.requestedVfx.has(kind))return;this.requestedVfx.add(kind);const image=new Image();image.onload=()=>this.vfx.set(kind,image);image.onerror=()=>console.warn('VFX load failed:',kind);image.src='assets/vfx/'+kind+'.webp';}
  drawVfx(c:CanvasRenderingContext2D,kind:string,x:number,y:number,size:number,angle=0,alpha=1){const image=this.vfx.get(kind);if(!image)return false;c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha*=alpha;c.drawImage(image,-size/2,-size/2,size,size);c.restore();return true;}
+ drawTargetArea(c:CanvasRenderingContext2D,kind:string,x:number,y:number,radius:number,time:number,valid:boolean,placing:boolean){
+  c.save();const vortex=kind==='vortex';
+  this.drawVfx(c,vortex?'calamity-vortex-preview':'calamity-starfall-preview',x,y,radius*2.12,time*(vortex?-.12:.035),valid?(placing?.48:.32):.18);
+  // Artwork supplies identity; this boundary supplies the precise gameplay radius.
+  c.strokeStyle=valid?(vortex?'#c9a0ff':'#f0ce87'):'#ff625d';c.lineWidth=placing?2.5:1.5;
+  c.setLineDash(valid?[]:[8,6]);c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.stroke();c.setLineDash([]);
+  if(placing){c.beginPath();if(valid){c.moveTo(x-9,y);c.lineTo(x+9,y);c.moveTo(x,y-9);c.lineTo(x,y+9);}else{c.moveTo(x-10,y-10);c.lineTo(x+10,y+10);c.moveTo(x+10,y-10);c.lineTo(x-10,y+10);}c.stroke();}c.restore();
+ }
  loadChampionVfx(id:string){const pack=CHAMPION_VFX[id];if(pack)for(const name of [pack.unbound,...pack.perks])this.loadVfx(name);}
  drawChampionAuras(c:CanvasRenderingContext2D,g:Game,time:number){
   const id=g.monster.id,scale=g.monster.visual.scale,x=g.player.x,y=g.player.y;
@@ -28,7 +36,7 @@ export class Renderer {
    if(g.dodgeInvuln>0)this.drawVfx(c,'devourer-dodge',x,y,180*scale,g.player.angle,.75);
   }
  }
- loadFloor(){const image=new Image();image.onload=()=>{const c=this.background.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);};image.src='assets/arena/floor.webp';}
+ loadFloor(){const image=new Image();image.onload=()=>{const c=this.background.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);this.groundPattern=null;};image.src='assets/arena/floor.webp';}
  loadEnemy(kind:string){const image=new Image();image.onload=()=>this.sprites.set(kind,image);image.src='assets/enemies/'+kind+'.webp';}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
  makeGround(){
@@ -61,7 +69,7 @@ export class Renderer {
   const cx=g?g.player.x:0,cy=g?g.player.y:0;
   c.save();c.translate(g?w/2:w*.77,g?h/2:h*.45);c.scale(this.scale,this.scale);c.translate(-cx,-cy);
   if(g&&this.shake&&g.shake>0)c.translate(Math.sin(time*61)*g.shake,Math.cos(time*47)*g.shake*.6);
-  const extent=Math.max(w,h)/this.scale;c.fillStyle=c.createPattern(this.background,'repeat')!;c.fillRect(cx-extent,cy-extent,extent*2,extent*2);
+  const extent=Math.max(w,h)/this.scale;c.fillStyle=this.groundPattern??=c.createPattern(this.background,'repeat')!;c.fillRect(cx-extent,cy-extent,extent*2,extent*2);
   // Permanent ritual masonry: concentric rings, cardinal gates, inscriptions and braziers.
   c.strokeStyle='#8060473d';c.lineWidth=3;
   for(const r of [260,280,480,496,EVENT.arenaRadius]){c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.stroke();}
@@ -77,7 +85,7 @@ export class Renderer {
    if(e.flash>0){c.fillStyle='#ffe5b8aa';c.beginPath();c.arc(e.x,e.y,def.radius*.7,0,7);c.fill();}
    if(e.kind==='elite'||e.kind==='titan'||e.hp<e.maxHp&&e.kind==='brute'){c.fillStyle='#21121c';c.fillRect(e.x-def.radius,e.y-def.radius*1.9,def.radius*2,4);c.fillStyle=def.color;c.fillRect(e.x-def.radius,e.y-def.radius*1.9,def.radius*2*Math.max(0,e.hp/e.maxHp),4);}
   }
-  for(const f of g.fields){if(detail<2)this.drawVfx(c,g.monster.id,f.x,f.y,Math.min(f.radius*1.45,480),f.kind==='vortex'?time*.55:0,f.kind==='vortex'?.32:.2);c.strokeStyle=g.identity.colors.power;c.lineWidth=3;c.setLineDash(f.kind==='meteor'?[10,8]:[]);c.beginPath();c.arc(f.x,f.y,f.radius,0,7);c.stroke();c.setLineDash([]);if(f.kind==='vortex'){c.beginPath();c.arc(f.x,f.y,f.radius*.6,time*3,time*3+5);c.stroke();}}
+  for(const f of g.fields)this.drawTargetArea(c,f.kind,f.x,f.y,f.radius,time,true,false);
   for(const s of g.servants){if(!s.active)continue;c.globalAlpha=Math.min(1,s.life);c.drawImage(this.sprites.get('thrall')!,s.x-20,s.y-20,40,40);c.strokeStyle=g.identity.colors.power;c.lineWidth=2;c.beginPath();c.arc(s.x,s.y,23,0,7);c.stroke();c.fillStyle=g.identity.colors.power;c.fillRect(s.x-3,s.y-30,6,6);c.globalAlpha=1;}
   for(const b of g.bolts){if(this.drawVfx(c,g.monster.id,b.x,b.y,32,Math.atan2(b.vy,b.vx)+time*5))continue;c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
   for(const b of g.debris){if(this.drawVfx(c,'titan',b.x,b.y,26,time*10))continue;c.fillStyle='#bc9a81';c.fillRect(b.x-7,b.y-7,14,14);}
@@ -85,7 +93,7 @@ export class Renderer {
   this.drawChampionAuras(c,g,time);
   const state=g.ultimateTime>0?'ultimate':g.player.invuln>0?'hurt':g.attack>g.monster.basic.interval*.65?'attack':g.moving?'move':'idle';if(!this.assets.drawGameplay(c,g.identity,cx,cy,detail>=3?Math.floor(time*5)/5:time,state,g.monster.visual.scale)){if(this.assets.status(g.identity,'gameplay')==='failed')this.drawSovereign(c,cx,cy,time,g.player.invuln,g.monster.visual.scale,g.player.rage,g.identity.colors);else this.drawLoading(c,cx,cy,time,70*g.monster.visual.scale);}
   if(g.beam>0){c.save();c.translate(cx,cy);c.rotate(g.player.angle);if(detail<2&&this.vfx.has(g.monster.id)){for(let x=45;x<g.beamPower.radius;x+=90)this.drawVfx(c,g.monster.id,x,0,(g.monster.id==='calamity'?42:48)*g.releaseStats.beam,time*2+x*.02,.68);}else{c.fillStyle='#d6425380';c.fillRect(0,-(g.monster.id==='calamity'?11:13)*g.releaseStats.beam,g.beamPower.radius,(g.monster.id==='calamity'?22:26)*g.releaseStats.beam);c.fillStyle=g.identity.colors.power;c.fillRect(0,-7*g.releaseStats.beam,g.beamPower.radius,14*g.releaseStats.beam);c.fillStyle='#fff0d1';c.fillRect(0,-3,g.beamPower.radius,6);}c.restore();}
-  if(this.targeting){const t=this.targeting;c.save();c.strokeStyle=t.valid?g.identity.colors.power:'#ff625d';c.fillStyle=t.valid?'#e0b67b24':'#ff444424';c.lineWidth=3;c.setLineDash([10,7]);c.beginPath();c.arc(t.x,t.y,t.radius,0,7);c.fill();c.stroke();c.setLineDash([]);c.beginPath();c.moveTo(t.x-16,t.y);c.lineTo(t.x+16,t.y);c.moveTo(t.x,t.y-16);c.lineTo(t.x,t.y+16);c.stroke();c.restore();}
+  if(this.targeting){const t=this.targeting;this.drawTargetArea(c,t.kind||'meteor',t.x,t.y,t.radius,time,t.valid,true);}
   const sparse=detail>=1;
   for(const e of g.effects){if(g.monster.id==='devourer'&&(e.kind==='frenzy'||e.kind==='feast'))continue;const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
    if(e.kind==='slam-titan'&&this.drawVfx(c,'hostile-titan',e.x,e.y,e.radius*2.1*(.7+t*.3),time*.08,1)){}

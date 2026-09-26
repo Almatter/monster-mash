@@ -1,0 +1,11 @@
+# Calamity targeting artwork
+
+Generated with the built-in imagegen tool, transparent-background mode, on 2026-09-26. Masters are preserved in this folder; runtime assets are 512×512 WebP in public/assets/vfx/. Rebuild with node tools/pack-calamity-target-vfx.mjs. The exact gameplay radius remains a separate canvas boundary, and these previews remain visible in Low FX.
+
+## Starfall Verdict
+
+Use case: stylized-concept. Asset type: transparent square top-down targeting preview for Starfall Verdict in a dark anime isekai monster-survival game. No character or background. A sparse broken outer annulus of purple-black arcane wisps, small gilded astrolabe fragments and three molten gold-violet falling comet fragments, all pointing inward toward the intended meteor impact. Richly painted premium anime isekai dark fantasy VFX, irregular inked edges and cel-painted light. Completely transparent central 70 percent of diameter and transparent corners; sparse and unobtrusive so enemies remain visible inside the targeted area. No text, letters, numbers, watermark, floor, UI, stock vector ring, opaque disk, full scene, or character. Actual transparent alpha background. The effect will be faintly rotated underneath an exact game-drawn targeting boundary, so keep thin elegant silhouette around the perimeter with broad empty negative space.
+
+## Abyssal Vortex
+
+Use case: stylized-concept. Transparent square top-down targeting perimeter for Abyssal Vortex in a dark anime isekai monster-survival game. No character, floor or background. Sparse broken annulus of midnight violet, luminous lavender and icy teal magical ribbons curling inward, with ornate dark arcane fragments and little crystalline motes. Painted premium anime isekai dark fantasy effects, expressive inked edges, cel-painted glow, asymmetrical spiral motion. Completely transparent central 70 percent of diameter and transparent corners; enemies must remain clearly visible inside this targeting area. Thin elegant silhouette at perimeter, broad empty negative space. No text, letters, numbers, watermark, stock vector ring, opaque disk, scene, character or UI. Actual transparent alpha background. It will rotate faintly underneath an exact game-drawn boundary.

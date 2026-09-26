@@ -104,3 +104,12 @@ Character art ships as 100 lossless WebP layers totaling about 18.2 MiB, loaded 
 All five champions now have illustrated transparent Unbound auras. Titan's stone barrier, Calamity's crystal ward, Sovereign's Feeding Rage, and Devourer's frenzy/Feast Guard/Lunge dodge use separate champion-specific sprites. Outer Unbound art dims slightly when an inner protection effect is active; the empty centers keep the character readable. Essential state sprites remain in Low FX and expire with actual gameplay state. Champion packs preload from selection, with duplicate requests suppressed. Ten new sprites total 2.22 MiB compressed. `art-source/vfx/CHAMPION_AURA_PROMPTS.md` records the built-in imagegen prompts; `node tools/pack-champion-vfx.mjs` produces the runtime WebP files.
 
 The mobile landscape HUD is compact (49 px on the tested 915×412, 844×390, 667×375 and 568×320 viewports), with Dominance, slain, Carnage, wave, health, name and pause visible. MASTER, MUSIC, COMBAT/SFX and INTERFACE levels persist locally. Original synthesized SFX cover every semantic hook, with supplied clips taking precedence; the music catalog and five adaptive states await finished original tracks.
+
+
+## Player guidance and comparisons
+
+The festival brief and first-visit preparation guide explain the survival/scoring goal, identity and settings. Champion selection precedes the artwork editor on phones; kit details remain expandable. The HUD shows the next timed release, and the pause screen repeats the scenario and champion strategy. Titles remain visible in play and sharing, with starter and earned prestige choices labeled separately.
+
+Personal bests are saved locally for the same champion, event week and ruleset. Manually ended runs have separate practice comparisons. Result cards, copied results and the verifier identify the week, ruleset and ending category. Existing cosmetic records remain separate from comparable scores. See [PLAYER_CLARITY_REPORT.md](PLAYER_CLARITY_REPORT.md) for changes, tests and performance limits.
+
+Calamity's Starfall and Vortex targeting/field markers use distinct generated transparent artwork plus exact gameplay boundaries. Masters and prompts are in `art-source/vfx/CALAMITY_TARGET_PROMPTS.md`; rebuild the 512×512 WebPs with `node tools/pack-calamity-target-vfx.mjs`. Essential previews remain visible in Low FX.

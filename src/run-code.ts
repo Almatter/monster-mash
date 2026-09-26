@@ -1,8 +1,11 @@
+import type {Comparison} from './personal-bests.ts';
 import {MONSTERS,type Palette} from './content-monsters.ts';
 import {EVENT} from './data.ts';
 import {releaseAt} from './unbound.ts';
-export type RunRecord={version:1|2|3|4;rules:string;phase:number;name:string;title?:string;monsterId?:string;colors?:Palette;newRecords?:string[];newTitles?:string[];sources?:Record<string,number>;seed:number;duration:number;score:number;kills:number;wave:number;elites:number;titans:number;multi:number;peak:number;feats:Record<string,number>;ended:string;reason:'overwhelmed'|'retired';release?:number;build?:string};
-export const KNOWN_RULESETS=['2026.10-v1','2026.10-v2','2026.10-v3','2026.10-v4-unbound','2026.10-v5-feast',EVENT.rules] as const;
+export type RunRecord={version:1|2|3|4;rules:string;phase:number;name:string;title?:string;monsterId?:string;colors?:Palette;newRecords?:string[];newTitles?:string[];sources?:Record<string,number>;comparison?:Comparison;seed:number;duration:number;score:number;kills:number;wave:number;elites:number;titans:number;multi:number;peak:number;feats:Record<string,number>;ended:string;reason:'overwhelmed'|'retired';release?:number;build?:string};
+// Retain shipped MM4 rules even after EVENT.rules advances.
+export const MM4_RULESETS=['2026.10-v6-tester',EVENT.rules] as const;
+export const KNOWN_RULESETS=['2026.10-v1','2026.10-v2','2026.10-v3','2026.10-v4-unbound','2026.10-v5-feast',...MM4_RULESETS] as const;
 // Client-side deterrence only. Not authoritative anti-cheat: shipped source contains
 // everything needed to reconstruct this seal, so a determined attacker can forge codes.
 const a=[42,194,16,177,95,202,112,18,221,64,175,42,88,17,200,97,215,33,154,54,3,214,119,81,242,7,130,55,188,14,75,206];
@@ -28,7 +31,7 @@ export function validateRun(run:RunRecord){
  if(run.version>=2){if(!Object.hasOwn(MONSTERS,run.monsterId)||typeof run.title!=='string'||Array.from(run.title).length>32||!run.colors||!['primary','secondary','accent','power'].every(k=>/^#[0-9a-f]{6}$/i.test(run.colors![k as keyof Palette])))throw Error('Invalid monster identity.');}
  if(run.version>=3){if(!integer(run.release,4)||typeof run.build!=='string'||!/^[0-9a-f]{16}$/.test(run.build))throw Error('Invalid release or build metadata.');if(run.release!<releaseAt(Math.max(0,run.duration-.51))||run.release!>releaseAt(run.duration+.51))throw Error('Inconsistent release stage.');}
  if(run.version===3&&!['2026.10-v4-unbound','2026.10-v5-feast'].includes(run.rules))throw Error('Invalid MM3 ruleset.');
- if(run.version===4&&run.rules!==EVENT.rules)throw Error('Invalid MM4 ruleset.');
+ if(run.version===4&&!MM4_RULESETS.includes(run.rules as typeof MM4_RULESETS[number]))throw Error('Invalid MM4 ruleset.');
 }
 export async function decodeRun(code:string):Promise<RunRecord>{
  const value=code.trim();if(value.length>10000)throw Error('Run code is too long.');const [prefix,payload,checksum,...rest]=value.split('.');if(!payload||!/^[A-Za-z0-9_-]+$/.test(payload))throw Error('Unrecognized run code.');
