@@ -18,7 +18,7 @@ function design(kind:string):Design{
 }
 function hash(value:string){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
- const {style,duration,pitch,weight}=design(kind),rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));
+ const base=design(kind),devourerBasic=kind==='basic.devourer',style=base.style,duration=base.duration*(devourerBasic?[.86,.94,1,1.07,1.14][variant%5]:1),pitch=base.pitch*(devourerBasic?1+((variant*7)%11-5)*.014:1),weight=base.weight,rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));
  const buffer=context.createBuffer(1,length,rate),samples=buffer.getChannelData(0);
  let seed=hash(kind)+variant*91891,phase=0,subPhase=0,low=0,lowSlow=0,drift=0,delay=0,peak=0;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
@@ -34,7 +34,7 @@ export function synthesizeCue(context:AudioContext,kind:string,variant=0){
   const crack=Math.max(0,1-Math.abs(p-.06)/.018)+.7*Math.max(0,1-Math.abs(p-.21)/.015)+.43*Math.max(0,1-Math.abs(p-.43)/.011);
   const reverse=Math.pow(p,1.7)*Math.pow(1-p,.6)*3;
   let sample=0;
-  if(style==='tear')sample=.48*throat*Math.sin(phase*.18+1)+.45*hiss*(.4+.6*Math.abs(Math.sin(phase*.11)))+.25*sub+.43*grit*crack;
+  if(style==='tear'){const bite=devourerBasic?1+.18*Math.sin(variant*1.7):1,rasp=devourerBasic?1+.16*Math.cos(variant*2.1):1;sample=.48*bite*throat*Math.sin(phase*.18+1)+.45*rasp*hiss*(.4+.6*Math.abs(Math.sin(phase*.11)))+.25*sub+.43*grit*crack;}
   else if(style==='stone')sample=.7*sub*Math.exp(-p*5)+.55*grit+.8*hiss*crack+.12*choir;
   else if(style==='infernal')sample=.62*choir+.25*throat+.22*sub+.32*grit*crack;
   else if(style==='ossuary')sample=.64*choir+.31*lowSlow+.32*hiss*Math.abs(Math.sin(phase*.37))+.2*sub;
