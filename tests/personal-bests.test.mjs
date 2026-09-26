@@ -27,7 +27,7 @@ test('share copy carries prestige, week, rules and practice status; release guid
 test('shipped MM4 codes stay readable when the active ruleset advances',async()=>{
  const {EVENT}=await import('../src/data.ts');const {encodeRun,decodeRun}=await import('../src/run-code.ts');
  const fixture={...run,version:4,name:'History',title:'',colors:{primary:'#112233',secondary:'#445566',accent:'#778899',power:'#aabbcc'},seed:1,wave:4,elites:0,titans:0,multi:3,peak:1,feats:{},ended:'2026-09-26T00:00:00.000Z',release:0,build:'0123456789abcdef'};
- const code=await encodeRun(fixture),current=EVENT.rules;
- try{EVENT.rules='2026.10-v7-next';assert.equal((await decodeRun(code)).rules,'2026.10-v6-tester');}finally{EVENT.rules=current;}
+ const code=await encodeRun(fixture),movementCode=await encodeRun({...fixture,rules:'2026.10-v7-movement'}),current=EVENT.rules;
+ try{EVENT.rules='2026.10-v8-next';assert.equal((await decodeRun(code)).rules,'2026.10-v6-tester');assert.equal((await decodeRun(movementCode)).rules,'2026.10-v7-movement');}finally{EVENT.rules=current;}
  await assert.rejects(()=>encodeRun({...fixture,rules:'2026.10-unknown'}));
 });

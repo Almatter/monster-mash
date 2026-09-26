@@ -4,7 +4,7 @@ import {EVENT} from './data.ts';
 import {releaseAt} from './unbound.ts';
 export type RunRecord={version:1|2|3|4;rules:string;phase:number;name:string;title?:string;monsterId?:string;colors?:Palette;newRecords?:string[];newTitles?:string[];sources?:Record<string,number>;comparison?:Comparison;seed:number;duration:number;score:number;kills:number;wave:number;elites:number;titans:number;multi:number;peak:number;feats:Record<string,number>;ended:string;reason:'overwhelmed'|'retired';release?:number;build?:string};
 // Retain shipped MM4 rules even after EVENT.rules advances.
-export const MM4_RULESETS=['2026.10-v6-tester',EVENT.rules] as const;
+export const MM4_RULESETS=['2026.10-v6-tester','2026.10-v7-movement',EVENT.rules] as const;
 export const KNOWN_RULESETS=['2026.10-v1','2026.10-v2','2026.10-v3','2026.10-v4-unbound','2026.10-v5-feast',...MM4_RULESETS] as const;
 // Client-side deterrence only. Not authoritative anti-cheat: shipped source contains
 // everything needed to reconstruct this seal, so a determined attacker can forge codes.

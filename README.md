@@ -113,3 +113,8 @@ The festival brief and first-visit preparation guide explain the survival/scorin
 Personal bests are saved locally for the same champion, event week and ruleset. Manually ended runs have separate practice comparisons. Result cards, copied results and the verifier identify the week, ruleset and ending category. Existing cosmetic records remain separate from comparable scores. See [PLAYER_CLARITY_REPORT.md](PLAYER_CLARITY_REPORT.md) for changes, tests and performance limits.
 
 Calamity's Starfall and Vortex targeting/field markers use distinct generated transparent artwork plus exact gameplay boundaries. Masters and prompts are in `art-source/vfx/CALAMITY_TARGET_PROMPTS.md`; rebuild the 512×512 WebPs with `node tools/pack-calamity-target-vfx.mjs`. Essential previews remain visible in Low FX.
+
+
+## Movement and outcome follow-up
+
+Devourer Lunge follows current movement or the last movement heading when stationary; aimed Titan Stampede retains its existing behavior. Every champion's kit pairs compact action labels with the same full ability names used in button tooltips and ultimate announcements. Natural-ending results celebrate Final Release and the ten-minute milestone; manually ended runs remain practice. The control change uses `2026.10-v7-movement`, preserving historical v6 codes and cosmetic progress. See [CONTROL_AND_PACING_REVIEW.md](CONTROL_AND_PACING_REVIEW.md) for validation, Devourer's measured survival and the unimplemented Carnage/wave/access proposals.
