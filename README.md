@@ -118,3 +118,6 @@ Calamity's Starfall and Vortex targeting/field markers use distinct generated tr
 ## Movement and outcome follow-up
 
 Devourer Lunge follows current movement or the last movement heading when stationary; aimed Titan Stampede retains its existing behavior. Every champion's kit pairs compact action labels with the same full ability names used in button tooltips and ultimate announcements. Natural-ending results celebrate Final Release and the ten-minute milestone; manually ended runs remain practice. The control change uses `2026.10-v7-movement`, preserving historical v6 codes and cosmetic progress. See [CONTROL_AND_PACING_REVIEW.md](CONTROL_AND_PACING_REVIEW.md) for validation, Devourer's measured survival and the unimplemented Carnage/wave/access proposals.
+
+
+Enemy pursuit now uses a shared 180-unit baseline and the existing time curve, independent of champion speed. Movement advantages no longer increase the horde's catch-up pace. `2026.10-v8-pursuit` keeps prior rules readable and scores separate. See [PURSUIT_FIX_REPORT.md](PURSUIT_FIX_REPORT.md) for all five survival comparisons and tests.

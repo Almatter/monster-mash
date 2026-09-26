@@ -8,7 +8,7 @@ import {POWER_HANDLERS} from './powers.ts';
 import {MASSACRES,SCORING} from './content-records.ts';
 const DESCENDING_MASSACRES=[...MASSACRES].reverse();
 import {createServants,updateServants} from './servants.ts';
-import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN} from './balance.ts';
+import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,HORDE_PURSUIT_SPEED} from './balance.ts';
 export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
@@ -102,7 +102,7 @@ export class Game {
    if(d>1150&&this.time<120){e.active=false;this.alive--;continue;}if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
    let speed=def.speed*(1+this.wave*.025+Math.max(0,this.wave-12)*.10);
    if(d>430)e.rushing=true;if(d<140)e.rushing=false;
-   if(e.rushing)speed=Math.max(speed,this.monster.speed*this.pressure.pursuit,180*this.pressure.pursuit);
+   if(e.rushing)speed=Math.max(speed,HORDE_PURSUIT_SPEED*this.pressure.pursuit);
    if(def.behavior==='ranged'&&d<380){speed=d<250?-def.speed:0;if(e.timer<=0&&this.shots.length<180){this.shots.push({x:e.x,y:e.y,vx:dx/d*220,vy:dy/d*220,life:4,damage:def.damage*threat});e.timer=2.5;}}
    if(def.behavior==='slam'&&d<220&&e.timer<=0&&e.windup<=0){e.windup=1.2;e.timer=e.kind==='titan'?4:5;}
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.kind==='titan'?240:140;this.effect(e.x,e.y,e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(d<r+20)this.hurt(def.damage*threat);}}

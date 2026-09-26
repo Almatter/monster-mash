@@ -1,3 +1,5 @@
+// Shared horde catch-up pace: never derive enemy speed from the selected champion.
+export const HORDE_PURSUIT_SPEED=180;
 export const THREAT_CURVE=[
  {at:0,rate:8,cap:95,arc:1.5,distance:560,pursuit:.78},
  {at:30,rate:12,cap:150,arc:2.1,distance:560,pursuit:.85},
