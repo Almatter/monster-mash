@@ -6,8 +6,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
  spitter: { name:'Hex spitter', hp:40, speed:43, radius:12, damage:25, score:25, color:'#ac87c4', behavior:'ranged' },
  wing: { name:'Carrion wing', hp:25, speed:76, radius:11, damage:12, score:18, color:'#839fa7', behavior:'weave' },
  brute: { name:'Iron ogre', hp:210, speed:37, radius:21, damage:50, score:80, color:'#c2a26f', behavior:'chase' },
- elite: { name:'Blood herald', hp:620, speed:52, radius:26, damage:70, score:250, color:'#e36971', behavior:'slam' },
- titan: { name:'The Hollow King', hp:6500, speed:27, radius:62, damage:150, score:1500, color:'#c592a7', behavior:'slam' }
+ elite: { name:'Blood herald', hp:1800, speed:52, radius:26, damage:55, score:250, color:'#e36971', behavior:'slam' },
+ titan: { name:'The Hollow King', hp:10000, speed:27, radius:62, damage:110, score:1500, color:'#c592a7', behavior:'slam' }
 };
 export const PHASES = [
  { name:'THE SWARM', pressure:1, weights:[72,13,4,5,6], eliteEvery:4, titanEvery:8 },
@@ -16,7 +16,7 @@ export const PHASES = [
  { name:'THRONE WAR', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
 ];
 // Change only this index to activate an event week. Included in every run code.
-export const EVENT = { phase:0, rules:'2026.10-v5-feast', waveSeconds:30, maxEnemies:720, arenaRadius:1500 };
+export const EVENT = { phase:0, rules:'2026.10-v6-tester', waveSeconds:30, maxEnemies:720, arenaRadius:1500 };
 export type FeatContext = { recentKills:number; overkill:number; chain:number; eliteDevoured:number; noHitKills:number; multi:number; corruption:number };
 export const FEATS: { id:string; name:string; metric:keyof FeatContext; threshold:number; bonus:number; cooldown:number }[] = [
  {id:'extinction',name:'EXTINCTION EVENT',metric:'recentKills',threshold:100,bonus:2000,cooldown:30},

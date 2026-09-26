@@ -44,7 +44,7 @@ The build hashes shipped runtime content into `monster-mash-static-<hash>` and r
 
 `src/config.ts` has `IS_BETA_BUILD=true`. It shows a small BETA BUILD label and optional copyable debug details, and the build adds `noindex,nofollow` HTML metadata. Flip the flag to `false`, commit and push `main` to launch at the **same URL**. A project-subpath `robots.txt` is included but cannot govern the whole account domain; the page metadata is the relevant indexing directive. There is no password, account, backend, database or automatic debug transmission.
 
-`src/data.ts` holds `EVENT.rules`; bump it when gameplay/scoring rules change. MM3 run codes include rules and build IDs plus a lightweight digest. The static `/monster-mash/verify/` page checks the digest and plausibility and reads older MM1/MM2 codes. It is not an anti-cheat authority.
+`src/data.ts` holds `EVENT.rules`; bump it when gameplay/scoring rules change. MM4 run codes include rules and build IDs inside AES-GCM authenticated ciphertext with random nonces. The static `/monster-mash/verify/` page decrypts and checks plausibility, and still reads MM1/MM2/MM3 codes. The key ships in client source; this is a casual-edit deterrent, not an anti-cheat authority.
 
 For updates, commit changes and push `main`; the workflow rebuilds and deploys the same site. Check the workflow run, menu, direct verifier, desktop/mobile art and audio, existing PWA offline reopen, and return visits after an asset change. To roll back, revert the bad commit on `main` and push the revert, or use `git revert <commit>`; this preserves history and triggers the same workflow. Do not force-push. Verify the older build and service-worker cache activation after rollback.
 

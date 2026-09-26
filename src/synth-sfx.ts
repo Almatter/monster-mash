@@ -20,12 +20,12 @@ function hash(value:string){let h=2166136261;for(const char of value){h^=char.ch
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
  const {style,duration,pitch,weight}=design(kind),rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));
  const buffer=context.createBuffer(1,length,rate),samples=buffer.getChannelData(0);
- let seed=hash(kind)+variant*91891,phase=0,subPhase=0,low=0,lowSlow=0,delay=0,peak=0;
+ let seed=hash(kind)+variant*91891,phase=0,subPhase=0,low=0,lowSlow=0,drift=0,delay=0,peak=0;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
  for(let i=0;i<length;i++){
-  const t=i/rate,p=i/length,n=random();low+=.14*(n-low);lowSlow+=.025*(n-lowSlow);
+  const t=i/rate,p=i/length,n=random();low+=.14*(n-low);lowSlow+=.025*(n-lowSlow);drift+=.0007*(n-drift);
   const hiss=n-low,grit=low-lowSlow;
-  const unstable=1+.045*Math.sin(47*t+variant)+.018*Math.sin(131*t);
+  const unstable=1+.045*Math.sin((43+variant*2)*t+variant)+.018*Math.sin(131*t)+drift*.1;
   const sweep=style==='rift'?.58+1.55*p:style==='tear'?1.8-1.1*p:style==='death'?2.1-1.65*p:1.2-.45*p;
   phase+=Math.PI*2*pitch*sweep*unstable/rate;subPhase+=Math.PI*2*pitch*.5*(1-.5*p)/rate;
   const throat=Math.tanh(2.8*(Math.sin(phase)+.33*Math.sin(phase*2.07)+.15*Math.sin(phase*3.7)));

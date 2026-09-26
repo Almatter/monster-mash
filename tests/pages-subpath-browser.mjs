@@ -16,7 +16,7 @@ try{
   assert.equal(await page.locator(`[data-monster=${id}]`).getAttribute('aria-pressed'),'true');
   await page.locator('#name').fill('Pages '+id);await page.locator('#startForm button[type=submit]').click();
   assert.equal(await page.locator('#hud').isVisible(),true);await page.waitForTimeout(450);
-  await page.locator('#pause').click();await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM3.'));
+  await page.locator('#pause').click();await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));
   code=await page.locator('#runCode').inputValue();await page.locator('#back').click();
  }
  await page.goto(origin+base+'verify/');await page.locator('#code').fill(code);await page.locator('#verify').click();

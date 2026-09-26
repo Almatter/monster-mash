@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href),browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
+try{
+ const page=await browser.newPage();await page.goto('http://127.0.0.1:4173/verify.html');await page.evaluate(async()=>{const {AudioEngine}=await import('./src/audio.js');window.a=new AudioEngine();document.body.innerHTML='<button id="unlock">Unlock</button>';document.querySelector('#unlock').onclick=()=>a.unlock();});await page.locator('#unlock').click();await page.waitForFunction(()=>a.context?.state==='running');
+ for(const value of [.25,.5,.75,1]){await page.evaluate(v=>a.setVolume('music',v),value);await page.waitForTimeout(180);const gain=await page.evaluate(()=>a.buses.music.gain.value);assert.ok(Math.abs(gain-value*2.4)<.03,{value,gain});console.log(`Music ${value*100}%: bus gain ${gain.toFixed(2)} vs SFX bus ${await page.evaluate(()=>a.buses.sfx.gain.value)}`);}
+ const sound=await page.evaluate(()=>{a.play('basic.devourer');const variants=a.synths.get('basic.devourer');const first=variants[0].getChannelData(0),second=variants[1].getChannelData(0);let difference=0,energy=0;for(let i=0;i<first.length;i+=40){difference+=Math.abs(first[i]-second[i]);energy+=Math.abs(first[i]);}return {count:variants.length,difference,energy};});assert.equal(sound.count,6);assert.ok(sound.difference>sound.energy*.15,sound);assert.ok(sound.difference<sound.energy*2.5,sound);console.log('Devourer attack has six related procedural variants.');await page.close();
+}finally{await browser.close();}

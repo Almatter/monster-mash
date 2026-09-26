@@ -12,5 +12,5 @@ const metrics=await page.evaluate(async()=>{
  const durations=[],intervals=[];let last=performance.now();
  for(let frame=0;frame<240;frame++){await new Promise(requestAnimationFrame);let start=performance.now();intervals.push(start-last);last=start;g.player.hp=1000;g.ended=false;g.update(1/60,{x:0,y:0,aimX:500,aimY:0,aiming:true});renderer.draw(g,g.time);durations.push(performance.now()-start);}
  durations.sort((a,b)=>a-b);intervals.sort((a,b)=>a-b);return {maxPool:g.enemies.length,alive:g.alive,frameWorkP50:durations[120],frameWorkP95:durations[228],frameIntervalP50:intervals[120],effects:g.effects.length,shots:g.shots.length};
-});console.log('Browser stress:',JSON.stringify(metrics));assert.ok(metrics.alive>500);assert.equal(metrics.maxPool,1100);
+});console.log('Browser stress:',JSON.stringify(metrics));assert.ok(metrics.alive>500);assert.equal(metrics.maxPool,720);
 await page.goto('http://127.0.0.1:4173');await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.context().setOffline(true);await page.reload();assert.equal(await page.locator('#startForm').isVisible(),true);await page.locator('#startForm button[type=submit]').click();assert.equal(await page.locator('#hud').isVisible(),true);console.log('Offline replay passed.');await browser.close();

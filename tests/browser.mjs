@@ -16,7 +16,7 @@ await page.waitForTimeout(6000);assert.notEqual(await page.locator('#kills').tex
 await page.screenshot({path:'test-results/combat.png'});
 await page.keyboard.press('Escape');assert.equal(await page.locator('#paused').isVisible(),true);
 const clock=await page.locator('#clock').textContent();await page.waitForTimeout(1100);assert.equal(await page.locator('#clock').textContent(),clock);
-await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM3.'));
+await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));
 const code=await page.locator('#runCode').inputValue();await page.screenshot({path:'test-results/result.png'});
 const downloadPromise=page.waitForEvent('download');await page.locator('#saveCard').click();const download=await downloadPromise;await download.saveAs('test-results/result-card.png');
 for(let i=0;i<3;i++){await page.locator('#again').click();await page.waitForTimeout(100);assert.equal(await page.locator('#result').isVisible(),false);await page.keyboard.press('Escape');await page.locator('#endRun').click();}

@@ -1,5 +1,9 @@
 # Monster Mash balance report
 
+## Tester feedback pass (rules `2026.10-v6-tester`)
+
+The current pass strengthens early focused beams, adds Calamity-only placement, a movement-built Titan shield, longer-lived controlled servants, Devourer Lunge charges/dodge, and durable elites/Titans with reduced unavoidable contact damage. The final matched-seed survival table and boss-lifetime measurements are in [TESTER_FEEDBACK_REPORT.md](TESTER_FEEDBACK_REPORT.md). The older sections below record their historical rules, not current ability values.
+
 ## Devourer Feast sustain pass (rules `2026.10-v5-feast`)
 
 Feast of the Unbound now heals 8–14 health per kill as Release advances, with a 25–65% maximum-health budget per activation. Every 20 kills during the eight-second Feast refresh a 1.5–2.5-second guard that reduces incoming damage by 40–60%. Only actual healing spends the budget. Guard requires kills and is brief; an empty cast grants no protection. Maw of Ruin, Lunge and Execution are unchanged.

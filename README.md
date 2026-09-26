@@ -17,24 +17,24 @@ The server builds once at startup. Rebuild after source changes. The permanent p
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v5-feast`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v6-tester`.
 
 ## Play
 
-Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM3 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
+Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM4 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
 
-- WASD / arrows or left thumb stick: move. Mouse: aim; touch aim follows movement and nearby prey when stationary.
-- Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attack is automatic.
+- WASD / arrows or left thumb stick: move. Mouse: aim; ranged basic attacks automatically choose a nearby threat when not mouse-aiming. Touch movement does not require fine ranged aiming.
+- Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attacks fire only when prey is in range. Calamity Starfall and Vortex enter placement mode: click/tap the arena to cast, or use Cancel/Escape. Devourer Lunge gains two charges at Unbound II and three at Final Release; each cast starts with a short dodge window.
 - P/Escape: pause. Backgrounding or entering touch portrait pauses combat. Menus work in portrait; combat requests landscape.
-- Mute, shake and low-effects toggles remain available. Repeated runs grant no statistical advantage.
+- Mute, shake and low-effects toggles remain available. The Settings panel also has optional SHOW PERFORMANCE (off by default), which displays smoothed FPS and enemy/ally/projectile/effect counts. Repeated runs grant no statistical advantage.
 
 | Archetype | Distinct mechanics |
 |---|---|
-| Titan | Slower, durable melee; surrounding enemies reduce damage; shockwave, charge, launched bodies and ground impact |
-| Devourer | Fast melee; kill momentum, lunge, capped feeding, wounded-elite execution and temporary frenzy |
-| Calamity | Vulnerable ranged caster; aimable beam, delayed meteor, pulling vortex, enormous detonation and bounded cooldown refunds |
-| Overlord | Control up to 32 pooled servants; curse damage, conversion, summons and iterative corruption cascades |
-| Sovereign | Preserved original mixed claw/shockwave/devour/beam/catastrophe package |
+| Titan | Slow durable melee; physical movement builds Momentum and reinforces a capped shield; shockwave, charge, launched bodies and ground impact |
+| Devourer | Fast melee; kill momentum, chained dodge lunges, capped feeding, boss execution and temporary frenzy |
+| Calamity | Vulnerable ranged caster; focused ray, placed meteor and vortex, enormous detonation and bounded cooldown refunds |
+| Overlord | Control up to 24–28 active servants; curse damage, conversion, summons and iterative corruption cascades |
+| Sovereign | Original mixed claw/shockwave/devour/beam/catastrophe package; Feeding Rage briefly reduces damage |
 
 ## Feats, records and titles
 
@@ -48,7 +48,7 @@ Enemy base score × current Carnage, rounded per kill, earns Dominance. Kills ad
 
 All damage routes credit the player once. Source totals distinguish direct, devour, execution, lunge/trample, beam, meteor/vortex, collisions, controlled/summoned servants, curse damage, corruption chains and ultimates. Conversion itself awards no kill. Summon expiration awards no kill. The Titan's collision credit requires actual launched-body contact, replacing the prototype's outer damage annulus.
 
-Players post their PNG card and run code manually to Discord. `/verify/` reads current MM3 plus legacy MM1/MM2 codes. The SHA-256 checksum detects damaged/simple edits; it **does not prove honest play**, provide a signature, or validate a replay. A modified client can forge results. Codes include rules, week, seed, name/title/archetype/colors, statistics, run feats, new local records and source counts. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
+Players post their PNG card and run code manually to Discord. `/verify/` reads current MM4 plus legacy MM1/MM2/MM3 codes. MM4 serializes core run metadata and statistics compactly, then encrypts/authenticates with browser-native AES-GCM and a random nonce. Casual Base64 decoding does not reveal the score; changing one character fails authentication. The key material ships in split form in the static client and can be reconstructed from source. **Client-side deterrence only. Not authoritative anti-cheat:** a modified client can forge results, and codes do not validate a replay. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
 
 ## Content map
 
