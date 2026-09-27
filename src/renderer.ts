@@ -89,6 +89,7 @@ export class Renderer {
   for(const f of g.fields)this.drawTargetArea(c,f.kind,f.x,f.y,f.radius,time,true,false);
   for(const s of g.servants){if(!s.active)continue;c.globalAlpha=Math.min(1,s.life);c.drawImage(this.sprites.get('thrall')!,s.x-20,s.y-20,40,40);c.strokeStyle=g.identity.colors.power;c.lineWidth=2;c.beginPath();c.arc(s.x,s.y,23,0,7);c.stroke();c.fillStyle=g.identity.colors.power;c.fillRect(s.x-3,s.y-30,6,6);c.globalAlpha=1;}
   for(const b of g.bolts){if(this.drawVfx(c,g.monster.id,b.x,b.y,32,Math.atan2(b.vy,b.vx)+time*5))continue;c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
+  for(const w of g.clawWaves)this.drawVfx(c,'devourer-claw-wave',w.x-Math.cos(w.angle)*w.width*.65,w.y-Math.sin(w.angle)*w.width*.65,w.width*3.15,w.angle,.72);
   for(const b of g.debris){if(this.drawVfx(c,'titan',b.x,b.y,26,time*10))continue;c.fillStyle='#bc9a81';c.fillRect(b.x-7,b.y-7,14,14);}
   for(const s of g.shots){if(this.drawVfx(c,'hostile-bolt',s.x,s.y,28,Math.atan2(s.vy,s.vx)))continue;c.fillStyle='#ed9bea';c.beginPath();c.arc(s.x,s.y,6,0,7);c.fill();}
   this.drawChampionAuras(c,g,time);
