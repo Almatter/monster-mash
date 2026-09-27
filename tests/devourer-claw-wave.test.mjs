@@ -25,10 +25,23 @@ test('outgoing waves finish after Feast ends, never emit outside it, and remain 
  for(let i=0;i<300;i++){g.update(dt,input);assert.ok(g.clawWaves.length<=CLAW_WAVE.maxActive);}assert.ok(g.clawWaves.length>0);g.frenzy=0;g.attack=100;for(let i=0;i<70;i++)g.update(dt,input);assert.equal(g.clawWaves.length,0);assert.equal(new Game(77,{monsterId:'devourer'}).clawWaves.length,0);
 });
 
-test('waves follow facing independently of movement, leaving prey outside the travel corridor untouched',()=>{
- const g=fixture();prey(g,80,0,1e9);const forward=prey(g,0,350),side=prey(g,350,0);lockSpawn(g);g.cast(3);g.update(dt,{...input,x:1,aimX:0,aimY:1000});const w=g.clawWaves[0];assert.ok(w.angle>1.5);g.attack=100;for(let i=0;i<35;i++)g.update(dt,input);assert.equal(forward.active,false);assert.equal(side.active,true);
+test('wave travel and hits follow all cardinal/diagonal movement directions despite opposite aim',()=>{
+ for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){
+  const g=fixture(),length=Math.hypot(x,y),dx=x/length,dy=y/length;prey(g,dx*80,dy*80,1e9);
+  const forward=prey(g,dx*350,dy*350),side=prey(g,-dy*350,dx*350);lockSpawn(g);g.cast(3);
+  g.update(dt,{x,y,aimX:-dx*1000,aimY:-dy*1000,aiming:true});const w=g.clawWaves[0],angle=Math.atan2(y,x);
+  assert.ok(Math.abs(w.angle-angle)<1e-9);assert.equal(g.effects.find(e=>e.kind==='claw').angle,angle,'claw animation matches wave direction');g.attack=100;for(let i=0;i<35;i++)g.update(dt,input);
+  assert.equal(forward.active,false);assert.equal(side.active,true);assert.equal(w.angle,angle,'launched waves do not turn with later aim');
+ }
 });
 
+test('new waves follow steering, stationary waves remember travel, and a fresh stationary run fires right',()=>{
+ const g=fixture();prey(g,80,0,1e9);lockSpawn(g);g.cast(3);g.update(dt,{...input,aimX:0,aimY:-1000});
+ assert.equal(g.clawWaves.at(-1).angle,0,'fresh stationary direction is right despite aim');
+ for(const [x,y] of [[0,-1],[-1,0],[0,0]]){g.attack=0;g.update(dt,{...input,x,y});assert.equal(g.clawWaves.at(-1).angle,x===0&&y===-1?-Math.PI/2:Math.PI);}
+ assert.equal(g.clawWaves[0].angle,0,'already launched waves keep their initial direction');
+ assert.equal(new Game(77,{monsterId:'devourer'}).movementAngle,0,'movement memory resets between runs');
+});
 
 test('nearby Feast claws retain circular cleave in every direction while a wave launches',()=>{
  const g=fixture();g.player.hp=100;for(let i=0;i<8;i++){const a=i*Math.PI/4;prey(g,Math.cos(a)*80,Math.sin(a)*80);}lockSpawn(g);g.cast(3);g.update(dt,input);

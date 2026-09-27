@@ -3,7 +3,7 @@ const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href),b
 const origin=process.env.SITE_URL||'http://127.0.0.1:4173/monster-mash/';
 try{for(const touch of [false,true]){
  const page=await browser.newPage({viewport:touch?{width:844,height:390}:{width:1440,height:900},hasTouch:touch,isMobile:touch}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto(origin);
- await page.evaluate(async()=>{const {Game}=await import('./src/simulation.js'),{Renderer}=await import('./src/renderer.js');window.Game=Game;window.drawnWaves=0;const update=Game.prototype.update,draw=Renderer.prototype.draw,vfx=Renderer.prototype.drawVfx;Game.prototype.update=function(...args){window.g=this;return update.apply(this,args);};Renderer.prototype.draw=function(...args){window.r=this;return draw.apply(this,args);};Renderer.prototype.drawVfx=function(...args){const ok=vfx.apply(this,args);if(ok&&args[1]==='devourer-claw-wave')drawnWaves++;return ok;};});
+ await page.evaluate(async()=>{const {Game}=await import('./src/simulation.js'),{Renderer}=await import('./src/renderer.js');window.Game=Game;window.drawnWaves=0;window.waveDrawAngles=[];const update=Game.prototype.update,draw=Renderer.prototype.draw,vfx=Renderer.prototype.drawVfx;Game.prototype.update=function(...args){window.g=this;return update.apply(this,args);};Renderer.prototype.draw=function(...args){window.r=this;return draw.apply(this,args);};Renderer.prototype.drawVfx=function(...args){const ok=vfx.apply(this,args);if(ok&&args[1]==='devourer-claw-wave'){drawnWaves++;waveDrawAngles.push(args[5]);}return ok;};});
  await page.locator('[data-monster=devourer]').click();assert.match(await page.locator('#kit').textContent(),/From Unbound II/);await page.locator('#startForm button.primary').click();await page.waitForFunction(()=>window.r?.vfx.has('devourer-claw-wave'));await page.waitForTimeout(300);await page.clock.pauseAt(await page.evaluate(()=>Date.now()+100));
  if(!touch)await page.mouse.move(1200,450);
  for(const stage of [1,2]){
@@ -12,5 +12,20 @@ try{for(const touch of [false,true]){
   const state=await page.evaluate(()=>({waves:g.clawWaves.length,drawn:drawnWaves,kills:g.score.sources.clawwave||0,hp:g.player.hp,guard:g.frenzyGuard}));
   if(stage===1){assert.equal(state.waves,0);assert.equal(state.kills,0);assert.doesNotMatch(await page.locator('#healthText').textContent(),/CLAW WAVES/);}else{assert.ok(state.waves>0);assert.ok(state.drawn>0);assert.equal(state.kills,30);assert.equal(state.hp,730);assert.ok(state.guard>0);assert.match(await page.locator('#healthText').textContent(),/CLAW WAVES/);await page.screenshot({path:`test-results/devourer-claw-waves-${touch?'touch':'desktop'}.png`});const low=await page.evaluate(()=>{r.low=true;drawnWaves=0;r.draw(g,g.time);return drawnWaves;});assert.ok(low>0);}
  }
- await page.evaluate(()=>{g.frenzy=0;});await page.clock.runFor(1100);assert.equal(await page.evaluate(()=>g.clawWaves.length),0);assert.doesNotMatch(await page.locator('#healthText').textContent(),/CLAW WAVES/);assert.deepEqual(errors,[]);console.log((touch?'Touch':'Desktop')+': real Feast activation, Unbound II gate, ranged kills sharing capped Feast healing, guard, generated wave art, Low FX and expiry pass');await page.close();
+ await page.evaluate(()=>{g.frenzy=0;});await page.clock.runFor(1100);assert.equal(await page.evaluate(()=>g.clawWaves.length),0);assert.doesNotMatch(await page.locator('#healthText').textContent(),/CLAW WAVES/);
+ await page.evaluate(()=>{g.time=300;g.release=2;g.wave=11;g.player.x=g.player.y=0;g.player.invuln=100;g.attack=0;g.frenzy=8;g.movementAngle=0;g.clawWaves=[];for(const e of g.enemies)e.active=false;g.alive=0;Game.prototype.spawn.call(g,'thrall');const e=g.enemies.find(e=>e.active);Object.assign(e,{x:80,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();g.spawn=()=>{};});
+ await page.mouse.move(1200,450);
+ const cdp=touch?await page.context().newCDPSession(page):null,stick=touch?await page.locator('#joystick').boundingBox():null;
+ let touchHeld=false;
+ async function steer(x,y){
+  if(touch){if(touchHeld)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});touchHeld=!!(x||y);if(touchHeld)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:stick.x+stick.width/2+x*25,y:stick.y+stick.height/2+y*25}]});}
+  else{for(const key of ['a','w','s','d'])await page.keyboard.up(key);if(x||y)await page.keyboard.down(y<0?'w':x<0?'a':'d');}
+ }
+ for(const [x,y,angle] of [[0,-1,-Math.PI/2],[-1,0,Math.PI],[0,0,Math.PI]]){
+  await steer(x,y);await page.evaluate(()=>{g.attack=0;waveDrawAngles=[];});await page.clock.runFor(50);
+  const direction=await page.evaluate(()=>({wave:g.clawWaves.at(-1).angle,visual:waveDrawAngles.at(-1),facing:g.player.angle,first:g.clawWaves[0].angle}));
+  assert.ok(Math.abs(direction.wave-angle)<.001,'movement controls new wave direction');assert.ok(Math.abs(direction.visual-angle)<.001,'generated art follows the damage direction');if(!touch||(!x&&!y))assert.ok(Math.abs(direction.facing-angle)>.5,'mouse/nearest-target facing differs from movement');assert.ok(Math.abs(direction.first+Math.PI/2)<.001,'old waves retain their launch direction');
+ }
+ await steer(0,0);console.log((touch?'Touch':'Desktop')+': real movement controls wave direction and artwork, steering new waves and retaining stationary direction despite opposing aim');
+ assert.deepEqual(errors,[]);console.log((touch?'Touch':'Desktop')+': real Feast activation, Unbound II gate, ranged kills sharing capped Feast healing, guard, generated wave art, Low FX and expiry pass');await page.close();
 }}finally{await browser.close();}
