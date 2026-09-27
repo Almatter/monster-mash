@@ -29,7 +29,8 @@ export class Renderer {
   const perk=g.shield>0||g.frenzy>0||g.frenzyGuard>0||id==='sovereign'&&g.player.rage>0;
   if(g.release>0){const size=(172+g.release*25)*scale*(1+Math.sin(time*2.1)*.02);this.drawVfx(c,CHAMPION_VFX[id].unbound,x,y,size,time*(id==='titan'?.035:.10),(.17+g.release*.05)*(perk?.75:1));}
   if(g.shield>0&&(id==='titan'||id==='calamity')){const cap=id==='titan'?SUSTAIN.titan.cap:SUSTAIN.calamity.cap,ratio=Math.min(1,g.shield/cap);this.drawVfx(c,id==='titan'?'titan-barrier':'calamity-ward',x,y,(id==='titan'?194:184)*scale,time*.035,.35+.3*ratio);}
-  if(id==='sovereign'&&g.player.rage>0)this.drawVfx(c,'sovereign-rage',x,y,182*scale,time*.09,.46+Math.sin(time*5)*.035);
+  if(id==='sovereign'&&g.shield>0){const s=SUSTAIN.sovereign,ratio=Math.min(1,g.shield/(s.wardCap+s.wardCapPerRelease*g.release));this.drawVfx(c,'sovereign-aegis',x,y,196*scale,-time*.035,.38+.22*ratio);}
+  if(id==='sovereign'&&g.player.rage>0)this.drawVfx(c,'sovereign-rage',x,y,(g.shield>0?158:182)*scale,time*.09,(g.shield>0?.32:.46)+Math.sin(time*5)*.035);
   if(id==='devourer'){
    if(g.frenzyGuard>0)this.drawVfx(c,'devourer-guard',x,y,196*scale,time*.045,.6);
    else if(g.frenzy>0)this.drawVfx(c,'devourer-frenzy',x,y,190*scale,-time*.3,.53+Math.sin(time*7)*.045);

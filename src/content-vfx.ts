@@ -1,5 +1,5 @@
 export const CHAMPION_VFX:Record<string,{unbound:string;perks:string[]}>={
- sovereign:{unbound:'sovereign-unbound-aura',perks:['sovereign-rage']},
+ sovereign:{unbound:'sovereign-unbound-aura',perks:['sovereign-rage','sovereign-aegis']},
  titan:{unbound:'titan-unbound-aura',perks:['titan-barrier']},
  calamity:{unbound:'calamity-unbound-aura',perks:['calamity-ward','calamity-starfall-preview','calamity-vortex-preview']},
  overlord:{unbound:'overlord-unbound-aura',perks:[]},

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const sharp=require(process.env.SHARP_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
-const names=["sovereign-unbound-aura","titan-unbound-aura","calamity-unbound-aura","overlord-unbound-aura","titan-barrier","calamity-ward","devourer-frenzy","devourer-guard","devourer-dodge","sovereign-rage"];
+const names=["sovereign-unbound-aura","titan-unbound-aura","calamity-unbound-aura","overlord-unbound-aura","titan-barrier","calamity-ward","devourer-frenzy","devourer-guard","devourer-dodge","sovereign-rage","sovereign-aegis"];
 let total=0;
 for(const name of names){
  const source=`art-source/vfx/${name}.png`,target=`public/assets/vfx/${name}.webp`;
