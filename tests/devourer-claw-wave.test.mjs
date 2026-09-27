@@ -8,9 +8,9 @@ test('only Devourer Feast claws from Unbound II onward emit waves; an idle or no
  for(const id of ['devourer','sovereign'])for(const stage of [0,1,2,3,4])for(const feast of [false,true]){const g=fixture(stage,id);if(feast)g.frenzy=8;prey(g,80,0,1e9);lockSpawn(g);g.update(dt,input);assert.equal(g.clawWaves.length,id==='devourer'&&stage>=2&&feast?1:0);}
  const empty=fixture();empty.cast(3);lockSpawn(empty);empty.update(dt,input);assert.equal(empty.clawWaves.length,0);
 });
-test('piercing waves kill distant ranks with ordinary score credit, without remote healing',()=>{
+test('piercing waves kill distant ranks with ordinary score credit, sharing capped Feast healing',()=>{
  const g=fixture();g.player.hp=400;prey(g,80,0,1e9);for(let i=0;i<30;i++)prey(g,350+i*.2,(i%5-2)*25);lockSpawn(g);g.cast(3);
- for(let i=0;i<35;i++)g.update(dt,input);assert.equal(g.score.sources.clawwave,30);assert.equal(g.score.kills,30);assert.ok(g.score.dominance>0);assert.equal(g.player.hp,400);assert.equal(g.sustainStats.healed,0);assert.equal(g.frenzyHealing,850*.65);assert.ok(g.frenzyGuard>0,'existing Feast guard still follows kills');
+ for(let i=0;i<35;i++)g.update(dt,input);assert.equal(g.score.sources.clawwave,30);assert.equal(g.score.kills,30);assert.ok(g.score.dominance>0);assert.equal(g.player.hp,820);assert.equal(g.sustainStats.healed,420);assert.equal(g.frenzyHealing,850*.65-420);assert.ok(g.frenzyGuard>0,'existing Feast guard still follows kills');
 });
 test('a wave damages each enemy serial once, and settles its multikill once on expiry',()=>{
  const g=fixture();const near=prey(g,80,0,1e9),far=prey(g,350,0,1e9);lockSpawn(g);g.cast(3);g.update(dt,input);const w=g.clawWaves[0],hp=near.hp,farHp=far.hp;g.attack=100;
@@ -27,4 +27,20 @@ test('outgoing waves finish after Feast ends, never emit outside it, and remain 
 
 test('waves follow facing independently of movement, leaving prey outside the travel corridor untouched',()=>{
  const g=fixture();prey(g,80,0,1e9);const forward=prey(g,0,350),side=prey(g,350,0);lockSpawn(g);g.cast(3);g.update(dt,{...input,x:1,aimX:0,aimY:1000});const w=g.clawWaves[0];assert.ok(w.angle>1.5);g.attack=100;for(let i=0;i<35;i++)g.update(dt,input);assert.equal(forward.active,false);assert.equal(side.active,true);
+});
+
+
+test('nearby Feast claws retain circular cleave in every direction while a wave launches',()=>{
+ const g=fixture();g.player.hp=100;for(let i=0;i<8;i++){const a=i*Math.PI/4;prey(g,Math.cos(a)*80,Math.sin(a)*80);}lockSpawn(g);g.cast(3);g.update(dt,input);
+ assert.equal(g.score.sources.direct,8);assert.equal(g.score.kills,8);assert.equal(g.player.hp,212);assert.equal(g.clawWaves.length,1);
+});
+
+test('all Feast kill sources share one unchanged healing budget, and distant kills cannot renew it',()=>{
+ for(const stage of [2,4]){const g=fixture(stage);g.player.hp=10;g.cast(3);const cap=g.player.maxHp*(.25+.1*stage);
+  for(let i=0;i<100;i++){const e=prey(g,500);g.damage(e,1e9,['clawwave','direct','execute','lunge'][i%4]);}
+  assert.ok(Math.abs(g.sustainStats.healed-cap)<1e-9);assert.equal(g.frenzyHealing,0);assert.ok(g.frenzyGuard>0);
+  g.player.hp=10;g.damage(prey(g,500),1e9,'clawwave');assert.equal(g.player.hp,10,'wave kills cannot refill an exhausted pool');
+  g.cooldowns[3]=0;g.cast(3);assert.equal(g.frenzyHealing,cap);g.damage(prey(g,500),1e9,'clawwave');assert.equal(g.player.hp,10+8+1.5*stage);
+  g.frenzy=0;g.player.hp=10;const remaining=g.frenzyHealing;g.damage(prey(g,500),1e9,'clawwave');assert.equal(g.player.hp,10);assert.equal(g.frenzyHealing,remaining,'outgoing kills after Feast cannot feed');
+ }
 });
