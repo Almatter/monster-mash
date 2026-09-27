@@ -1,5 +1,12 @@
-// Shared horde catch-up pace: never derive enemy speed from the selected champion.
-export const HORDE_PURSUIT_SPEED=180;
+import {ENEMIES,type EnemyKind} from './data.ts';
+// Fixed species limits preserve escape speed even beyond the ten-minute milestone.
+// These never read champion speed, release bonuses or recent kills.
+export const ENEMY_SPEED_LIMITS:Record<EnemyKind,number>={thrall:155,hound:235,wing:205,spitter:110,brute:125,elite:140,titan:110};
+export function enemyMovementSpeed(kind:EnemyKind,wave:number,pursuit:number,rushing:boolean){
+ const speedWave=Math.max(1,Math.min(21,wave));
+ const natural=ENEMIES[kind].speed*(1+speedWave*.025+Math.max(0,speedWave-12)*.10);
+ return Math.min(ENEMY_SPEED_LIMITS[kind],Math.max(natural,rushing?180*pursuit:0));
+}
 export const THREAT_CURVE=[
  {at:0,rate:8,cap:95,arc:1.5,distance:560,pursuit:.78},
  {at:30,rate:12,cap:150,arc:2.1,distance:560,pursuit:.85},

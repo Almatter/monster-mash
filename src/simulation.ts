@@ -8,7 +8,7 @@ import {POWER_HANDLERS} from './powers.ts';
 import {MASSACRES,SCORING} from './content-records.ts';
 const DESCENDING_MASSACRES=[...MASSACRES].reverse();
 import {createServants,updateServants} from './servants.ts';
-import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,HORDE_PURSUIT_SPEED} from './balance.ts';
+import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,enemyMovementSpeed} from './balance.ts';
 export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
@@ -98,11 +98,11 @@ export class Game {
   while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=weights[index]){roll-=weights[index];index++;}if(this.alive<this.pressure.cap)this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
   const threat=1+Math.max(0,this.wave-12)*.10+Math.max(0,this.time-540)*.004+Math.max(0,this.time-660)*.025;
   for(const e of this.enemies){if(!e.active)continue;const def=ENEMIES[e.kind];let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;e.timer-=dt;e.flash=Math.max(0,e.flash-dt);
-   // Recycle off-screen stragglers around the player without changing their health or identity.
-   if(d>1150&&this.time<120){e.active=false;this.alive--;continue;}if(d>1150){e.x=p.x-dx/d*820;e.y=p.y-dy/d*820;dx=p.x-e.x;dy=p.y-e.y;d=820;}
-   let speed=def.speed*(1+this.wave*.025+Math.max(0,this.wave-12)*.10);
+   // Escaped ordinary foes leave without kill credit. Bosses persist in place;
+   // never teleport a pursuer closer and undo the player's earned separation.
+   if(d>1150&&e.kind!=='elite'&&e.kind!=='titan'){e.active=false;this.alive--;continue;}
    if(d>430)e.rushing=true;if(d<140)e.rushing=false;
-   if(e.rushing)speed=Math.max(speed,HORDE_PURSUIT_SPEED*this.pressure.pursuit);
+   let speed=enemyMovementSpeed(e.kind,this.wave,this.pressure.pursuit,!!e.rushing);
    if(def.behavior==='ranged'&&d<380){speed=d<250?-def.speed:0;if(e.timer<=0&&this.shots.length<180){this.shots.push({x:e.x,y:e.y,vx:dx/d*220,vy:dy/d*220,life:4,damage:def.damage*threat});e.timer=2.5;}}
    if(def.behavior==='slam'&&d<220&&e.timer<=0&&e.windup<=0){e.windup=1.2;e.timer=e.kind==='titan'?4:5;}
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.kind==='titan'?240:140;this.effect(e.x,e.y,e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(d<r+20)this.hurt(def.damage*threat);}}
