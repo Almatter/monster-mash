@@ -29,7 +29,7 @@ try{for(const [width,height] of [[1440,900],[844,390]]){
    const guard=await page.evaluate(()=>{g.frenzyGuard=3;g.dodgeInvuln=.15;window.drawn=[];r.draw(g,3);return drawn;});assert.ok(guard.includes('devourer-guard'));assert.ok(guard.includes('devourer-dodge'));assert.ok(!guard.includes('devourer-frenzy'));
    await page.screenshot({path:`test-results/aura-devourer-guard-${width}.png`});
   }
-  const expired=await page.evaluate(()=>{g.release=0;g.shield=0;g.player.rage=0;g.frenzy=g.frenzyGuard=g.dodgeInvuln=0;window.drawn=[];r.draw(g,3);return drawn;});assert.equal(expired.length,0,'Expired states must remove art');
+  const expired=await page.evaluate(()=>{g.release=0;g.shield=0;g.player.rage=0;g.frenzy=g.frenzyGuard=g.dodgeInvuln=0;g.clawWaves=[];g.effects=[];window.drawn=[];r.draw(g,3);return drawn;});assert.equal(expired.length,0,'Expired states must remove art');
   const perf=await page.evaluate(()=>{g.release=4;g.shield=100;g.frenzy=8;g.frenzyGuard=3;g.dodgeInvuln=.1;g.player.rage=5;for(let i=0;i<700;i++)g.spawn(i%6===0?'hound':'thrall');for(const e of g.enemies)if(e.active){e.x=(g.random()-.5)*1200;e.y=(g.random()-.5)*570;}const samples=[];for(let f=0;f<100;f++){const start=performance.now();r.draw(g,f/60);samples.push(performance.now()-start);}samples.sort((a,b)=>a-b);return {alive:g.alive,p95:samples[95]};});assert.ok(perf.p95<16.7,JSON.stringify({id,width,perf}));console.log(`${id} ${width}x${height}: layers, low FX, expiry pass; ${perf.alive} enemies p95 ${perf.p95.toFixed(2)}ms`);
  }
  assert.deepEqual(errors,[]);await page.close();

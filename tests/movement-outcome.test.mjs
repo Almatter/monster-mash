@@ -2,6 +2,17 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../src/simulation.ts';import {ABILITIES,MONSTERS,abilityLabel} from '../src/content-monsters.ts';
 import {runOutcome,outcomeDescription,resultText} from '../src/results.ts';
 const idle={x:0,y:0,aimX:400,aimY:0,aiming:true};
+
+test('all champion sprites remember horizontal walking direction independently of aim',()=>{
+ for(const monsterId of Object.keys(MONSTERS)){
+  const g=new Game(19,{monsterId});assert.equal(g.facingX,1);
+  g.update(1/60,{...idle,x:-1});assert.equal(g.facingX,-1);
+  g.update(1/60,{...idle,y:-1});assert.equal(g.facingX,-1,'vertical walking keeps the last side');
+  g.update(1/60,idle);assert.equal(g.facingX,-1,'standing still keeps the last side');
+  g.update(1/60,{...idle,x:1,aimX:-1000});assert.equal(g.facingX,1,'movement wins over opposite pointer aim');
+  assert.equal(new Game(19,{monsterId}).facingX,1,'fresh runs reset visual direction');
+ }
+});
 test('Lunge follows cardinal/diagonal movement despite opposite aim, and actual displacement agrees',()=>{
  for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1]]){
   const g=new Game(77,{monsterId:'devourer'});g.update(1/60,{...idle,x,y,aimX:-x*400,aimY:-y*400});const angle=Math.atan2(y,x);assert.equal(g.cast(0),true);assert.ok(Math.abs(g.dash.angle-angle)<1e-10);
