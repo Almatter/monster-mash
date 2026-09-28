@@ -17,6 +17,13 @@ test('servants at opposite flanks pursue different distant prey while Overlord i
  assert.ok(left.x<-120&&right.x>120);
 });
 
+test('a raised squad claims separate nearby weak enemies before piling onto one target',()=>{
+ const g=new Game(31,{monsterId:'overlord'});for(let i=0;i<6;i++)addServant(g,0,0,'summoned');
+ for(let i=0;i<6;i++){const angle=i*Math.PI/3;enemy(g,Math.cos(angle)*180,Math.sin(angle)*180);}
+ updateServants(g,1/60);const targets=g.servants.filter(s=>s.active).map(s=>s.target?.serial);
+ assert.equal(new Set(targets).size,6);
+});
+
 test('undead patrol around Overlord instead of piling onto him when no prey is nearby',()=>{
  const g=new Game(31,{monsterId:'overlord'});for(let i=0;i<6;i++)addServant(g,0,0,'summoned');
  for(let i=0;i<90;i++)updateServants(g,1/60);

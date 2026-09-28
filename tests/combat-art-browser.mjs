@@ -25,7 +25,8 @@ try{
     g.update(1/60,{x:1,y:0,aimX:-1000,aimY:0,aiming:true});flips=0;r.draw(g,g.time);const right=flips;
     return {left,vertical,right};
    },id);
-   assert.deepEqual(state,{left:1,vertical:1,right:0},`${id} sprite must flip only for left-facing travel`);
+   const authoredLeft=['sovereign','titan','devourer'].includes(id);
+   assert.deepEqual(state,{left:authoredLeft?0:1,vertical:authoredLeft?0:1,right:authoredLeft?1:0},`${id} sprite must face the direction of travel`);
   }
   const art=await page.evaluate(async()=>{
    window.g=new Game(41,{monsterId:'titan'});r.loadChampionVfx('titan');g.player.invuln=100;g.spawn('thrall');const e=g.enemies.find(e=>e.active);Object.assign(e,{x:90,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();g.spawn=()=>{};g.update(1/60,{x:0,y:0,aimX:1000,aimY:0,aiming:true});

@@ -16,6 +16,6 @@ export const POWER_HANDLERS:Record<string,(game:Game,power:AbilityDef)=>void>={
  devour(g,p){g.healBudget=g.player.maxHp*(g.monster.id==='sovereign'?SUSTAIN.sovereign.devourCap:SUSTAIN.devourer.devourCap);g.area(g.player.x,g.player.y,p.radius,p.damage,'devour');g.player.rage=6;},
  beam(g,p){g.beam=(p.duration||2.5)*(1+g.release*.075);g.beamTick=0;g.beamKills=0;g.beamPower=p;},
  blast(g,p){g.area(g.player.x,g.player.y,p.radius,p.damage,'ultimate',450);},
- charge(g,p){g.dash={remaining:p.duration||.65,speed:650*g.releaseStats.dash,damage:p.damage,kills:0,angle:g.player.angle,radius:p.radius,source:'trample'};},
+ charge(g,p){g.dash={remaining:p.duration||.65,speed:650*g.releaseStats.dash,damage:p.damage,kills:0,angle:g.movementAngle,radius:p.radius,source:'trample'};},
  launch(g,p){g.area(g.player.x,g.player.y,p.radius,p.damage,'launch',1300);}
 };

@@ -8,7 +8,7 @@ const idle={x:0,y:0,aimX:500,aimY:0,aiming:false};
 const move={...idle,x:1};
 function enemy(g,kind,x,y){g.spawn(kind);const e=g.enemies.find(e=>e.active&&e.serial===g.serial);assert.ok(e);e.x=x;e.y=y;g.rebuildGrid();return e;}
 
-test('auto attacks wait for a target and ranged mobile aim retains a nearby threat',()=>{
+test('auto attacks wait for a target and ranged attacks favor the nearest threat',()=>{
  const d=new Game(1,{monsterId:'devourer'}),sounds=[];d.sound=k=>sounds.push(k);for(let i=0;i<30;i++)d.update(1/60,idle);assert.equal(d.attack,0);assert.equal(sounds.filter(x=>x==='basic.devourer').length,0);const prey=enemy(d,'thrall',45,0);d.update(1/60,idle);assert.equal(prey.active,false);assert.ok(d.attack>0);
  const c=new Game(1,{monsterId:'calamity'});const far=enemy(c,'thrall',480,0),near=enemy(c,'thrall',90,0);assert.equal(c.findBasicTarget(650,true),near);assert.equal(c.findBasicTarget(650,true),near);const urgent=enemy(c,'hound',30,0);assert.equal(c.findBasicTarget(650,true),urgent);c.update(1/60,idle);assert.ok(c.bolts.length>0);assert.ok(Math.abs(c.player.angle)<.01);assert.equal(far.active,true);
 });

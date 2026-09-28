@@ -25,10 +25,25 @@ test('stationary Lunge remembers travel, fresh casts face right, recasts redirec
  g.setMovementDirection(-1,0);g.cast(0);assert.equal(g.dash.angle,Math.PI);assert.ok(g.dash.remaining>remaining);assert.equal(g.lungeCharges,0);assert.ok(g.dodgeInvuln>0);
  g.setMovementDirection(0,0);g.setMovementDirection(NaN,1);g.setMovementDirection(1,Infinity);assert.equal(g.movementAngle,Math.PI);
 });
-test('Titan Stampede retains aimed direction; all 20 ability action labels resolve to their canonical kit names',()=>{
- const g=new Game(1,{monsterId:'titan'});g.setMovementDirection(0,1);g.player.angle=Math.PI;g.cast(1);assert.equal(g.dash.angle,Math.PI);
+test('Titan Stampede follows movement rather than aim, remembering the last direction while standing; ability labels stay canonical',()=>{
+ const g=new Game(1,{monsterId:'titan'});g.setMovementDirection(0,1);g.player.angle=Math.PI;g.cast(1);assert.equal(g.dash.angle,Math.PI/2);
+ const fresh=new Game(1,{monsterId:'titan'});fresh.player.angle=Math.PI;fresh.cast(1);assert.equal(fresh.dash.angle,0);
+ const start={x:g.player.x,y:g.player.y};g.update(1/60,idle);assert.ok(g.player.y>start.y);
  for(const monster of Object.values(MONSTERS))for(const id of monster.abilities){const p=ABILITIES[id],label=abilityLabel(p);assert.ok(label.includes(p.short));assert.ok(label.includes(p.name));}
  assert.equal(ABILITIES.frenzy.short,'Feast');assert.ok(!MONSTERS.devourer.basic.description.includes('Frenzy'));
+});
+test('Overlord and Calamity ranged basics fire at the nearest enemy despite opposite pointer aim',()=>{
+ for(const monsterId of ['overlord','calamity']){
+  const g=new Game(23,{monsterId});g.spawn('thrall');const near=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(near,{x:110,y:0,hp:1e9,maxHp:1e9});
+  g.spawn('titan');const far=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(far,{x:-240,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();
+  g.update(1/60,{...idle,aimX:-1000});assert.ok(g.bolts.length>0,monsterId+' fired');assert.ok(g.bolts[0].vx>0,monsterId+' fired toward closer prey');
+ }
+});
+test('Calamity Ray tracks the nearest enemy within beam range while pointer aim points away',()=>{
+ const g=new Game(23,{monsterId:'calamity'});g.spawn('thrall');const east=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(east,{x:130,y:0,hp:1e9,maxHp:1e9});
+ g.spawn('thrall');const west=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(west,{x:-300,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();
+ g.attack=100;g.cast(0);g.update(1/60,{...idle,aimX:-1000});assert.ok(Math.cos(g.player.angle)>.99);assert.ok(east.hp<east.maxHp);
+ east.x=900;west.x=-130;g.rebuildGrid();g.update(1/60,{...idle,aimX:1000});assert.ok(Math.cos(g.player.angle)<-.99);
 });
 test('outcome milestones celebrate survival without changing retirement category or ending the engine',()=>{
  assert.equal(runOutcome({reason:'overwhelmed',duration:509,release:3}),'A LEGEND IN THE MAKING');
