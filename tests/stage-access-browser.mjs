@@ -14,6 +14,8 @@ try{
  await page.waitForSelector('#stageChoices button');
  assert.equal(await page.locator('#stageChoices button').count(),4);
  assert.match(await page.locator('#stageChoices').textContent(),/FUTURE STAGE/);
+ assert.match(await page.locator('[data-phase="1"]').textContent(),/GATEBREAKER.*7 DAYS, ONE CHAMPION/i);
+ assert.doesNotMatch(await page.locator('[data-phase="1"]').textContent(),/Shattered Court|adaptive horde/i);
  await page.locator('[data-phase="1"]').click();
  assert.equal(await page.locator('[data-phase="1"]').getAttribute('aria-pressed'),'false');
  assert.match(await page.locator('#stageStatus').textContent(),/0 \/ 7 qualifying days/);
@@ -24,7 +26,7 @@ try{
   localStorage.setItem('mm-profile',JSON.stringify(profile));
  });
  await page.reload();await page.waitForSelector('[data-phase="1"]');
- assert.match(await page.locator('[data-phase="1"]').textContent(),/OPENS OCTOBER 8/);
+ assert.match(await page.locator('[data-phase="1"]').textContent(),/LOCKED.*OPENS OCT 8/);
  await page.locator('[data-phase="1"]').click();
  assert.equal(await page.locator('[data-phase="1"]').getAttribute('aria-pressed'),'false');
  assert.match(await page.locator('#stageStatus').textContent(),/remains locked until October 8/);
@@ -55,5 +57,18 @@ try{
  assert.match(await touch.locator('#stageStatus').textContent(),/0 \/ 7 qualifying days/);
  await touch.screenshot({path:'test-results/stage2-mobile-menu.png'});
  await touch.close();
+ const credit=await browser.newPage({viewport:{width:1200,height:800}});
+ await credit.clock.install({time:new Date('2026-09-28T16:00:00Z')});
+ await credit.goto('http://127.0.0.1:4173/');
+ await credit.evaluate(async()=>{const {Game}=await import('./src/simulation.js');const update=Game.prototype.update;Game.prototype.update=function(...args){window.creditGame=this;return update.apply(this,args);};});
+ for(let runNumber=1;runNumber<=2;runNumber++){
+  await credit.locator('#startForm button.primary').click();await credit.locator('#pause').click();
+  await credit.evaluate(()=>{creditGame.time=520;creditGame.wave=18;creditGame.release=4;creditGame.score.kills=16000;creditGame.score.dominance=250000;});
+  await credit.locator('#endRun').click();await credit.waitForSelector('#stageProgress:not([hidden])');
+  assert.match(await credit.locator('#stageProgress').textContent(),runNumber===1?/1 \/ 7 days.*this run counted/:/1 \/ 7 days.*today already counted/);
+  await credit.locator('#back').click();
+ }
+ assert.match(await credit.locator('[data-phase="1"]').textContent(),/1 \/ 7 DAYS/);
+ await credit.close();
  console.log('Desktop and phone: Stage 2 title/date locks, future stages, playable scenario, floor asset and run metadata pass');
 }finally{await browser.close();}

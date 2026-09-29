@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {normalizeProfile,recordProgress,availableTitles} from '../src/profile.ts';
-import {STAGE_GATES,stageAccess,serverTime,trialDays,eventDay} from '../src/stage-access.ts';
+import {STAGE_GATES,stageAccess,serverTime,trialDays,eventDay,trialFeedback} from '../src/stage-access.ts';
 import {Game} from '../src/simulation.ts';
 
 const gate=STAGE_GATES[0];
@@ -16,11 +16,17 @@ test('Stage 2 needs seven qualifying days on one champion; other champions canno
  assert.equal(stageAccess(1,p.progress,Date.parse(gate.opensAt)-1),'date');assert.equal(stageAccess(1,p.progress,Date.parse(gate.opensAt)),'open');
 });
 
-test('only natural Stage 1 finishes at Final Release with 15,000 kills count once per festival day',()=>{
- const p=normalizeProfile(null);for(const candidate of [run('short','titan',0,'overwhelmed',509,20000),run('few','titan',0,'overwhelmed',700,14999),run('retired','titan',0,'retired',700,20000),run('wrong-stage','titan',1,'overwhelmed',700,20000)])recordProgress(p,candidate,true,day(1));
- recordProgress(p,run('before-launch','titan'),true,new Date('2026-10-01T03:59:59Z'));assert.equal(trialDays(p.progress.trials,gate),0);
- recordProgress(p,run('first','titan'),true,day(1));recordProgress(p,run('same-day','titan'),true,day(1));recordProgress(p,run('first','titan'),true,day(2));
- assert.equal(trialDays(p.progress.trials,gate),1);assert.equal(eventDay(day(1)),'2026-10-01');assert.equal(stageAccess(1,p.progress,Date.parse(gate.opensAt)+1),'title');
+test('qualifying Stage 1 runs count from public launch, including manual endings, once per festival day',()=>{
+ const p=normalizeProfile(null),launchDay=new Date('2026-09-28T16:00:00Z');
+ for(const candidate of [run('short','titan',0,'overwhelmed',509,20000),run('few','titan',0,'overwhelmed',700,14999),run('wrong-stage','titan',1,'overwhelmed',700,20000)])recordProgress(p,candidate,true,launchDay);
+ recordProgress(p,run('before-launch','titan'),true,new Date('2026-09-25T03:59:59Z'));assert.equal(trialDays(p.progress.trials,gate),0);
+ recordProgress(p,run('retired','titan',0,'retired',700,20000),true,launchDay);
+ assert.equal(trialDays(p.progress.trials,gate),1);
+ assert.match(trialFeedback(gate,p.progress.trials,{monsterId:'titan',phase:0,reason:'retired',seconds:700,kills:20000},launchDay,false),/this run counted/);
+ recordProgress(p,run('same-day','titan'),true,launchDay);
+ assert.equal(trialDays(p.progress.trials,gate),1);
+ assert.match(trialFeedback(gate,p.progress.trials,{monsterId:'titan',phase:0,reason:'retired',seconds:700,kills:20000},launchDay,true),/today already counted/);
+ assert.equal(eventDay(launchDay),'2026-09-28');assert.equal(stageAccess(1,p.progress,Date.parse(gate.opensAt)+1),'title');
  assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)+1),'future');
 });
 

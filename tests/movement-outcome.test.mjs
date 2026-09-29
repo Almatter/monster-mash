@@ -39,11 +39,13 @@ test('Overlord and Calamity ranged basics fire at the nearest enemy despite oppo
   g.update(1/60,{...idle,aimX:-1000});assert.ok(g.bolts.length>0,monsterId+' fired');assert.ok(g.bolts[0].vx>0,monsterId+' fired toward closer prey');
  }
 });
-test('Calamity Ray tracks the nearest enemy within beam range while pointer aim points away',()=>{
- const g=new Game(23,{monsterId:'calamity'});g.spawn('thrall');const east=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(east,{x:130,y:0,hp:1e9,maxHp:1e9});
- g.spawn('thrall');const west=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(west,{x:-300,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();
- g.attack=100;g.cast(0);g.update(1/60,{...idle,aimX:-1000});assert.ok(Math.cos(g.player.angle)>.99);assert.ok(east.hp<east.maxHp);
- east.x=900;west.x=-130;g.rebuildGrid();g.update(1/60,{...idle,aimX:1000});assert.ok(Math.cos(g.player.angle)<-.99);
+test('Calamity Ray and Sovereign Death Beam track the nearest enemy while pointer aim points away',()=>{
+ for(const [monsterId,ability] of [['calamity',0],['sovereign',2]]){
+  const g=new Game(23,{monsterId});g.spawn('thrall');const east=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(east,{x:130,y:0,hp:1e9,maxHp:1e9});
+  g.spawn('thrall');const west=g.enemies.find(e=>e.active&&e.serial===g.serial);Object.assign(west,{x:-300,y:0,hp:1e9,maxHp:1e9});g.rebuildGrid();
+  g.attack=100;g.cast(ability);g.update(1/60,{...idle,aimX:-1000});assert.ok(Math.cos(g.player.angle)>.99,monsterId+' chose nearer east enemy');assert.ok(east.hp<east.maxHp);
+  east.x=900;west.x=-130;g.rebuildGrid();g.update(1/60,{...idle,aimX:1000});assert.ok(Math.cos(g.player.angle)<-.99,monsterId+' retargeted west after movement');
+ }
 });
 test('outcome milestones celebrate survival without changing retirement category or ending the engine',()=>{
  assert.equal(runOutcome({reason:'overwhelmed',duration:509,release:3}),'A LEGEND IN THE MAKING');
