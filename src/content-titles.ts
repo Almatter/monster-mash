@@ -1,5 +1,6 @@
+import {STAGE_GATES,trialDays,type StageTrials} from './stage-access.ts';
 export type Totals=Record<string,number>;
-export type Progression={total:Totals;best:Totals;archetypes:Record<string,Totals>;titles:Record<string,string>;legacyTitles:string[];ledger:{id:string;values:Totals}|null;finished:string[]};
+export type Progression={total:Totals;best:Totals;archetypes:Record<string,Totals>;titles:Record<string,string>;legacyTitles:string[];ledger:{id:string;values:Totals}|null;finished:string[];trials:StageTrials};
 export type Requirement={scope:string;metric:string;target:number;label:string};
 export type PrestigeTitle={id:string;name:string;family:string;requirements:Requirement[]};
 const req=(scope:string,metric:string,target:number,label:string):Requirement=>({scope,metric,target,label});
@@ -20,8 +21,9 @@ export const TITLES:PrestigeTitle[]=[
  title('overlord1','The Thousand Thrones','Overlord mastery',req('overlord','owned',10000,'servant kills'),req('overlord','runs',5,'Overlord incarnations ≥60s')),
  title('overlord2','Emperor of the Fallen','Overlord mastery',req('overlord','owned',100000,'servant kills'),req('overlord','chain',25000,'corruption explosion kills'),req('overlord','runs',20,'Overlord incarnations ≥60s')),
  title('sovereign1','The Ravenous Crown','Sovereign mastery',req('sovereign','devour',5000,'Sovereign consumed prey'),req('sovereign','beam',5000,'Sovereign beam kills'),req('sovereign','runs',5,'Sovereign incarnations ≥60s')),
- title('sovereign2','The First and Last','Sovereign mastery',req('sovereign','devour',50000,'Sovereign consumed prey'),req('sovereign','beam',50000,'Sovereign beam kills'),req('sovereign','runs',20,'Sovereign incarnations ≥60s'))
+ title('sovereign2','The First and Last','Sovereign mastery',req('sovereign','devour',50000,'Sovereign consumed prey'),req('sovereign','beam',50000,'Sovereign beam kills'),req('sovereign','runs',20,'Sovereign incarnations ≥60s')),
+ ...STAGE_GATES.map(gate=>title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different festival days with one champion: finish Stage ${gate.sourcePhase+1} naturally after ≥${Math.floor(gate.minSeconds/60)}:${String(gate.minSeconds%60).padStart(2,'0')} and ≥${gate.minKills.toLocaleString()} kills each day`)))
 ];
-export function progressValue(p:Progression,r:Requirement){return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
+export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return gate&&r.metric==='days'?trialDays(p.trials,gate):0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
 export function titleProgress(p:Progression,t:PrestigeTitle){return t.requirements.map(r=>({...r,value:progressValue(p,r)}));}
 export function awardTitles(p:Progression,now=new Date().toISOString()){const earned:string[]=[];for(const t of TITLES)if(!p.titles[t.id]&&t.requirements.every(r=>progressValue(p,r)>=r.target)){p.titles[t.id]=now;earned.push(t.id);}return earned;}

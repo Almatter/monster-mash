@@ -2,7 +2,7 @@
 
 Run Feats award current-run Dominance, repeat under individual cooldowns and reset each incarnation. Permanent records store best-run achievements. Titles are cosmetic rewards with independent AND-combined requirements; a basic achievement no longer automatically awards a high-prestige title.
 
-There are 26 prestige titles, plus the existing small starter selection. All goals and every condition are visible in Monster Records.
+There are 27 prestige titles, plus the existing small starter selection. All goals and every condition are visible in Monster Records.
 
 | Family | Main thresholds | Additional requirement |
 |---|---|---|
@@ -16,6 +16,9 @@ There are 26 prestige titles, plus the existing small starter selection. All goa
 | Calamity mastery (2) | 20k / 250k spell kills | 5 / 20 Calamity runs; upper tier also 300 kills in one activation |
 | Overlord mastery (2) | 10k / 100k servant kills | 5 / 20 Overlord runs; upper tier also 25k corruption explosion kills |
 | Sovereign mastery (2) | 5k / 50k devoured AND beam kills | 5 / 20 Sovereign runs |
+| Stage passage (1) | Seven distinct festival days with one champion | Each Stage 1 run ends naturally after 8:30 with at least 15,000 kills |
+
+The Gatebreaker begins counting on October 1, 2026 (Indianapolis time). Only one qualifying run per calendar day counts, and runs on different champions cannot be combined. The days need not be consecutive. The title can be worn like other prestige titles, but it also permits Stage 2 selection once that stage opens October 8 at midnight Eastern. A fresh network time check is required to select it; offline play remains available on Stage 1. Stages 3 and 4 display as future stages until each gets a map, scenario, title requirement and opening date in `src/stage-access.ts`. This client-side gate is for normal play, not tamper-proof access control.
 
 Only finished incarnations lasting >=60 seconds count toward run requirements. Lifetime kills and score are saved incrementally every five seconds and on finish/pagehide. Force closing the process can lose the latest interval. Best statistics retain maxima. Source-specific lifetime counters are separated by archetype. A per-run delta ledger and bounded completed-run IDs prevent ordinary repeated save/finish double-counting.
 

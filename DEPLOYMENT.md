@@ -4,7 +4,7 @@
 
 - Owner: **Almatter**. Intended separate repository: [Almatter/monster-mash](https://github.com/Almatter/monster-mash). The account-root character-builder repository is out of scope and must not be changed.
 - Production branch: `main`. Publish source: **GitHub Actions**. Build: `npm ci --ignore-scripts`, then `npm run build` (Node 24). Artifact: `dist/` only.
-- Permanent beta/final URL: [https://Almatter.github.io/monster-mash/](https://Almatter.github.io/monster-mash/). Direct verifier: [https://Almatter.github.io/monster-mash/verify/](https://Almatter.github.io/monster-mash/verify/).
+- Permanent public URL: [https://Almatter.github.io/monster-mash/](https://Almatter.github.io/monster-mash/). Direct verifier: [https://Almatter.github.io/monster-mash/verify/](https://Almatter.github.io/monster-mash/verify/).
 - **Live since 2026-09-25:** the separate public `Almatter/monster-mash` repository is connected as `origin`, Pages uses GitHub Actions, and the production URL and direct verifier return 200. The first hosted browser pass covered all five champions, palettes, gameplay, run verification, project-only PWA scope and mobile landscape. A second changed-icon deployment exposed a CDN propagation edge case: a newly activated worker could cache the previous icon. The corrected online-refresh worker passed a third real deployment test: an already-open browser switched from `monster-mash-static-70aba059e7949ae5` to `monster-mash-static-b2e3949f5e5ab3b4`, fetched the changed icon, and reopened the menu and direct verifier offline. A normal-profile Chromium installability check reported no errors. The account-root URL returned GitHub's 404 page when checked; no account-root repository or Pages setting was changed.
 
 ## First deployment
@@ -40,9 +40,9 @@ There is no Vite dependency or base setting. Every HTML/module/CSS/art/audio URL
 
 The build hashes shipped runtime content into `monster-mash-static-<hash>` and replaces the build ID in `src/config.js`. The worker precaches the shell, verifier and JavaScript; art is cached lazily. Scoped requests revalidate online and refresh their cached copy, with the cached response used when the network is unavailable. On a return visit, service-worker registration checks for updates; visible tabs check again on return. A waiting worker activates on the menu, while an active run finishes before reloading. Activation deletes old versioned caches. GitHub Pages does not honor custom `_headers`, so cache correctness relies on the changed worker bytes, registration `updateViaCache: none`, online revalidation, offline cache fallback, and versioned caches. Local project-path tests cover offline reload and a simulated new-asset deployment. The real hosted changed-asset/reopen test passed after the online-refresh correction. Repeat it if the worker strategy changes.
 
-## Beta, verifier and updates
+## Release, verifier and updates
 
-`src/config.ts` has `IS_BETA_BUILD=true`. It shows a small BETA BUILD label and optional copyable debug details, and the build adds `noindex,nofollow` HTML metadata. Flip the flag to `false`, commit and push `main` to launch at the **same URL**. A project-subpath `robots.txt` is included but cannot govern the whole account domain; the page metadata is the relevant indexing directive. There is no password, account, backend, database or automatic debug transmission.
+The public build has no beta label or `noindex` metadata. A project-subpath `robots.txt` is included. There is no password, account, backend, database or automatic debug transmission. Stage 2 selection checks a fresh network Date header after The Gatebreaker title is earned; this is a client-side access gate, not authoritative anti-cheat.
 
 `src/data.ts` holds `EVENT.rules`; bump it when gameplay/scoring rules change. MM4 run codes include rules and build IDs inside AES-GCM authenticated ciphertext with random nonces. The static `/monster-mash/verify/` page decrypts and checks plausibility, and still reads MM1/MM2/MM3 codes. The key ships in client source; this is a casual-edit deterrent, not an anti-cheat authority.
 

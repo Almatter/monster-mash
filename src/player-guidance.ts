@@ -7,5 +7,5 @@ export const CHAMPION_TIPS:Record<string,string>={
  overlord:'Build an army and fight behind it. Controlled and summoned prey help sustain your reign.',
  devourer:'Keep hunting. Lunge in your movement direction through gaps, use Devour to recover, Execute heavy prey, and trigger Feast for a burst of killing and protection.'
 };
-export const scenarioText=()=>`WEEK ${EVENT.phase+1} · ${PHASES[EVENT.phase].name} · RITUAL ARENA`;
+export const scenarioText=(phase=EVENT.phase)=>`STAGE ${phase+1} · ${PHASES[phase].name} · ${phase===1?'SHATTERED COURT':'RITUAL ARENA'}`;
 export function releaseGuidance(seconds:number,stage:number){const next=RELEASES[stage+1];if(!next)return 'FINAL RELEASE · YOUR FULL POWER IS UNBOUND';const remaining=Math.max(0,Math.ceil(next.at-seconds));return `${next.name} IN ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;}

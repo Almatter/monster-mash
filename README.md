@@ -1,6 +1,6 @@
 # Isekai Hell — Monster Mash
 
-Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Name/title/palette are cosmetic identity, not progression. No accounts, tracking, external assets, server or runtime dependencies are required.
+Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Name and palette are cosmetic identity; one earned title grants stage access. No accounts, tracking, external assets, server or runtime dependencies are required.
 
 ## Run and deploy
 
@@ -38,7 +38,7 @@ Choose a name, one of five packages, an optional title and four tint channels. T
 
 ## Feats, records and titles
 
-Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 26 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect stats. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
+Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 27 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect combat stats. The Gatebreaker title opens Stage 2 after seven qualifying festival days with a single champion and its October 8, 2026 opening date. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
 
 See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) documents the shipped layered anime art and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) documents the master/three-bus mix, synthesized sound effects, loop/crossfade states and music delivery slots. Six distinct procedural menu/champion themes ship without external music masters.
 
@@ -48,7 +48,7 @@ Enemy base score × current Carnage, rounded per kill, earns Dominance. Kills ad
 
 All damage routes credit the player once. Source totals distinguish direct, devour, execution, lunge/trample, beam, meteor/vortex, collisions, controlled/summoned servants, curse damage, corruption chains and ultimates. Conversion itself awards no kill. Summon expiration awards no kill. The Titan's collision credit requires actual launched-body contact, replacing the prototype's outer damage annulus.
 
-Players post their PNG card and run code manually to Discord. `/verify/` reads current MM4 plus legacy MM1/MM2/MM3 codes. MM4 serializes core run metadata and statistics compactly, then encrypts/authenticates with browser-native AES-GCM and a random nonce. Casual Base64 decoding does not reveal the score; changing one character fails authentication. The key material ships in split form in the static client and can be reconstructed from source. **Client-side deterrence only. Not authoritative anti-cheat:** a modified client can forge results, and codes do not validate a replay. Local records are not authoritative. Compare best runs within one weekly phase and rules version; decide whether retired runs are eligible.
+Players post their PNG card and run code manually to Discord. `/verify/` reads current MM4 plus legacy MM1/MM2/MM3 codes. MM4 serializes core run metadata and statistics compactly, then encrypts/authenticates with browser-native AES-GCM and a random nonce. Casual Base64 decoding does not reveal the score; changing one character fails authentication. The key material ships in split form in the static client and can be reconstructed from source. **Client-side deterrence only. Not authoritative anti-cheat:** a modified client can forge results, and codes do not validate a replay. Local records are not authoritative. Compare best runs within one stage and rules version; decide whether retired runs are eligible.
 
 ## Content map
 
@@ -68,7 +68,7 @@ Players post their PNG card and run code manually to Discord. `/verify/` reads c
 
 Adding a monster that uses existing effects requires a definition, stats, four ability references, passive choice and palette/art references. A genuinely new mechanic or passive requires a small handler; this is intentionally not a freeform ability builder. New achievements using existing aggregated metrics and new feats using existing contexts require data rows. Keep the plain-language condition and implementation threshold synchronized.
 
-Change `EVENT.phase` (0–3) to activate a week. Week 1 remains the baseline; later phase tables remain starting configurations. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. Production character and enemy art is bundled under `public/assets/`; editable original images stay in `art-source/`.
+Stage selection uses `src/stage-access.ts`: each later stage needs its own qualifying title, opening date, scenario and map. Stage 1 remains the baseline; Stage 2 uses Adaptation and Shattered Court. Stages 3 and 4 remain locked until their own content and gate definitions are added. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. Production character and enemy art is bundled under `public/assets/`; editable original images stay in `art-source/`.
 
 ## Performance contracts
 
@@ -110,7 +110,7 @@ The mobile landscape HUD is compact (49 px on the tested 915×412, 844×390, 667
 
 The festival brief and first-visit preparation guide explain the survival/scoring goal, identity and settings. Champion selection precedes the artwork editor on phones; kit details remain expandable. The HUD shows the next timed release, and the pause screen repeats the scenario and champion strategy. Titles remain visible in play and sharing, with starter and earned prestige choices labeled separately.
 
-Personal bests are saved locally for the same champion, event week and ruleset. Manually ended runs have separate practice comparisons. Result cards, copied results and the verifier identify the week, ruleset and ending category. Existing cosmetic records remain separate from comparable scores. See [PLAYER_CLARITY_REPORT.md](PLAYER_CLARITY_REPORT.md) for changes, tests and performance limits.
+Personal bests are saved locally for the same champion, stage and ruleset. Manually ended runs have separate practice comparisons. Result cards, copied results and the verifier identify the stage, ruleset and ending category. Existing cosmetic records remain separate from comparable scores. See [PLAYER_CLARITY_REPORT.md](PLAYER_CLARITY_REPORT.md) for changes, tests and performance limits.
 
 Calamity's Starfall and Vortex targeting/field markers use distinct generated transparent artwork plus exact gameplay boundaries. Masters and prompts are in `art-source/vfx/CALAMITY_TARGET_PROMPTS.md`; rebuild the 512×512 WebPs with `node tools/pack-calamity-target-vfx.mjs`. Essential previews remain visible in Low FX.
 

@@ -11,8 +11,8 @@ export class Renderer {
  targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
- sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
- constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.loadFloor();const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('sovereign');this.loadVfx('titan');this.loadVfx('devourer');this.loadVfx('calamity');this.loadVfx('overlord');this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
+ sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;adaptationBackground:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;adaptationPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
+ constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.adaptationBackground=this.makeGround();this.loadFloor('assets/arena/floor.webp',this.background,0);this.loadFloor('assets/arena/floor-adaptation.webp',this.adaptationBackground,1);const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('sovereign');this.loadVfx('titan');this.loadVfx('devourer');this.loadVfx('calamity');this.loadVfx('overlord');this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
  loadVfx(kind:string){if(this.requestedVfx.has(kind))return;this.requestedVfx.add(kind);const image=new Image();image.onload=()=>this.vfx.set(kind,image);image.onerror=()=>console.warn('VFX load failed:',kind);image.src='assets/vfx/'+kind+'.webp';}
  drawVfx(c:CanvasRenderingContext2D,kind:string,x:number,y:number,size:number,angle=0,alpha=1){const image=this.vfx.get(kind);if(!image)return false;if(!angle){const previous=c.globalAlpha;c.globalAlpha*=alpha;c.drawImage(image,x-size/2,y-size/2,size,size);c.globalAlpha=previous;return true;}c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha*=alpha;c.drawImage(image,-size/2,-size/2,size,size);c.restore();return true;}
  drawTargetArea(c:CanvasRenderingContext2D,kind:string,x:number,y:number,radius:number,time:number,valid:boolean,placing:boolean){
@@ -37,7 +37,7 @@ export class Renderer {
    if(g.dodgeInvuln>0)this.drawVfx(c,'devourer-dodge',x,y,180*scale,g.player.angle,.75);
   }
  }
- loadFloor(){const image=new Image();image.onload=()=>{const c=this.background.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);this.groundPattern=null;};image.src='assets/arena/floor.webp';}
+ loadFloor(path:string,target:HTMLCanvasElement,phase:number){const image=new Image();image.onload=()=>{const c=target.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);if(phase===1)this.adaptationPattern=null;else this.groundPattern=null;};image.src=path;}
  loadEnemy(kind:string){const image=new Image();image.onload=()=>this.sprites.set(kind,image);image.src='assets/enemies/'+kind+'.webp';}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
  makeGround(){
@@ -70,11 +70,11 @@ export class Renderer {
   const cx=g?g.player.x:0,cy=g?g.player.y:0;
   c.save();c.translate(g?w/2:w*.77,g?h/2:h*.45);c.scale(this.scale,this.scale);c.translate(-cx,-cy);
   if(g&&this.shake&&g.shake>0)c.translate(Math.sin(time*61)*g.shake,Math.cos(time*47)*g.shake*.6);
-  const extent=Math.max(w,h)/this.scale;c.fillStyle=this.groundPattern??=c.createPattern(this.background,'repeat')!;c.fillRect(cx-extent,cy-extent,extent*2,extent*2);
+  const stageTwo=g?.phase===1,extent=Math.max(w,h)/this.scale;c.fillStyle=stageTwo?(this.adaptationPattern??=c.createPattern(this.adaptationBackground,'repeat')!):(this.groundPattern??=c.createPattern(this.background,'repeat')!);c.fillRect(cx-extent,cy-extent,extent*2,extent*2);
   // Permanent ritual masonry: concentric rings, cardinal gates, inscriptions and braziers.
-  c.strokeStyle='#8060473d';c.lineWidth=3;
+  c.strokeStyle=stageTwo?'#68b6a05c':'#8060473d';c.lineWidth=3;
   for(const r of [260,280,480,496,EVENT.arenaRadius]){c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.stroke();}
-  for(let i=0;i<24;i++){const a=i*Math.PI/12;c.save();c.rotate(a);c.translate(0,475);c.fillStyle='#a77c4f50';c.font='20px Georgia';c.fillText(['ᛉ','ᚷ','ᛟ','ᚹ'][i%4],-6,0);c.restore();}
+  for(let i=0;i<24;i++){const a=i*Math.PI/12;c.save();c.rotate(a);c.translate(0,475);c.fillStyle=stageTwo?'#89c4ad67':'#a77c4f50';c.font='20px Georgia';c.fillText(['ᛉ','ᚷ','ᛟ','ᚹ'][i%4],-6,0);c.restore();}
   for(let i=0;i<TORCHES.length;i++){const {x}=TORCHES[i],y=TORCHES[i].y-31;if(this.brazier){c.drawImage(this.brazier,x-42,y-80,84,126);c.fillStyle='#ff9d4e';c.globalAlpha=.12+Math.sin(time*7+i)*.035;c.beginPath();c.arc(x,y-43,35,0,7);c.fill();c.globalAlpha=1;}}
   if(!g){this.drawSovereign(c,0,0,time,0,3.5);c.restore();return;}
   const detail=this.low?3:this.fxLevel;this.loadChampionVfx(g.monster.id);

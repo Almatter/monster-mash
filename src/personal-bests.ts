@@ -16,7 +16,7 @@ export function normalizeBests(value:unknown):PersonalBests{
 export function recordBest(bests:PersonalBests,run:ComparableRun):Comparison{
  const key=bestKey(run),old=bests[key],previous=old?.score??null,delta=run.score-(previous??0);
  bests[key]={score:Math.max(run.score,old?.score??0),kills:Math.max(run.kills,old?.kills??0),seconds:Math.max(run.duration,old?.seconds??0)};
- // Keep bounded local history; never combine different rules, weeks, champions or endings.
+ // Keep bounded local history; never combine different rules, stages, champions or endings.
  const keys=Object.keys(bests);if(keys.length>160)for(const stale of keys.filter(k=>k!==key).slice(0,keys.length-160))delete bests[stale];
  return {previous,delta,status:previous===null?'first':delta>0?'record':delta===0?'tie':'below'};
 }

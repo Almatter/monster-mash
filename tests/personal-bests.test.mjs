@@ -4,7 +4,7 @@ import {normalizeProfile,resetProgress} from '../src/profile.ts';
 import {resultText} from '../src/results.ts';
 import {releaseGuidance} from '../src/player-guidance.ts';
 const run={monsterId:'calamity',rules:'2026.10-v6-tester',phase:0,reason:'overwhelmed',score:100,kills:12,duration:90};
-test('personal bests compare only identical champion, week, rules and ending',()=>{
+test('personal bests compare only identical champion, stage, rules and ending',()=>{
  const bests={};assert.equal(recordBest(bests,run).status,'first');
  assert.deepEqual(recordBest(bests,{...run,score:150}),{previous:100,delta:50,status:'record'});
  assert.equal(recordBest(bests,{...run,score:150}).status,'tie');assert.equal(recordBest(bests,{...run,score:10,kills:20,duration:120}).status,'below');
@@ -18,9 +18,9 @@ test('scoped bests persist without inventing historical competition scores and r
  assert.deepEqual(normalizeBests({[bestKey(run)]:{score:NaN,kills:1,seconds:1},'__proto__':{},'bad|0|calamity|overwhelmed':{score:1,kills:1,seconds:1}}),{});
 });
 test('local history stays bounded while preserving the current result',()=>{const b={};for(let i=0;i<200;i++)recordBest(b,{...run,rules:'2026.10-v'+i});assert.equal(Object.keys(b).length,160);assert.equal(b[bestKey({...run,rules:'2026.10-v199'})].score,100);});
-test('share copy carries prestige, week, rules and practice status; release guidance matches actual seals',()=>{
+test('share copy carries prestige, stage, rules and practice status; release guidance matches actual seals',()=>{
  const text=resultText({...run,name:'Night Crown',title:'The Unbound',wave:4,multi:7,titans:0,reason:'retired',comparison:{previous:50,delta:50,status:'record'}},'CODE');
- for(const part of ['Night Crown','The Unbound','WEEK 1','THE SWARM','2026.10-v6-tester','PRACTICE / MANUALLY ENDED','7 slain','practice best','CODE'])assert.ok(text.includes(part),part);
+ for(const part of ['Night Crown','The Unbound','STAGE 1','THE SWARM','2026.10-v6-tester','PRACTICE / MANUALLY ENDED','7 slain','practice best','CODE'])assert.ok(text.includes(part),part);
  assert.match(comparisonText({previous:150,delta:-50,status:'below'}),/50 Dominance below/);assert.match(releaseGuidance(149,0),/0:01/);assert.match(releaseGuidance(510,4),/FULL POWER/);
 });
 

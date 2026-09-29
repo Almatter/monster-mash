@@ -5,4 +5,4 @@
 @media(orientation:portrait) and (pointer:coarse){body.playing #rotate{display:block}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 
-.beta-label{display:inline-block;margin:5px 0;padding:4px 7px;border:1px solid #8e624a;color:#e5b28a;font-size:9px;font-weight:bold;letter-spacing:2px}.result-copy .beta-label{margin-left:10px}#debugCopy{font-size:9px;padding:4px 7px;min-height:28px;background:transparent;color:#d6b69d;border-color:#6e5047}
+#debugCopy{font-size:9px;padding:4px 7px;min-height:28px;background:transparent;color:#d6b69d;border-color:#6e5047}

@@ -5,11 +5,13 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.BR
 const origin=process.env.SITE_ORIGIN||'http://127.0.0.1:4173',base='/monster-mash/';
 try{
  const context=await browser.newContext({viewport:{width:1440,height:900},serviceWorkers:'allow'}),page=await context.newPage(),errors=[],paths=[];
- page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>errors.push(r.url()+': '+r.failure()?.errorText));page.on('response',r=>{if(r.status()>=400)errors.push(r.url()+': '+r.status());});page.on('request',r=>paths.push(new URL(r.url()).pathname));
+ page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>{if(r.method()==='HEAD'&&r.url().includes('stage-clock='))return;errors.push(r.url()+': '+r.failure()?.errorText);});page.on('response',r=>{if(r.status()>=400)errors.push(r.url()+': '+r.status());});page.on('request',r=>paths.push(new URL(r.url()).pathname));
  await page.goto(origin+base);await page.waitForFunction(()=>navigator.serviceWorker.controller,{timeout:20000});
  assert.equal(await page.locator('#menu').isVisible(),true);
  const pwa=await page.evaluate(async()=>{const m=await fetch('manifest.webmanifest').then(r=>r.json());const reg=await navigator.serviceWorker.ready;return {scope:reg.scope,manifestStart:new URL(m.start_url,location.href).pathname,manifestScope:new URL(m.scope,location.href).pathname,icon:new URL(m.icons[0].src,new URL('manifest.webmanifest',location.href)).pathname};});
  assert.deepEqual(pwa,{scope:origin+base,manifestStart:base,manifestScope:base,icon:base+'icon.svg'});
+ const stageClock=await page.evaluate(async()=>{const response=await fetch('index.html?stage-clock=subpath-check',{method:'HEAD',cache:'no-store'});return {ok:response.ok,date:response.headers.get('Date')};});
+ assert.equal(stageClock.ok,true);assert.ok(Number.isFinite(Date.parse(stageClock.date||'')));
  let code='';
  for(const id of ['sovereign','overlord','titan','devourer','calamity']){
   await page.locator(`[data-monster=${id}]`).click();await page.locator('.swatch').nth(1).click();

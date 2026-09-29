@@ -18,7 +18,7 @@ export class Game {
  release=0;releaseTime=0;
  private releaseCache=releaseStats('sovereign',0);private cachedStage=-1;
  get releaseStats(){if(this.cachedStage!==this.release){this.cachedStage=this.release;this.releaseCache=releaseStats(this.monster.id,this.release);}return this.releaseCache;}
- seed:number; rng:number; time=0; wave=0; ended=false; score=new Score();
+ seed:number; rng:number; phase:number; time=0; wave=0; ended=false; score=new Score();
  player={x:0,y:0,hp:1000,maxHp:1000,angle:0,invuln:0,rage:0};
  enemies:Enemy[]=Array.from({length:EVENT.maxEnemies},()=>({active:false,kind:'thrall' as EnemyKind,x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:0}));
  effects:Effect[]=[];shots:Shot[]=[]; cooldowns=[0,0,0,0];beam=0;beamTick=0;attack=0;spawnBank=0;alive=0;serial=0;
@@ -33,7 +33,7 @@ export class Game {
  debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
  dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
  identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
- constructor(seed:number,identity:Partial<Identity>={}){this.seed=seed>>>0;this.rng=this.seed||1;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;}
+ constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;}
  random(){let x=this.rng;x^=x<<13;x^=x>>>17;x^=x<<5;this.rng=x>>>0;return this.rng/4294967296;}
  notifications:string[]=[];
  announce(text:string){if(text.startsWith('RECORD')||text.startsWith('TITLE')){if(this.notifications.length>=10)this.notifications.pop();this.notifications.unshift(text);return;}if(this.noticeTime<=0){this.notice=text;this.noticeTime=2.8;}else if(this.notifications.length<10&&!this.notifications.includes(text))this.notifications.push(text);}
@@ -94,7 +94,7 @@ export class Game {
   if(input.aiming)p.angle=Math.atan2(input.aimY-p.y,input.aimX-p.x);
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
   else {let nearest:Enemy|null=null,best=500;for(const e of this.enemies)if(e.active){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<best){nearest=e;best=d;}}if(nearest)p.angle=Math.atan2(nearest.y-p.y,nearest.x-p.x);}
-  const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[EVENT.phase];
+  const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[this.phase];
   if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;this.announce(`WAVE ${this.wave} · THE HORDE GROWS`);this.sound('wave');}if(this.time>=INTRODUCTIONS.elite&&this.wave%phase.eliteEvery===0)this.spawn('elite');if(this.time>=INTRODUCTIONS.titan&&this.wave%phase.titanEvery===0)this.spawn('titan');}
   this.spawnBank+=dt*this.pressure.rate*phase.pressure;
   const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];const heavy=Math.min(12,Math.max(0,this.time-420)*.04),weights=phase.weights.map((v,i)=>v+(i===0?-heavy:i===4?heavy:0));

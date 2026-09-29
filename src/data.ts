@@ -15,7 +15,7 @@ export const PHASES = [
  { name:'TITANS', pressure:1.12, weights:[42,15,10,13,20], eliteEvery:2, titanEvery:4 },
  { name:'THRONE WAR', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
 ];
-// Change only this index to activate an event week. Included in every run code.
+// Default stage for direct Game creation and historical run codes; player selection is gated in stage-access.ts.
 export const EVENT = { phase:0, rules:'2026.10-v15-autotarget-squad', waveSeconds:30, maxEnemies:720, arenaRadius:1500 };
 export type FeatContext = { recentKills:number; overkill:number; chain:number; eliteDevoured:number; noHitKills:number; multi:number; corruption:number };
 export const FEATS: { id:string; name:string; metric:keyof FeatContext; threshold:number; bonus:number; cooldown:number }[] = [
