@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href),browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
+const file='dist/sw.js',original=await readFile(file,'utf8');
+try{
+ const context=await browser.newContext({serviceWorkers:'allow'}),page=await context.newPage();await page.goto('http://127.0.0.1:4173/');await page.waitForFunction(()=>navigator.serviceWorker.controller);
+ await page.locator('#name').fill('Live Incarnation');await page.locator('#startForm button[type=submit]').click();await page.waitForTimeout(350);await page.locator('#pause').click();const before=await page.evaluate(()=>localStorage.getItem('mm-profile')),old=(await page.evaluate(()=>caches.keys())).find(k=>k.startsWith('monster-mash-static-')),next=old+'-live-menu-test';
+ await writeFile(file,original.replaceAll(old,next));await page.evaluate(async()=>{await (await navigator.serviceWorker.ready).update();});await page.waitForFunction(async()=>!!(await navigator.serviceWorker.ready).waiting,{timeout:20000});await page.waitForTimeout(1000);
+ assert.equal(await page.locator('#paused').isVisible(),true);assert.equal(await page.locator('#hudName').textContent(),'Live Incarnation');assert.equal(await page.evaluate(()=>localStorage.getItem('mm-profile')),before);assert.ok((await page.evaluate(()=>caches.keys())).includes(old));
+ await page.locator('#endRun').click();await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));await page.locator('#back').click();await page.waitForFunction(async old=>!(await caches.keys()).includes(old),old,{timeout:20000});await page.waitForSelector('#recordsButton');
+ assert.equal(await page.locator('#name').inputValue(),'Live Incarnation');await context.setOffline(true);await page.reload();await page.locator('#recordsButton').click();assert.equal(await page.locator('#exportProgress').isVisible(),true);assert.equal(await page.locator('#importProgress').isVisible(),true);console.log('Live update waited through paused combat and results; activated on return to menu; saved identity and offline transfer controls preserved.');
+}finally{await writeFile(file,original);await browser.close();}

@@ -1,0 +1,17 @@
+# Stage 2: reward pursuit and impact
+
+These are design options, not live balance changes. The organizer reports Overlord leading Dominance, with Calamity and Sovereign also strong. Without a submitted results dataset, the size of those gaps is not yet measured here. Stage 1 remains untouched.
+
+Overlord turns many weak bodies into parallel servant and corruption scoring opportunities. Calamity clears dense groups at range; Sovereign combines ranged magic and close attacks. Devourer benefits from speed, repeated lunges, execution and close feeding. Titan benefits from movement, launches, collisions and trample. Stage 2 should therefore place more value on reaching a target and breaking a formation than simply clearing the largest continuous mass of weak prey.
+
+| Option | Why Devourer/Titan benefit | Caster/army tradeoff and risk |
+|---|---|---|
+| Scattered priority hunts | Valuable captains or couriers arrive in separated sectors. Devourer can close the gap and execute; Titan can charge through an escort. A trophy needs champion contact to claim its objective bonus. | Distant AoE and servants can defeat escorts, but the champion still has to travel to claim the prize. Limit simultaneous trophies and keep pickup windows generous enough for slower champions. Avoid spawning straight into existing persistent damage fields. |
+| Breakable vanguard formations | Introduce armored, **launchable** troops in compact fronts. Launch/collision damage breaks their guard; Devourer can flank to attack an exposed side or reach a vulnerable leader. | Explicit, readable guard rules reduce easy full-value splash farming. All champions need an ordinary-damage way to break guards; no hard magic immunity. Existing elites/Titans resist launch, so merely adding more of those would fail to reward Titan's signature mechanic. |
+| Rotating breach objectives | Short, announced objectives alternate locations. Completing a hunt, breaking a formation or personally entering an opened breach grants a capped Stage 2 bonus. | Rewards mobility, timing and positioning. AoE remains useful for clearing the path, but idle army farming earns less of the stage's objective budget. Clear telegraphs and objective status are required so this does not become confusing busywork. |
+
+Recommendation: prototype **scattered hunts plus launchable vanguards** first, within the current arena. Add objectives only if those encounters do not close the gap enough. Give ordinary fodder a smaller share of Stage 2's scoring opportunity and allocate a meaningful, bounded share to priority encounters. Keep total threat manageable rather than simply doubling enemy HP.
+
+Avoid global caster damage nerfs, champion-speed-linked pursuit, blanket magic immunity, narrow choke points full of densely packed prey, or a boss-only stage. Choke points and slower high-HP hordes can strengthen vortex/beam/army strategies; boss-only encounters deny Titan launch targets. A new map alone is unlikely to equalize Dominance if the same kill sources and crowd density remain.
+
+Before enabling any option, run the same seeds and comparable input policies for all five champions, compare survival, kills/minute, Dominance/minute and objective conversion, then test with humans who play each kit well. Include the objective bonus in visible results and keep Stage 2 comparisons separate from Stage 1. Judge improvement against the observed Stage 2 baseline; no numeric bonus or fairness promise is justified without those results.

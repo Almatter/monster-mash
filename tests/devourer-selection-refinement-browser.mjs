@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';import {createRequire} from 'node:module';import fs from 'node:fs/promises';
+const require=createRequire(import.meta.url),sharp=require(process.env.SHARP_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href);
+const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
+const channels=['primary','secondary','accent','power'],root='public/assets/monsters/devourer/';
+function flecks(data,width,height){const seen=new Uint8Array(width*height);let tiny=0;for(let p=0;p<seen.length;p++){if(seen[p]||data[p*4+3]<96)continue;const stack=[p];seen[p]=1;let size=0;while(stack.length){const q=stack.pop();size++;const x=q%width,y=Math.floor(q/width);for(const n of [x>0?q-1:-1,x<width-1?q+1:-1,y>0?q-width:-1,y<height-1?q+width:-1])if(n>=0&&!seen[n]&&data[n*4+3]>=96){seen[n]=1;stack.push(n);}}if(size<=6)tiny++;}return tiny;}
+try{
+ const before={};let oldFlecks=0,newFlecks=0;
+ for(const channel of channels){const previous='test-results/devourer-selection-before/selection-'+channel+'.webp';before[channel]='data:image/webp;base64,'+(await fs.readFile(previous)).toString('base64');for(const [file,old] of [[previous,true],[root+'selection-'+channel+'.webp',false]]){const {data,info}=await sharp(file).ensureAlpha().raw().toBuffer({resolveWithObject:true});const count=flecks(data,info.width,info.height);if(old)oldFlecks+=count;else newFlecks+=count;}}
+ assert.ok(newFlecks<oldFlecks*.5,`Small disconnected material flecks: ${oldFlecks} → ${newFlecks}`);
+ const page=await browser.newPage({viewport:{width:1440,height:1000},serviceWorkers:'block'});await page.goto('http://127.0.0.1:4173/');await page.locator('[data-monster=devourer]').click();
+ for(const [channel,color] of Object.entries({primary:'#eee5d4',secondary:'#387ccb',accent:'#e975bc',power:'#49b3aa'}))await page.locator(`[data-channel=${channel}][data-color="${color}"]`).click();await page.waitForTimeout(1600);await page.locator('#preview').screenshot({path:'test-results/devourer-selection-after-in-menu.png'});
+ const rendered=await page.evaluate(async before=>{const {compose}=await import('./src/assets.js'),set=(await fetch('assets/catalog.json').then(r=>r.json())).devourer.selection,colors={primary:'#eee5d4',secondary:'#387ccb',accent:'#e975bc',power:'#49b3aa'};const load=url=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});const a=await compose(set,colors,'selection',url=>load(before[Object.keys(set).find(k=>set[k]===url)]||url)),b=await compose(set,colors,'selection',load);return [a.toDataURL(),b.toDataURL()];},before);
+ const panels=await Promise.all(rendered.map((url,index)=>sharp(Buffer.from(url.split(',')[1],'base64')).flatten({background:'#19151e'}).png().toFile('test-results/devourer-selection-'+(index?'after':'before')+'.png')));
+ await sharp({create:{width:1536,height:1024,channels:3,background:'#19151e'}}).composite([{input:'test-results/devourer-selection-before.png',left:0,top:0},{input:'test-results/devourer-selection-after.png',left:768,top:0}]).png().toFile('test-results/devourer-selection-comparison.png');
+ console.log(`Devourer contrast palette: disconnected ≤6-pixel mask flecks ${oldFlecks} → ${newFlecks}; before/after browser composites saved.`);
+}finally{await browser.close();}

@@ -11,5 +11,7 @@ Get-ChildItem -LiteralPath $root -Recurse -Filter '*.tmp.webp' -File | ForEach-O
  Copy-Item -LiteralPath $_.FullName -Destination $target -Force
  Remove-Item -LiteralPath $_.FullName
 }
+node tools/refine-devourer-selection.mjs
+if ($LASTEXITCODE -ne 0) { throw 'Devourer selection refinement failed' }
 node tools/validate-masks.mjs
 if ($LASTEXITCODE -ne 0) { throw 'Mask validation failed' }
