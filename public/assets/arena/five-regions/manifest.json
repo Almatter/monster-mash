@@ -1,0 +1,44 @@
+{
+  "size": 512,
+  "density": 1,
+  "cols": 22,
+  "rows": 21,
+  "left": -5600,
+  "top": -5400,
+  "cacheLimit": 36,
+  "gutter": 2,
+  "tiles": 462,
+  "bytes": 50748758,
+  "regions": [
+    {
+      "id": "crownfall",
+      "name": "CROWNFALL KEEP",
+      "x": 0,
+      "y": -3400
+    },
+    {
+      "id": "emberforge",
+      "name": "EMBERFORGE",
+      "x": 3400,
+      "y": -850
+    },
+    {
+      "id": "chapel",
+      "name": "SUNKEN CHAPEL",
+      "x": 2200,
+      "y": 2700
+    },
+    {
+      "id": "bonebarrow",
+      "name": "BONEBARROW",
+      "x": -2200,
+      "y": 2700
+    },
+    {
+      "id": "wayfarer",
+      "name": "WAYFARER’S REST",
+      "x": -3400,
+      "y": -850
+    }
+  ]
+}

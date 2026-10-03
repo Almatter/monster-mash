@@ -1,0 +1,3 @@
+import {createRequire} from 'node:module';import {mkdir} from 'node:fs/promises';
+const require=createRequire('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json'),sharp=require('sharp');await mkdir('art-source/stage2/regions/details',{recursive:true});
+for(const id of ['crownfall','emberforge','chapel','bonebarrow','wayfarer']){const path='art-source/stage2/regions/'+id+'.png',m=await sharp(path).metadata(),half=m.width/2;for(let q=0;q<4;q++)await sharp(path).extract({left:q%2*half,top:Math.floor(q/2)*half,width:half,height:half}).resize(1536,1536).png().toFile('art-source/stage2/regions/details/'+id+'-'+q+'-reference.png');}

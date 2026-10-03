@@ -10,17 +10,17 @@ try{
    const {AudioEngine}=await import('./src/audio.js'),music=AudioEngine.prototype.setMusic;AudioEngine.prototype.setMusic=function(...args){window.testAudio=this;return music.apply(this,args);};
   });
   await page.locator('[data-monster=devourer]').click();await page.locator('#startForm button[type=submit]').click();await page.locator('#pause').click();
-  await page.waitForFunction(()=>testRenderer.courtFormations.size===2&&testRenderer.vfx.has('court-ash-trace')&&testRenderer.sprites.get('court-captain')?.naturalWidth);
+  await page.waitForFunction(()=>testRenderer.courtTerrain.tiles.size>0&&testRenderer.vfx.has('court-ash-trace')&&testRenderer.sprites.get('court-captain')?.naturalWidth);
   const geometry=await page.evaluate(async()=>{
    const {initializeCourt,updateCourt,COURT}=await import('./src/stage-two.js'),r=testRenderer,g=testGame,c=r.ctx,draw=c.drawImage;
    assertCamera();function assertCamera(){const w=r.viewWidth/r.scale,h=r.viewHeight/r.scale;if(Math.abs(w*h-912000)>1e-5||Math.max(w,h)>1200.001)throw Error('Camera grants extra area');}
    const screen=r.worldToScreen(g.player.x+123,g.player.y-76,g),world=r.screenToWorld(screen.x,screen.y,g);if(Math.abs(world.x-g.player.x-123)>1e-8||Math.abs(world.y-g.player.y+76)>1e-8)throw Error('Pointer mapping changed');
-   g.enemies.forEach(e=>e.active=false);g.alive=0;initializeCourt(g);g.court.camps.forEach((p,i)=>{p.spawned=false;p.slain=i!==0;});const camp=g.court.camps[0];camp.x=2000;camp.y=0;
+   g.enemies.forEach(e=>e.active=false);g.alive=0;initializeCourt(g);g.court.camps.forEach((p,i)=>{p.spawned=false;p.slain=i!==0;});const camp=g.court.camps[0];camp.x=500;camp.y=0;
    let captain=null,draws=0,firstVisibleAt=0,spawnAt=0;const image=r.sprites.get('court-captain');c.drawImage=function(im,...args){if(im===image)draws++;return draw.call(this,im,...args);};
    try{for(let distance=1100;distance>=500;distance-=10){g.player.x=camp.x-distance;g.player.y=0;updateCourt(g,.01);captain=g.enemies.find(e=>e.active&&e.court?.role==='captain');if(captain&&!spawnAt)spawnAt=distance;draws=0;r.draw(g,0);if(draws&&!firstVisibleAt)firstVisibleAt=distance;}}
    finally{c.drawImage=draw;}
    if(!(spawnAt>firstVisibleAt&&firstVisibleAt>0))throw Error('Captain appeared before preload activation: '+JSON.stringify({spawnAt,firstVisibleAt}));
-   const serial=captain.serial;g.player.x=-2000;g.spawn=()=>undefined;g.attack=100;for(let n=0;n<120;n++)g.update(1/60,{x:0,y:0,aimX:0,aimY:0,aiming:false});if(!captain.active||serial!==captain.serial)throw Error('Captain unloaded');
+   const serial=captain.serial;g.player.x=-500;g.spawn=()=>undefined;g.attack=100;for(let n=0;n<120;n++)g.update(1/60,{x:0,y:0,aimX:0,aimY:0,aiming:false});if(!captain.active||serial!==captain.serial)throw Error('Captain unloaded');
    g.player.x=camp.x-600;g.player.y=0;g.time=900.01;updateCourt(g,.3);let traceDraws=0;c.drawImage=function(im,...args){if(im===r.vfx.get('court-ash-trace'))traceDraws++;return draw.call(this,im,...args);};try{r.draw(g,0);}finally{c.drawImage=draw;}if(traceDraws<2)throw Error('Trail artwork was not rendered');if(!g.court.hint?.trail)throw Error('Late trail missing');
    const [barX,barY]=r.viewWidth<r.width-1?[1,r.height/2]:[r.width/2,1],pixel=[...c.getImageData(barX*r.dpr,barY*r.dpr,1,1).data];
    return {worldWidth:r.viewWidth/r.scale,worldHeight:r.viewHeight/r.scale,spawnAt,firstVisibleAt,pixel};
@@ -35,7 +35,7 @@ try{
  await page.locator('[data-monster=devourer]').click();await page.locator('#startForm button[type=submit]').click();await page.locator('#pause').click();
  // Kill immediately: a pending battle-score render must not restart over boon music.
  for(let n=0;n<2;n++){
-  await page.evaluate(()=>{const e=testGame.enemies.find(e=>e.active&&e.court?.role==='captain');testGame.damage(e,1e8,'execute');});
+  await page.evaluate(async()=>{const {spawnCourtHunt}=await import('./src/stage-two.js');spawnCourtHunt(testGame);const e=testGame.enemies.find(e=>e.active&&e.court?.role==='captain');testGame.damage(e,1e8,'execute');});
   await page.locator('#resume').click();await page.locator('#huntUpgrade').waitFor({state:'visible'});await page.waitForFunction(()=>testAudio.activeState==='boon'&&testAudio.context.state==='running');
   if(n===0)await page.screenshot({path:'test-results/stage2-v21-boon-score.png'});
   const before=await page.evaluate(()=>({time:testGame.time,hp:testGame.player.hp,cooldowns:[...testGame.cooldowns]}));await page.waitForTimeout(1400);

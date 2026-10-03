@@ -1,3 +1,7 @@
 dist/
 node_modules/
 test-results/
+
+# Reproducible source-art instruction references; never shipped as game scenery.
+art-source/stage2/regions/layout-guide.png
+art-source/stage2/regions/details/*-reference.png

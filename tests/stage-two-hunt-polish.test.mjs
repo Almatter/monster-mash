@@ -1,8 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {cameraViewport} from '../src/camera.ts';
 import {Game} from '../src/simulation.ts';
-import {COURT,initializeCourt,updateCourt,courtHintTarget,courtHintPath,chooseCourtUpgrade,courtSpeedBonus} from '../src/stage-two.ts';
-import {COURT_ROCKS,insideCourt,slideCourt,courtSteer,COURT_NAV_NODE_COUNT} from '../src/court-map.ts';
+import {COURT,initializeCourt,spawnCourtHunt,updateCourt,courtHintTarget,courtHintPath,chooseCourtUpgrade,courtSpeedBonus} from '../src/stage-two.ts';
+import {COURT_REGIONS,COURT_SITES,insideCourt,slideCourt,courtSteer,COURT_NAV_NODE_COUNT} from '../src/court-map.ts';
 import {CLAW_WAVE} from '../src/balance.ts';
 import {renderBoonScore,renderMusicLayer} from '../src/procedural-music.ts';
 const idle={x:0,y:0,aimX:-1000,aimY:0,aiming:true};
@@ -37,7 +37,7 @@ test('Stage 2 Feast swings and emits bounded movement-directed waves even withou
 
 test('continuous Feast reaches a captain beyond melee range and retains its existing healing cap',()=>{
  const g=new Game(77,{monsterId:'devourer'},1);g.court.initialized=true;
- g.player.x=2000;const e=g.spawn('brute');Object.assign(e,{x:2440,y:0,hp:1e6,maxHp:1e6,court:{role:'captain',guard:0,maxGuard:0,facing:Math.PI,broken:true,homeX:2440,homeY:0,homeAngle:0,tier:0}});g.spawn=()=>undefined;g.rebuildGrid();
+ g.player.x=-600;const e=g.spawn('brute');Object.assign(e,{x:-160,y:0,hp:1e6,maxHp:1e6,court:{role:'captain',guard:0,maxGuard:0,facing:Math.PI,broken:true,homeX:-160,homeY:0,homeAngle:0,tier:0}});g.spawn=()=>undefined;g.rebuildGrid();
  assert.equal(g.findBasicTarget(g.monster.basic.radius*g.releaseStats.radius,false),null);
  g.player.hp=300;g.cast(3);const cap=g.frenzyHealing,hp=e.hp;
  for(let i=0;i<40;i++)g.update(1/60,idle);
@@ -55,30 +55,18 @@ test('late captain bearings start at twelve minutes; persistent route guidance f
 
 test('guidance retargets living captains after a kill and boon deliberation cannot advance its clock',()=>{
  const g=new Game(77,{},1);initializeCourt(g);g.time=901;updateCourt(g,.01);const site=g.court.hint.site,target=courtHintTarget(g);
- g.damage(target,1e8,'execute');assert.equal(g.court.camps[site].slain,true);assert.equal(courtHintTarget(g),null);
+ spawnCourtHunt(g,site);g.damage(g.enemies.find(e=>e.active&&e.court?.role==='captain'&&e.court.site===site),1e8,'execute');assert.equal(g.court.camps[site].slain,true);assert.equal(courtHintTarget(g),null);
  const time=g.time,next=g.court.nextHintAt;g.update(60,idle);assert.equal(g.time,time);assert.equal(g.court.nextHintAt,next);
  chooseCourtUpgrade(g,'power');g.update(.3,idle);assert.ok(courtHintTarget(g));assert.notEqual(g.court.hint.site,site);
  g.court.cleared=true;updateCourt(g,.01);assert.equal(courtHintTarget(g),null);
 });
 
-test('sculpted hollows are walkable and navigation can enter and leave every rotated basin',()=>{
- assert.ok(COURT_NAV_NODE_COUNT<=1024);
- for(const rock of COURT_ROCKS.filter(r=>r.kind==='crescent')){
-  const inside=local(rock,0,130),outside=local(rock,80,800),side=local(rock,-700,0);
-  assert.ok(insideCourt(inside.x,inside.y,24));
-  for(const [start,goal] of [[outside,inside],[inside,outside],[side,inside],[inside,side]]){
-   const body={...start};for(let i=0;i<3000&&Math.hypot(body.x-goal.x,body.y-goal.y)>60;i++){const dir=courtSteer(body.x,body.y,goal.x,goal.y);body.x+=dir.x*5;body.y+=dir.y*5;slideCourt(body,23);}
-   assert.ok(Math.hypot(body.x-goal.x,body.y-goal.y)<=60,JSON.stringify({rock,start,goal,body}));
-  }
- }
+test('authored courtyard pockets have walkable centers and navigation can enter and leave them',()=>{
+ assert.ok(COURT_NAV_NODE_COUNT<=1200);
+ for(const goal of COURT_SITES)for(const [start,target] of [[{x:0,y:0},goal],[goal,{x:0,y:0}]]){const body={...start};for(let n=0;n<6000&&Math.hypot(body.x-target.x,body.y-target.y)>60;n++){const dir=courtSteer(body.x,body.y,target.x,target.y);body.x+=dir.x*5;body.y+=dir.y*5;slideCourt(body,23);}assert.ok(Math.hypot(body.x-target.x,body.y-target.y)<=60,JSON.stringify({start,target,body}));}
 });
-
-test('nearby goals across each small ridge route around its solid core',()=>{
- for(const rock of COURT_ROCKS.filter(r=>r.kind==='ridge')){
-  const start=local(rock,0,110),goal=local(rock,0,-110),body={...start};
-  for(let i=0;i<3000&&Math.hypot(body.x-goal.x,body.y-goal.y)>30;i++){const d=courtSteer(body.x,body.y,goal.x,goal.y);body.x+=d.x*4;body.y+=d.y*4;slideCourt(body,23);}
-  assert.ok(Math.hypot(body.x-goal.x,body.y-goal.y)<=30,JSON.stringify({rock,body,goal}));
- }
+test('central district landmarks block their structure while their surrounding loop remains navigable',()=>{
+ for(const r of COURT_REGIONS){assert.equal(insideCourt(r.x,r.y,23),false);const start={x:r.x-600,y:r.y},goal={x:r.x+600,y:r.y},body={...start};for(let i=0;i<3000&&Math.hypot(body.x-goal.x,body.y-goal.y)>30;i++){const d=courtSteer(body.x,body.y,goal.x,goal.y);body.x+=d.x*4;body.y+=d.y*4;slideCourt(body,23);}assert.ok(Math.hypot(body.x-goal.x,body.y-goal.y)<=30,JSON.stringify({region:r.id,body,goal}));}
 });
 
 test('boon selection has a distinct finite score in one small reusable mono buffer',async()=>{
@@ -86,3 +74,5 @@ test('boon selection has a distinct finite score in one small reusable mono buff
  let peak=0,square=0;for(const v of score){assert.ok(Number.isFinite(v));peak=Math.max(peak,Math.abs(v));square+=v*v;}
  assert.ok(peak>.01&&peak<.5);assert.ok(Math.sqrt(square/score.length)>.002);
 });
+
+test('continuous ash traces guide raw movement around every authored turn without overshooting waypoints',()=>{for(const start of [{x:0,y:0},{x:-797.29,y:-3602.71}])for(const target of COURT_SITES){const g=new Game(77,{monsterId:'devourer'},1);Object.assign(g.player,start);g.court.initialized=true;g.court.camps=[{...target,visited:false,spawned:false,slain:false}];g.court.hint={site:0,life:1,trail:true};g.time=900;g.court.nextHintAt=900;g.spawn=()=>undefined;g.attack=1e6;for(let frame=0;frame<80*30&&Math.hypot(g.player.x-target.x,g.player.y-target.y)>100;frame++){const traces=courtHintPath(g),p=traces[0];assert.ok(p,'A surviving distant captain must produce a next route point');const dx=p.x-g.player.x,dy=p.y-g.player.y,n=Math.hypot(dx,dy)||1;g.update(1/30,{x:dx/n,y:dy/n,aimX:0,aimY:0,aiming:false});}assert.ok(Math.hypot(g.player.x-target.x,g.player.y-target.y)<110,'Trace route stuck for '+target.region);}});
