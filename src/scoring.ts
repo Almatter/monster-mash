@@ -1,6 +1,10 @@
 import { FEATS, type FeatContext } from './data.ts';
 import {SCORING,type Metrics} from './content-records.ts';
 export class Score {
+ #limitAward:((amount:number,objective:boolean)=>number)|null=null;
+ setAwardLimit(limit:(amount:number,objective:boolean)=>number){this.#limitAward=limit;}
+ award(amount:number,objective=false){const gained=this.#limitAward?this.#limitAward(amount,objective):amount;this.dominance+=gained;return gained;}
+
  eliteDevoured=0; dominance=0; kills=0; carnage=1; peak=1; elites=0; titans=0; largestMulti=0;
  feats:Record<string,number>={}; timers:Record<string,number>={};
  quiet=0; noHitKills=0; recent:number[]=[];
@@ -12,16 +16,16 @@ export class Score {
   this.currentMaxStreak=this.carnage>=5?this.currentMaxStreak+dt:0;this.maxStreak=Math.max(this.maxStreak,this.currentMaxStreak);
   while(this.recent.length && this.recent[0]<time-5) this.recent.shift();
  }
- kill(base:number,kind:string,time:number,source='direct') {
+ kill(base:number,kind:string,time:number,source='direct',objective=false) {
   if(kind==='elite'&&source==='devour')this.eliteDevoured++;this.kills++; this.noHitKills++; this.quiet=0; this.recent.push(time);
   this.carnage=Math.min(SCORING.maxCarnage,this.carnage+SCORING.killCarnage);this.peak=Math.max(this.peak,this.carnage);this.sources[source]=(this.sources[source]||0)+1;this.bestRecent=Math.max(this.bestRecent,this.recent.length);this.bestNoHit=Math.max(this.bestNoHit,this.noHitKills);
-  this.dominance+=Math.round(base*this.carnage);
+  this.award(Math.round(base*this.carnage),objective);
   if(kind==='elite') this.elites++;
   if(kind==='titan') this.titans++;
  }
  multikill(count:number) {
   this.largestMulti=Math.max(this.largestMulti,count);
-  if(count>=SCORING.multiMinimum)this.dominance+=count*SCORING.multiBonus;
+  if(count>=SCORING.multiMinimum)this.award(count*SCORING.multiBonus);
  }
  evaluate(time:number,extra:Partial<FeatContext>) {
   const context:FeatContext={recentKills:this.recent.length,noHitKills:this.noHitKills,overkill:0,chain:0,eliteDevoured:0,multi:0,corruption:0,...extra};
@@ -29,7 +33,7 @@ export class Score {
   for(const feat of FEATS) if(context[feat.metric]>=feat.threshold && time>=(this.timers[feat.id]??-1)) {
    if((feat.metric==='noHitKills'||feat.metric==='recentKills')&&context[feat.metric]<=(this.featBest[feat.id]||0))continue;
    this.timers[feat.id]=time+feat.cooldown; this.feats[feat.id]=(this.feats[feat.id]??0)+1;
-   this.dominance+=feat.bonus;this.featBest[feat.id]=Math.max(this.featBest[feat.id]||0,context[feat.metric]);earned.push(`RUN FEAT · ${feat.name} · +${feat.bonus.toLocaleString()}`);
+   const credited=this.award(feat.bonus);this.featBest[feat.id]=Math.max(this.featBest[feat.id]||0,context[feat.metric]);earned.push(`RUN FEAT · ${feat.name} · ${credited>0?'+'+credited.toLocaleString():'SCORE LIMIT REACHED'}`);
   }
   return earned;
  }

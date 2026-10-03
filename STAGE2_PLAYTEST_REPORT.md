@@ -20,6 +20,14 @@ Finite guards absorb 60% frontal damage until broken; flanking bypasses absorpti
 
 Ambient hunt pressure uses captain progress, not endless elapsed-time scaling. Its spawn/cap multipliers are 0.28/0.4, leaving room for exploration and recovery while captains remain dangerous. Guard breaks grant +400, impact breaks +1,500 extra, close captain finishes +6,000, and collected seals +15,000. The last seal is automatic at victory. Other seals expire after two minutes and require champion contact. Ordinary enemies grant 70% base kill score. Enemy and effect pools stay bounded.
 
+## Bounded scoring and clear-speed reward
+
+Stage 2 starts with a 50,000-Dominance combat allowance. Each captain defeated opens another 50,000, up to 500,000 for the whole hunt. Unused allowance carries forward. Ordinary enemy kills, multikills, run feats and wave points all draw from the same allowance, so repeatedly farming those bonuses cannot bypass the cutoff. The HUD shows earned combat score and the currently unlocked limit; reaching the limit prompts the next captain hunt. Kills still count toward body count, Carnage, achievements and kit sustain after their score stops. Captain kill points and finite guard/impact/close-hunt/seal rewards remain separate.
+
+Completing all ten captains grants the same clear-speed reward to every champion: +1,000,000 Dominance at 10 minutes or less, decreasing linearly by 200,000 per minute to zero at 15 minutes. Partial, defeated and retired hunts receive none. The final captain ends the run and grants the reward once; the bonus is not multiplied by Carnage. Recorded Stage 2 duration rounds up to a whole second, with a small floating-point tolerance, so the bonus and signed duration agree. Boon selection still pauses the run clock.
+
+Results, copied results, saved cards and the verifier expose the score breakdown. The current signed run code records combat, captain and speed contributions separately and validates their limits, completion status and sum with hunt objectives. Old results retain their original rules and scores. Stage 1 scoring remains uncapped and unchanged.
+
 ## Seven choices
 
 Each boon has three ranks and lasts only for its current hunt.
@@ -52,21 +60,23 @@ All **15/15 final samples cleared**. These average times therefore measure survi
 
 | Champion | Average time to clear | Average body count | Average Dominance | Time range | Clears |
 |---|---:|---:|---:|---:|---:|
-| Devourer | 10:00 | 4,346 | 610,837 | 9:53–10:06 | 3/3 |
-| Titan | 11:16 | 6,467 | 889,444 | 10:33–11:42 | 3/3 |
-| Sovereign | 10:15 | 6,017 | 824,459 | 9:35–11:15 | 3/3 |
-| Calamity | 10:57 | 6,750 | 857,851 | 10:21–11:29 | 3/3 |
-| Overlord | 11:03 | 6,853 | 841,213 | 10:36–11:20 | 3/3 |
+| Devourer | 10:01 | 4,346 | 1,591,304 | 9:54–10:07 | 3/3 |
+| Titan | 11:16 | 6,467 | 1,551,457 | 10:34–11:43 | 3/3 |
+| Sovereign | 10:16 | 6,017 | 1,681,172 | 9:36–11:16 | 3/3 |
+| Calamity | 10:57 | 6,750 | 1,544,500 | 10:21–11:30 | 3/3 |
+| Overlord | 11:04 | 6,853 | 1,538,667 | 10:37–11:21 | 3/3 |
+
+Paired with the v17 controller sample, all fifteen hunts retained the exact same body counts, remaining HP, travel distances, healing visits, chosen boons and hunt objective statistics. Displayed duration differs by at most one second because Stage 2 now rounds up. Combat and sustain are unchanged; only scoring and its presentation changed.
 
 Maximum observed active enemies: 128. Roaming hordes and score totals are lower than in the earlier leech-based prototype. The hunt rewards reaching objectives and clear speed; Devourer's smaller body count does not make its fastest clear obsolete. Titan retains strong impact bonuses. Overlord can rely on its army; Devourer/Titan/Sovereign use shrines more often. Different builds and human strategies still need tester feedback.
 
 ## Validation and compatibility
 
-- **121 unit tests passed**: real boon effects, dangerous stationary captain pressure, healing cooldowns, every site/shrine's reachability, clear/build/speed rewards, profile transfers and legacy codes.
+- **130 unit tests passed**: real boon effects, dangerous stationary captain pressure, healing cooldowns, every site/shrine's reachability, clear/build/speed rewards, profile transfers, legacy codes, combat-score clipping, farming bypasses, continued sustain, clear-time boundaries and signed score breakdowns.
 - Ten fixed-seed Stage 1 simulations (all five champions × seeds 77/444) matched deployed commit `5aae6a7` exactly through ten minutes, including RNG, enemy/player state, score, sustain, servants, fields, projectiles and cooldowns. Stage 1 rules remain `2026.10-v15-autotarget-squad`.
 - Desktop and touch landscape tests passed for all kits, art, seal contact, frozen choices, nine choices and automatic victory, signed results, test-title persistence and zero writes to the official profile.
 - Public-origin/subdirectory tests passed for the explicit test entry and normal Gatebreaker/date locks. Phone → PC → phone transfer, personal bests, normal Stage 1, direct verifier and Pages subpaths passed.
 - The update lifecycle test kept an active paused match/results intact and activated the new version on return to the menu, retaining identity and offline transfer controls.
 - Production build, static Pages artifact validation and Git whitespace checks passed. Native low-end laptop or real phone performance has not been benchmarked in this change.
 
-Stage 2 rules are `2026.10-v17-court-hunts`; playtests use `2026.10-v17-court-test`. Historical v16 Court codes, older MM4 codes and MM1–MM3 remain readable. Existing save version 3 is unchanged. Raw final measurements and screenshots are in ignored `test-results/`; reproduce with `node tests/stage-two-balance.mjs` and the tests listed above.
+Stage 2 rules are `2026.10-v18-court-hunts`; playtests use `2026.10-v18-court-test`. Historical v16/v17 Court codes, older MM4 codes and MM1–MM3 remain readable. Existing save version 3 is unchanged. Raw v18 measurements (`test-results/stage2-balance-v18.json`) and screenshots are in ignored `test-results/`; reproduce with `node tests/stage-two-balance.mjs` and the tests listed above.

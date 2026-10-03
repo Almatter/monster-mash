@@ -10,7 +10,7 @@ import {MASSACRES,SCORING} from './content-records.ts';
 const DESCENDING_MASSACRES=[...MASSACRES].reverse();
 import {createServants,updateServants} from './servants.ts';
 import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,CLAW_WAVE,enemyMovementSpeed} from './balance.ts';
-import {COURT,createCourt,courtDamage,courtKill,courtEnemyMotion,courtContactScale,updateCourt,courtRelease,upgradeRank,type CourtState,type CourtUnit} from './stage-two.ts';
+import {COURT,createCourt,courtDamage,courtKill,courtEnemyMotion,courtContactScale,updateCourt,courtScoreCredit,courtRelease,upgradeRank,type CourtState,type CourtUnit} from './stage-two.ts';
 export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean;court?:CourtUnit};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
@@ -36,7 +36,7 @@ export class Game {
  debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
  dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
  identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
- constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1)this.court=createCourt();}
+ constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
  insideMap(x:number,y:number){return this.court?insideCourt(x,y):Math.hypot(x,y)<=EVENT.arenaRadius;}
  get arenaRadius(){return this.court?COURT_RADIUS:EVENT.arenaRadius;}
  slideArena(body:{x:number;y:number},radius:number){if(this.court)slideCourt(body,radius);else slideTorches(body,radius);}
@@ -69,7 +69,7 @@ export class Game {
   if(!e.active||this.court?.cleared)return false;
   const actual=e.court?courtDamage(this,e,amount,source,origin):amount;e.hp-=actual;e.flash=.1;
   if(e.hp>0)return false;
-  e.active=false;this.alive--;this.score.kill(this.court?(e.court?.role==='captain'?600:e.kind==='elite'||e.kind==='titan'?ENEMIES[e.kind].score:Math.round(ENEMIES[e.kind].score*.7)):ENEMIES[e.kind].score,e.kind,this.time,source);if(e.court)courtKill(this,e);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath.'+e.kind);if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
+  e.active=false;this.alive--;this.score.kill(this.court?(e.court?.role==='captain'?600:e.kind==='elite'||e.kind==='titan'?ENEMIES[e.kind].score:Math.round(ENEMIES[e.kind].score*.7)):ENEMIES[e.kind].score,e.kind,this.time,source,e.court?.role==='captain');if(e.court)courtKill(this,e);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath.'+e.kind);if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
   if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
   this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
   if(this.frenzy>0){const s=SUSTAIN.devourer;this.frenzyKills++;const heal=Math.min(s.frenzyHealBase+s.frenzyHealPerRelease*this.release,this.frenzyHealing,this.player.maxHp-this.player.hp);this.frenzyHealing-=heal;this.heal(heal);if(this.frenzyKills%s.guardKills===0){if(this.frenzyGuard<=0)this.announce('FEAST GUARD · KEEP FEEDING');this.frenzyGuard=Math.max(this.frenzyGuard,s.guardBaseSeconds+s.guardSecondsPerRelease*this.release);this.effect(this.player.x,this.player.y,'feast',90,.35);}}
@@ -101,7 +101,7 @@ export class Game {
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
   else {let nearest:Enemy|null=null,best=500;for(const e of this.enemies)if(e.active){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<best){nearest=e;best=d;}}if(nearest)p.angle=Math.atan2(nearest.y-p.y,nearest.x-p.x);}
   const nextWave=Math.floor(this.time/EVENT.waveSeconds)+1,phase=PHASES[this.phase];
-  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.dominance+=this.wave*SCORING.waveBonus;if(!this.court){this.announce(`WAVE ${this.wave} · THE HORDE GROWS`);this.sound('wave');}}if(!this.court&&this.time>=INTRODUCTIONS.elite&&this.wave%phase.eliteEvery===0)this.spawn('elite');if(!this.court&&this.time>=INTRODUCTIONS.titan&&this.wave%phase.titanEvery===0)this.spawn('titan');}
+  if(nextWave!==this.wave){this.wave=nextWave;if(this.wave>1){this.score.award(this.wave*SCORING.waveBonus);if(!this.court){this.announce(`WAVE ${this.wave} · THE HORDE GROWS`);this.sound('wave');}}if(!this.court&&this.time>=INTRODUCTIONS.elite&&this.wave%phase.eliteEvery===0)this.spawn('elite');if(!this.court&&this.time>=INTRODUCTIONS.titan&&this.wave%phase.titanEvery===0)this.spawn('titan');}
   this.spawnBank+=dt*this.pressure.rate*phase.pressure*(this.court?COURT.spawnRate:1);
   const kinds:EnemyKind[]=['thrall','hound','spitter','wing','brute'];const heavy=Math.min(12,Math.max(0,this.time-420)*.04),weights=phase.weights.map((v,i)=>v+(i===0?-heavy:i===4?heavy:0));
   while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=weights[index]){roll-=weights[index];index++;}if(this.alive<this.pressure.cap*(this.court?COURT.crowdCap:1))this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
