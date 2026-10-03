@@ -62,7 +62,7 @@ test('guidance retargets living captains after a kill and boon deliberation cann
 });
 
 test('sculpted hollows are walkable and navigation can enter and leave every rotated basin',()=>{
- assert.ok(COURT_NAV_NODE_COUNT<=737);
+ assert.ok(COURT_NAV_NODE_COUNT<=1024);
  for(const rock of COURT_ROCKS.filter(r=>r.kind==='crescent')){
   const inside=local(rock,0,130),outside=local(rock,80,800),side=local(rock,-700,0);
   assert.ok(insideCourt(inside.x,inside.y,24));

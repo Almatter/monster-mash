@@ -1,7 +1,7 @@
 import {EVENT} from './data.ts';
 import {COURT_SITE_GROUPS,COURT_SHRINES,slideCourt,courtSteer} from './court-map.ts';
 import type {Game,Enemy} from './simulation.ts';
-export const COURT_RULES='2026.10-v21-court-hunts',COURT_TEST_RULES='2026.10-v21-court-test';
+export const COURT_RULES='2026.10-v22-court-hunts',COURT_TEST_RULES='2026.10-v22-court-test';
 export const rulesForStage=(phase:number,testing=false)=>phase===1?(testing?COURT_TEST_RULES:COURT_RULES):EVENT.rules;
 export const COURT={total:10,activationRadius:1000,hintStart:720,hintTrail:900,hintPeriod:30,hintLife:8,sealLife:120,sealRadius:60,sealBonus:15000,guardBonus:400,impactBonus:1500,closeBonus:6000,closeRange:220,spawnRate:.28,crowdCap:.4,startRelease:4,captainHp:32000,hpPerCaptain:.4,slamRadius:170,slamWarning:1.4,slamCycle:4.6,slamDamage:115,healScale:.4,devourerHealScale:.75,devourDrain:.1,devourMinimum:.18,shieldScale:.4,shieldCapScale:.55,combatPerCaptain:50000,speedMax:1000000,speedFullAt:600,speedZeroAt:900};
 export const COURT_UPGRADES=[

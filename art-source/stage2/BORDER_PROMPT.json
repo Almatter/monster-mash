@@ -1,0 +1,7 @@
+{
+  "mode": "built-in image_gen",
+  "border": "Use case: stylized-concept\nAsset type: transparent terrain boundary segment for the overhead anime isekai desert game Monster Mash.\nPrimary request: a continuous uneven rocky escarpment segment extending broadly left to right, richly sculpted charcoal basalt with pale ash facets, broken jagged spires of varied height, natural kinks and clefts, lower rubble attached at the base. Roughly horizontal long rock band, with irregular upper and lower silhouettes and tapered interlocking rocky ends so overlapping several segments creates a natural unbroken ridge. Strong crisp polished hand-painted anime RPG environment art, nearly overhead 80-degree view, warm desert highlights. The actual band is narrow relative to its length; no enclosing ground plane, no sandy floor, no plateau, no shadows outside stone, no grass, no characters, no lettering, no UI. The backdrop around every exposed silhouette is genuinely transparent. One complete isolated environment sprite, wide landscape framing, no clipping, 8 percent transparent padding. Do not draw multiple disconnected sprites or a scene.",
+  "master": "art-source/stage2/border-ridge.png",
+  "runtime": "public/assets/arena/court-border.webp",
+  "original_output": "C:/Users/novam/.codex/generated_images/01a0c70d-dd19-79a3-8b96-8777a6095533/exec-e69671a0-089c-47ba-b32f-c05a94252845.png"
+}

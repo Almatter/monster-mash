@@ -23,6 +23,10 @@ The original crescent ridge prompt above is historical. Its master was replaced 
 
 Final masters: [rock-ridge.png](rock-ridge.png) and [landmarks.png](landmarks.png). The square atlas contains Swordfall, Rib Gate, Sun Spire and Broken Bell in that order, reading left to right, top to bottom. `node tools/pack-stage2-terrain.mjs` extracts each cell and preserves alpha. Ridge output is 1024 × 342; each landmark is 384 × 432. World spacing no longer changes either prop resolution or physical collision size.
 
-## Current v21 sculpted formations
+## v21 sculpted formations
 
 Eight varied rotated crescent/fork structures and six smaller broken clusters replace the straight rows. The original v20 straight sprite remains only for the compact secondary clusters. Built-in generated masters are `rock-crescent.png`, `rock-fork.png` and `ash-trace.png`; exact prompts and mode are in [STRUCTURE_PROMPTS.json](STRUCTURE_PROMPTS.json). Packing fits each main formation into a transparent 1024 × 960 image and the ember trace into 256 × 144. `src/court-map.ts` authors local capsule bands and open-hollow navigation connections for each shape; collision rotates with the artwork and excludes empty image areas.
+
+## Current v22 perimeter and distribution
+
+The interior now contains 54 formations, including forty additional staggered crescent/fork placements that reuse the same cached textures. The built-in imagegen tool generated [border-ridge.png](border-ridge.png) as a narrow transparent jagged basalt perimeter band, with no ground plane. Exact prompt and generation mode: [BORDER_PROMPT.json](BORDER_PROMPT.json). The inspected master packs to `public/assets/arena/court-border.webp`, 768 × 256 with alpha preserved. A single cached texture supplies 140 overlapping rotated/mirrored placements along four uneven physical boundary profiles. Rebuild using the same terrain packer.

@@ -1,4 +1,6 @@
-# Ashen Wilds Stage 2 playtest release
+# Ashen Wilds Stage 2 playtest release — v21 baseline
+
+The current v22 terrain, edge-movement and performance changes, with updated champion measurements, are documented in [STAGE2_TERRAIN_REPORT.md](STAGE2_TERRAIN_REPORT.md). This report preserves the preceding v21 baseline.
 
 Tester entry: **https://almatter.github.io/monster-mash/stage2-test/**. Local preview: **http://127.0.0.1:4173/stage2-test/** (the previous localhost `?stage2-test=1` link also works).
 

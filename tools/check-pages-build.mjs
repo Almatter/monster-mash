@@ -4,7 +4,7 @@ import {join} from 'node:path';
 const files=[];
 async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){const path=join(dir,entry.name);if(entry.isDirectory())await walk(path);else files.push(path.replaceAll('\\','/').replace(/^dist\//,''));}}
 await walk('dist');
-for(const required of ['index.html','stage2-test/index.html','verify/index.html','manifest.webmanifest','sw.js','src/main.js','src/verify.js','src/camera.js','assets/arena/court-crescent.webp','assets/arena/court-fork.webp','assets/vfx/court-ash-trace.webp','assets/catalog.json','assets/arena/floor-adaptation.webp'])assert.ok(files.includes(required),`Missing ${required}`);
+for(const required of ['index.html','stage2-test/index.html','verify/index.html','manifest.webmanifest','sw.js','src/main.js','src/verify.js','src/camera.js','assets/arena/court-crescent.webp','assets/arena/court-fork.webp','assets/arena/court-border.webp','assets/vfx/court-ash-trace.webp','assets/catalog.json','assets/arena/floor-adaptation.webp'])assert.ok(files.includes(required),`Missing ${required}`);
 for(const file of files)assert.ok(!/^(art-lab\.html|music-lab\.html|_headers|node_modules\/)|\.(ts|psd)$/i.test(file),`Development file in Pages artifact: ${file}`);
 const manifest=JSON.parse(await readFile('dist/manifest.webmanifest','utf8'));
 assert.equal(manifest.start_url,'./');assert.equal(manifest.scope,'./');
