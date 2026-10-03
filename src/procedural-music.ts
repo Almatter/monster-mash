@@ -1,5 +1,5 @@
 import type {MusicState} from './content-audio.ts';
-export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds';
+export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon';
 type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'};
 const repeat=(bars:number[],count:number)=>Array.from({length:count},(_,i)=>bars[i%bars.length]);
 export const THEMES:Record<ThemeId,Theme>={
@@ -9,10 +9,11 @@ export const THEMES:Record<ThemeId,Theme>={
  overlord:{bpm:100,bars:16,mode:'E Phrygian / funeral march',roots:repeat([40,41,36,40,40,43,41,40],16),third:repeat([3,4,4,3,3,3,4,3],16),motif:[0,1,7,0,10,7,1,0],drums:[0,1,2,3],bass:[0,1,2,3],texture:'choir'},
  titan:{bpm:84,bars:12,mode:'G minor / open-fifth hammering',roots:repeat([31,34,29,31,31,36,34,29],12),third:repeat([3,4,3,3],12),motif:[0,7,0,12,7,0,10,7],drums:[0,2],bass:[0,2],texture:'hammer'},
  devourer:{bpm:144,bars:16,mode:'C Phrygian / predatory 3+3+2 pulse',roots:repeat([36,37,43,36,39,37,34,36],16),third:repeat([3,4,3,3,3,4,4,3],16),motif:[0,1,3,7,1,0,10,7],drums:[0,1.5,3],bass:[0,1.5,3],texture:'breath'},
- calamity:{bpm:132,bars:16,mode:'A harmonic minor / unstable arcana',roots:repeat([45,41,38,40,45,46,43,40],16),third:repeat([3,4,3,3,3,4,3,3],16),motif:[0,12,7,15,19,12,8,7],drums:[0,2.5,3.5],bass:[0,1,2,3.5],texture:'arcane'}
+ calamity:{bpm:132,bars:16,mode:'A harmonic minor / unstable arcana',roots:repeat([45,41,38,40,45,46,43,40],16),third:repeat([3,4,3,3,3,4,3,3],16),motif:[0,12,7,15,19,12,8,7],drums:[0,2.5,3.5],bass:[0,1,2,3.5],texture:'arcane'},
+ boon:{bpm:76,bars:4,mode:'D suspended minor / choice sanctuary',roots:[50,46,53,45],third:[3,4,3,4],motif:[0,7,12,5,3,7,14,12],drums:[],bass:[],texture:'bells'}
 };
 export const MUSIC={sampleRate:22050,layers:['drone / harmony','character bass','character percussion','signature motif','Carnage counterline','Unbound and Final Release','Titan threat / results cadence']} as const;
-const MIX:Record<MusicState,number[]>={menu:[.72,.35,.22,.58,0,0,.08],combat:[.65,.8,.75,.72,0,0,0],escalation:[.7,.86,.88,.84,.55,.12,0],unbound:[.7,.95,.94,.9,.72,.7,0],final:[.74,1,1,.95,.9,1,.18],titan:[.75,.95,.96,.82,.63,.72,.9],results:[.55,0,0,.13,0,0,.5]};
+const MIX:Record<MusicState,number[]>={menu:[.72,.35,.22,.58,0,0,.08],combat:[.65,.8,.75,.72,0,0,0],escalation:[.7,.86,.88,.84,.55,.12,0],unbound:[.7,.95,.94,.9,.72,.7,0],final:[.74,1,1,.95,.9,1,.18],titan:[.75,.95,.96,.82,.63,.72,.9],results:[.55,0,0,.13,0,0,.5],boon:[0,0,0,0,0,0,0]};
 function midiFrequency(midi:number){return 440*2**((midi-69)/12);}
 // Each bar yields to the browser. All notes are authored or selected from a fixed motif;
 // seven buffers/sources are reused through every intensity change in a run.
@@ -50,7 +51,7 @@ export class ProceduralMusic {
  voices:{source:AudioBufferSourceNode;gain:GainNode}[]=[];buffers:AudioBuffer[]=[];state:MusicState='menu';theme:ThemeId='menu';requestedTheme:ThemeId='menu';ready:Promise<void>|null=null;enabled=true;disposed=false;generation=0;
  context:AudioContext;output:GainNode;filter:BiquadFilterNode;
  constructor(context:AudioContext,destination:AudioNode){this.context=context;this.output=context.createGain();this.filter=context.createBiquadFilter();this.filter.type='lowpass';this.filter.frequency.value=4200;this.filter.Q.value=.4;this.output.gain.value=.75;this.output.connect(this.filter);this.filter.connect(destination);}
- async prepare(theme:ThemeId=this.requestedTheme){if(this.ready&&this.requestedTheme===theme)return this.ready;const gen=++this.generation;this.requestedTheme=theme;this.ready=(async()=>{const next:AudioBuffer[]=[];for(let layer=0;layer<MUSIC.layers.length;layer++){const pcm=await renderMusicLayer(layer,MUSIC.sampleRate,theme);if(this.disposed||gen!==this.generation)return;const buffer=this.context.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);next.push(buffer);}if(this.disposed||gen!==this.generation)return;this.stop();this.theme=theme;this.buffers=next;this.enabled=true;this.start();})();return this.ready;}
+ async prepare(theme:ThemeId=this.requestedTheme){if(this.ready&&this.requestedTheme===theme)return this.ready;const gen=++this.generation;this.requestedTheme=theme;this.ready=(async()=>{const next:AudioBuffer[]=[];for(let layer=0;layer<MUSIC.layers.length;layer++){const pcm=await renderMusicLayer(layer,MUSIC.sampleRate,theme);if(this.disposed||gen!==this.generation)return;const buffer=this.context.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);next.push(buffer);}if(this.disposed||gen!==this.generation)return;const enabled=this.enabled;this.stop();this.theme=theme;this.buffers=next;this.enabled=enabled;this.start();})();return this.ready;}
  setTheme(theme:ThemeId){if(theme===this.requestedTheme)return;void this.prepare(theme);}
  start(){if(this.disposed||!this.enabled||this.voices.length||this.buffers.length!==7)return;const at=this.context.currentTime+.08;for(const buffer of this.buffers){const source=this.context.createBufferSource(),gain=this.context.createGain();source.buffer=buffer;source.loop=true;gain.gain.value=0;source.connect(gain);gain.connect(this.output);source.start(at);this.voices.push({source,gain});}this.mix();}
  setState(state:MusicState){this.state=state;this.enabled=true;void this.prepare(this.requestedTheme);this.start();this.mix();}
@@ -59,3 +60,6 @@ export class ProceduralMusic {
  stop(){this.enabled=false;for(const v of this.voices){try{v.source.stop();}catch{}v.source.disconnect();v.gain.disconnect();}this.voices=[];}
  dispose(){this.disposed=true;this.generation++;this.stop();this.buffers=[];this.output.disconnect();this.filter.disconnect();}
 }
+
+// One cached mono score for choice breaks; battle's seven buffers are reused.
+export async function renderBoonScore(){const layers=[];for(const index of [0,3,6])layers.push(await renderMusicLayer(index,MUSIC.sampleRate,'boon'));const data=new Float32Array(layers[0].length);for(let i=0;i<data.length;i++)data[i]=layers[0][i]*.8+layers[1][i]*.7+layers[2][i]*.35;return data;}

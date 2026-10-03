@@ -19,7 +19,7 @@ test('all ten captain regions are occupied, deterministic, and rotate between se
 });
 
 test('stone footprints block only their compact core and leave adjacent ground walkable',()=>{
- for(const r of COURT_ROCKS){
+ for(const r of COURT_ROCKS.filter(r=>r.kind==='ridge')){
   assert.equal(insideCourt(r.x,r.y,23),false);
   const body={x:r.x-Math.sin(r.angle)*90,y:r.y+Math.cos(r.angle)*90},before={...body};
   assert.equal(insideCourt(body.x,body.y,23),true);

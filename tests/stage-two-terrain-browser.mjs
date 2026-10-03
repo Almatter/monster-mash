@@ -15,19 +15,19 @@ try{
   });
   await page.locator('[data-monster=devourer]').click();
   await page.locator('#startForm button[type=submit]').click();await page.locator('#pause').click();
-  await page.waitForFunction(()=>testRenderer.courtRidge&&testRenderer.courtLandmarks.size===4&&testRenderer.vfx.has('court-slam'));
+  await page.waitForFunction(()=>testRenderer.courtRidge&&testRenderer.courtLandmarks.size===4&&testRenderer.courtFormations.size===2&&testRenderer.vfx.has('court-slam'));
   const geometry=await page.evaluate(async()=>{
    const {COURT_ROCKS,COURT_RIDGE_ART,COURT_LANDMARKS,insideCourt}=await import('./src/court-map.js');
    const r=testRenderer,g=testGame,c=r.ctx,drawImage=c.drawImage,drawVfx=r.drawVfx;
-   const stone=COURT_ROCKS.find(p=>p.angle===0),halfW=r.width/r.scale/2,halfH=r.height/r.scale/2;
+   const stone=COURT_ROCKS.find(p=>p.kind==='ridge'),halfW=r.viewWidth/r.scale/2,halfH=r.viewHeight/r.scale/2;
    const calls=[],warnings=[];g.shake=0;
-   c.drawImage=function(image,...args){if(image===r.courtRidge)calls.push({args,e:c.getTransform().e,f:c.getTransform().f});return drawImage.call(this,image,...args);};
+   c.drawImage=function(image,...args){if(image===r.courtRidge||[...r.courtFormations.values()].includes(image))calls.push({args,e:c.getTransform().e,f:c.getTransform().f});return drawImage.call(this,image,...args);};
    r.drawVfx=function(c,kind,...args){warnings.push(kind);return drawVfx.call(this,c,kind,...args);};
    const edgeChecks=[];
    try{
-    for(const stone of [COURT_ROCKS[0],COURT_ROCKS.find(p=>p.angle===0)]){
-     const hw=(Math.abs(Math.cos(stone.angle))*COURT_RIDGE_ART.width+Math.abs(Math.sin(stone.angle))*COURT_RIDGE_ART.height)/2;
-     const hh=(Math.abs(Math.sin(stone.angle))*COURT_RIDGE_ART.width+Math.abs(Math.cos(stone.angle))*COURT_RIDGE_ART.height)/2;
+    for(const stone of [COURT_ROCKS[0],COURT_ROCKS.find(p=>p.kind==='crescent'),COURT_ROCKS.find(p=>p.kind==='ridge')]){
+     const hw=(Math.abs(Math.cos(stone.angle))*stone.width+Math.abs(Math.sin(stone.angle))*stone.height)/2;
+     const hh=(Math.abs(Math.sin(stone.angle))*stone.width+Math.abs(Math.cos(stone.angle))*stone.height)/2;
      for(const edge of ['left','right','top','bottom'])for(const offset of [-8,-2,2,8]){
       g.player.x=stone.x+(['left','right'].includes(edge)?(edge==='left'?1:-1)*(halfW+hw-20+offset):0);
       g.player.y=stone.y+(['top','bottom'].includes(edge)?(edge==='top'?1:-1)*(halfH+hh-20+offset):0);
@@ -45,14 +45,18 @@ try{
    const landmark=COURT_LANDMARKS[0];
    g.player.x=landmark.x+230;g.player.y=landmark.y-60;
    document.querySelector('#paused').hidden=true;r.draw(g,0);
-   return {edgeChecks,landmarks:[...r.courtLandmarks.keys()],ridge:[r.courtRidge.naturalWidth,r.courtRidge.naturalHeight],walkable:insideCourt(stone.x,stone.y+90,23)};
+   return {edgeChecks,landmarks:[...r.courtLandmarks.keys()],ridge:[r.courtRidge.naturalWidth,r.courtRidge.naturalHeight],walkable:insideCourt(stone.x,stone.y+150,23)};
   });
   assert.ok(geometry.edgeChecks.every(c=>c.drawn));assert.equal(geometry.landmarks.length,4);assert.deepEqual(geometry.ridge,[1024,342]);assert.equal(geometry.walkable,true);
   await page.screenshot({path:'test-results/stage2-navigation-'+viewport.width+'.png'});
   await page.evaluate(async()=>{const {COURT_LANDMARKS}=await import('./src/court-map.js'),p=COURT_LANDMARKS[1];testGame.player.x=p.x;testGame.player.y=p.y+110;testRenderer.draw(testGame,0);});
   await page.screenshot({path:'test-results/stage2-rib-gate-'+viewport.width+'.png'});
-  await page.evaluate(async()=>{const {COURT_ROCKS}=await import('./src/court-map.js'),p=COURT_ROCKS.find(p=>p.angle===0);testGame.player.x=p.x+80;testGame.player.y=p.y+100;testRenderer.draw(testGame,0);});
-  await page.screenshot({path:'test-results/stage2-compact-rock-'+viewport.width+'.png'});
+  await page.evaluate(async()=>{const {COURT_ROCKS}=await import('./src/court-map.js'),p=COURT_ROCKS.find(p=>p.kind==='ridge');testGame.player.x=p.x+80;testGame.player.y=p.y+100;testRenderer.draw(testGame,0);});
+  await page.screenshot({path:'test-results/stage2-v21-compact-rock-'+viewport.width+'.png'});
+  for(const kind of ['crescent','fork']){
+   await page.evaluate(async kind=>{const {COURT_ROCKS}=await import('./src/court-map.js'),p=COURT_ROCKS.find(p=>p.kind===kind);testGame.player.x=p.x;testGame.player.y=p.y;testRenderer.draw(testGame,0);},kind);
+   await page.screenshot({path:'test-results/stage2-v21-'+kind+'-'+viewport.width+'.png'});
+  }
   assert.deepEqual(errors,[]);console.log('Terrain browser PASS',viewport,{edges:geometry.edgeChecks.length,landmarks:geometry.landmarks,ridge:geometry.ridge,walkable:geometry.walkable});
   await context.close();
  }
