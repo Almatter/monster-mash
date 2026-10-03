@@ -16,3 +16,9 @@ Use case: stylized-concept. Asset type: seamless repeating terrain tile for top-
 ## Ridge prompt
 
 Use case: stylized-concept. Asset type: transparent environment sprite for top-down anime isekai action game Monster Mash. One low crescent-shaped rocky outcrop of dark jagged basalt, eroded grey brown stone with pale dusty ochre tops, sparse dry roots in fissures. Broad irregular natural rock ridge designed as a physical obstacle in an ash desert. Overhead view, slightly angled top-down 75 degrees, modest depth visible on lower face, crisp hand-painted anime RPG environment art. Exactly one compact cluster centered, full silhouette completely inside canvas, transparent background. No glow, no circle, no ground plane, no paving, no building, no creatures, no text, no border. Strong silhouette readable at 300 pixels. Rock cluster should be wider than tall, softly jagged, about 2 to 1 silhouette.
+
+## Current v20 terrain and landmark sources
+
+The original crescent ridge prompt above is historical. Its master was replaced with a compact straight basalt outcrop with no ground plane or sandy plateau. The current exact prompts and built-in generation mode are in [NAVIGATION_PROMPTS.json](NAVIGATION_PROMPTS.json).
+
+Final masters: [rock-ridge.png](rock-ridge.png) and [landmarks.png](landmarks.png). The square atlas contains Swordfall, Rib Gate, Sun Spire and Broken Bell in that order, reading left to right, top to bottom. `node tools/pack-stage2-terrain.mjs` extracts each cell and preserves alpha. Ridge output is 1024 × 342; each landmark is 384 × 432. World spacing no longer changes either prop resolution or physical collision size.

@@ -3,7 +3,7 @@ import {COURT} from './stage-two.ts';
 import {SUSTAIN} from './balance.ts';
 import {RELEASES} from './unbound.ts';
 import {TORCHES} from './arena.ts';
-import {COURT_BOUNDS,COURT_ROCKS,HUNT_MAP_SCALE} from './court-map.ts';
+import {COURT_BOUNDS,COURT_ROCKS,COURT_RIDGE_ART,COURT_LANDMARKS,courtArtVisible} from './court-map.ts';
 import { ENEMIES, EVENT } from './data.ts';
 import { Game } from './simulation.ts';
 import {createIdentity,type Identity} from './identity.ts';
@@ -41,8 +41,8 @@ export class Renderer {
  }
  loadFloor(path:string,target:HTMLCanvasElement,phase:number){const image=new Image();image.onload=()=>{const c=target.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);if(phase===1)this.adaptationPattern=null;else this.groundPattern=null;};image.src=path;}
  loadEnemy(kind:string){const image=new Image();image.onload=()=>this.sprites.set(kind,image);image.src='assets/enemies/'+kind+'.webp';}
- courtArtRequested=false;courtRidge:HTMLImageElement|null=null;courtShrine:HTMLImageElement|null=null;
- loadCourtArt(){if(this.courtArtRequested)return;this.courtArtRequested=true;this.loadVfx('court-slam');this.loadVfx('court-guard-front');this.loadEnemy('court-captain');this.loadEnemy('court-vanguard');this.loadFloor('assets/arena/floor-court.webp',this.adaptationBackground,1);const ridge=new Image();ridge.onload=()=>this.courtRidge=ridge;ridge.src='assets/arena/court-ridge.webp';const shrine=new Image();shrine.onload=()=>this.courtShrine=shrine;shrine.src='assets/arena/court-shrine.webp';}
+ courtLandmarks=new Map<string,HTMLImageElement>();courtArtRequested=false;courtRidge:HTMLImageElement|null=null;courtShrine:HTMLImageElement|null=null;
+ loadCourtArt(){if(this.courtArtRequested)return;this.courtArtRequested=true;for(const landmark of COURT_LANDMARKS){const image=new Image();image.onload=()=>this.courtLandmarks.set(landmark.id,image);image.src='assets/arena/court-'+landmark.id+'.webp';}this.loadVfx('court-slam');this.loadVfx('court-guard-front');this.loadEnemy('court-captain');this.loadEnemy('court-vanguard');this.loadFloor('assets/arena/floor-court.webp',this.adaptationBackground,1);const ridge=new Image();ridge.onload=()=>this.courtRidge=ridge;ridge.src='assets/arena/court-ridge.webp';const shrine=new Image();shrine.onload=()=>this.courtShrine=shrine;shrine.src='assets/arena/court-shrine.webp';}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
  makeGround(){
   const tile=document.createElement('canvas');tile.width=512;tile.height=512;const c=tile.getContext('2d')!;
@@ -81,12 +81,12 @@ export class Renderer {
   for(const r of [260,280,480,496,EVENT.arenaRadius]){c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.stroke();}
   for(let i=0;i<24;i++){const a=i*Math.PI/12;c.save();c.rotate(a);c.translate(0,475);c.fillStyle=stageTwo?'#89c4ad67':'#a77c4f50';c.font='20px Georgia';c.fillText(['ᛉ','ᚷ','ᛟ','ᚹ'][i%4],-6,0);c.restore();}
   for(let i=0;i<TORCHES.length;i++){const {x}=TORCHES[i],y=TORCHES[i].y-31;if(this.brazier){c.drawImage(this.brazier,x-42,y-80,84,126);c.fillStyle='#ff9d4e';c.globalAlpha=.12+Math.sin(time*7+i)*.035;c.beginPath();c.arc(x,y-43,35,0,7);c.fill();c.globalAlpha=1;}}
-  }else{c.strokeStyle='#967750';c.lineWidth=6;c.beginPath();c.rect(COURT_BOUNDS.left,COURT_BOUNDS.top,COURT_BOUNDS.right-COURT_BOUNDS.left,COURT_BOUNDS.bottom-COURT_BOUNDS.top);c.stroke();for(const rock of COURT_ROCKS){if(Math.abs(rock.x-cx)>extent||Math.abs(rock.y-cy)>extent)continue;c.save();c.translate(rock.x,rock.y);c.rotate(rock.angle);if(this.courtRidge)c.drawImage(this.courtRidge,-245*HUNT_MAP_SCALE,-132*HUNT_MAP_SCALE,490*HUNT_MAP_SCALE,264*HUNT_MAP_SCALE);c.restore();}}
+  }else{c.strokeStyle='#967750';c.lineWidth=6;c.beginPath();c.rect(COURT_BOUNDS.left,COURT_BOUNDS.top,COURT_BOUNDS.right-COURT_BOUNDS.left,COURT_BOUNDS.bottom-COURT_BOUNDS.top);c.stroke();for(const rock of COURT_ROCKS){const {width,height}=COURT_RIDGE_ART;if(!courtArtVisible(rock.x,rock.y,width,height,rock.angle,cx,cy,w/this.scale/2,h/this.scale/2))continue;c.save();c.translate(rock.x,rock.y);c.rotate(rock.angle);if(this.courtRidge)c.drawImage(this.courtRidge,-width/2,-height/2,width,height);c.restore();}for(const landmark of COURT_LANDMARKS){if(!courtArtVisible(landmark.x,landmark.y-120,320,360,0,cx,cy,w/this.scale/2,h/this.scale/2))continue;const image=this.courtLandmarks.get(landmark.id);if(image)c.drawImage(image,landmark.x-160,landmark.y-300,320,360);c.save();c.font='bold 16px Georgia';c.textAlign='center';c.fillStyle='#f5dfad';c.strokeStyle='#30261e';c.lineWidth=3;c.strokeText(landmark.name,landmark.x,landmark.y+88);c.fillText(landmark.name,landmark.x,landmark.y+88);c.restore();}}
   if(!g){this.drawSovereign(c,0,0,time,0,3.5);c.restore();return;}
   const detail=this.low?3:this.fxLevel;this.loadChampionVfx(g.monster.id);
-  const halfW=w/this.scale/2+100,halfH=h/this.scale/2+100;
+  const halfW=w/this.scale/2,halfH=h/this.scale/2;
   if(g.court)for(const shrine of g.court.shrines){if(Math.abs(shrine.x-cx)>extent||Math.abs(shrine.y-cy)>extent)continue;const ready=g.time>=shrine.readyAt;c.save();c.globalAlpha=ready?1:.5;if(this.courtShrine)c.drawImage(this.courtShrine,shrine.x-78,shrine.y-90,156,156);c.font='bold 12px Arial';c.textAlign='center';c.fillStyle=ready?'#b6f5e8':'#e1d3ba';c.fillText(ready?'HEALING OASIS':Math.ceil(shrine.readyAt-g.time)+'s',shrine.x,shrine.y+80);c.restore();}
-  for(const e of g.enemies){if(!e.active||Math.abs(e.x-cx)>halfW||Math.abs(e.y-cy)>halfH)continue;const def=ENEMIES[e.kind],size=def.radius*4;
+  for(const e of g.enemies){const margin=e.windup>0?(e.court?.role==='captain'?COURT.slamRadius:e.kind==='titan'?240:140):100;if(!e.active||Math.abs(e.x-cx)>halfW+margin+32||Math.abs(e.y-cy)>halfH+margin+32)continue;const def=ENEMIES[e.kind],size=def.radius*4;
    if(e.windup>0){if(e.court?.role==='captain'){const progress=1-e.windup/COURT.slamWarning;this.drawVfx(c,'court-slam',e.x,e.y,COURT.slamRadius*2,0,.38+progress*.45);c.strokeStyle='#ff7b66';c.lineWidth=1.5;c.beginPath();c.arc(e.x,e.y,COURT.slamRadius,0,Math.PI*2);c.stroke();}else{c.strokeStyle='#ff5a56';c.fillStyle='#e6404030';c.lineWidth=3;const r=e.kind==='titan'?240:140;c.beginPath();c.arc(e.x,e.y,r,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(e.x,e.y,r*(1-e.windup/1.2),0,Math.PI*2);c.stroke();}}
    const sprite=e.court?this.sprites.get('court-'+e.court.role):null,drawSize=e.court?.role==='captain'?114:e.court?96:size;
    c.drawImage(sprite??this.sprites.get(e.kind)!,e.x-drawSize/2,e.y-drawSize/2+(detail>=3?0:Math.sin(time*8+e.serial)*1.5),drawSize,drawSize);
