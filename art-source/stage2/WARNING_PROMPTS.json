@@ -1,0 +1,15 @@
+{
+  "mode": "Built-in image_gen tool",
+  "assets": [
+    {
+      "master": "art-source/stage2/court-slam.png",
+      "runtime": "public/assets/vfx/court-slam.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent raster combat warning sprite for Monster Mash, an anime isekai action game in an ashen desert. Create a top-down perfectly circular captain slam danger sigil, centered in a square canvas. Sharp crimson-orange outer perimeter marking the exact full attack radius, intricate broken obsidian and ember runes inside, jagged radial cracks, restrained fiery energy. The circle's outside boundary must be crisp and easy to read on tan desert terrain. The entire disc is flat top-down, never tilted or elliptical. Outer circle occupies 92% of canvas width and height. Interior mostly transparent so terrain and combatants remain visible, restrained sparse details. Real painted anime fantasy game VFX art, polished dramatic hand-painted shapes and glow, not a diagram or plain geometric placeholder. No characters, scenery, lettering, words, UI, watermark, arrows or cast shadow. Genuine transparent background and transparent gaps; no black or white backdrop."
+    },
+    {
+      "master": "art-source/stage2/court-guard-front.png",
+      "runtime": "public/assets/vfx/court-guard-front.webp",
+      "prompt": "Use case: stylized-concept. Asset type: transparent raster directional guard sprite for Monster Mash anime isekai desert combat. A single hand-painted spectral bronze and pale amber shield-front arc, viewed straight down, on a square canvas. Crescent of overlapping angular armored shield plates and fine ember sparks describing a protected forward sector of about 160 degrees facing RIGHT. Origin is exact canvas center, arc lies on the RIGHT side around it, radius 44 percent of canvas width, open left half fully transparent. Clear right-facing directional composition: a pointed central spear-shaped shield plate facing right at the arc midpoint, two tapering ends curling toward the upper-left and lower-left sides. This identifies the front of an armored desert guard so players can flank the open rear. Elaborate fantasy armor textures and thin crisp silhouette readable at small size, limited warm amber glow, mostly transparent interior. Polished anime game visual effect art rather than a stock arrow or plain line drawing. No character, scenery, text, UI, watermark, ground, cast shadow or opaque backdrop. Genuine alpha transparency."
+    }
+  ]
+}

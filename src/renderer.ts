@@ -1,8 +1,9 @@
 import {CHAMPION_VFX} from './content-vfx.ts';
+import {COURT} from './stage-two.ts';
 import {SUSTAIN} from './balance.ts';
 import {RELEASES} from './unbound.ts';
 import {TORCHES} from './arena.ts';
-import {COURT_BOUNDS,COURT_ROCKS} from './court-map.ts';
+import {COURT_BOUNDS,COURT_ROCKS,HUNT_MAP_SCALE} from './court-map.ts';
 import { ENEMIES, EVENT } from './data.ts';
 import { Game } from './simulation.ts';
 import {createIdentity,type Identity} from './identity.ts';
@@ -41,7 +42,7 @@ export class Renderer {
  loadFloor(path:string,target:HTMLCanvasElement,phase:number){const image=new Image();image.onload=()=>{const c=target.getContext('2d')!;c.clearRect(0,0,512,512);c.drawImage(image,0,0,512,512);if(phase===1)this.adaptationPattern=null;else this.groundPattern=null;};image.src=path;}
  loadEnemy(kind:string){const image=new Image();image.onload=()=>this.sprites.set(kind,image);image.src='assets/enemies/'+kind+'.webp';}
  courtArtRequested=false;courtRidge:HTMLImageElement|null=null;courtShrine:HTMLImageElement|null=null;
- loadCourtArt(){if(this.courtArtRequested)return;this.courtArtRequested=true;this.loadEnemy('court-captain');this.loadEnemy('court-vanguard');this.loadFloor('assets/arena/floor-court.webp',this.adaptationBackground,1);const ridge=new Image();ridge.onload=()=>this.courtRidge=ridge;ridge.src='assets/arena/court-ridge.webp';const shrine=new Image();shrine.onload=()=>this.courtShrine=shrine;shrine.src='assets/arena/court-shrine.webp';}
+ loadCourtArt(){if(this.courtArtRequested)return;this.courtArtRequested=true;this.loadVfx('court-slam');this.loadVfx('court-guard-front');this.loadEnemy('court-captain');this.loadEnemy('court-vanguard');this.loadFloor('assets/arena/floor-court.webp',this.adaptationBackground,1);const ridge=new Image();ridge.onload=()=>this.courtRidge=ridge;ridge.src='assets/arena/court-ridge.webp';const shrine=new Image();shrine.onload=()=>this.courtShrine=shrine;shrine.src='assets/arena/court-shrine.webp';}
  resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.width*this.dpr);this.canvas.height=Math.round(this.height*this.dpr);this.scale=Math.max(.45,Math.min(this.width/1200,this.height/760));}
  makeGround(){
   const tile=document.createElement('canvas');tile.width=512;tile.height=512;const c=tile.getContext('2d')!;
@@ -80,16 +81,16 @@ export class Renderer {
   for(const r of [260,280,480,496,EVENT.arenaRadius]){c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.stroke();}
   for(let i=0;i<24;i++){const a=i*Math.PI/12;c.save();c.rotate(a);c.translate(0,475);c.fillStyle=stageTwo?'#89c4ad67':'#a77c4f50';c.font='20px Georgia';c.fillText(['ᛉ','ᚷ','ᛟ','ᚹ'][i%4],-6,0);c.restore();}
   for(let i=0;i<TORCHES.length;i++){const {x}=TORCHES[i],y=TORCHES[i].y-31;if(this.brazier){c.drawImage(this.brazier,x-42,y-80,84,126);c.fillStyle='#ff9d4e';c.globalAlpha=.12+Math.sin(time*7+i)*.035;c.beginPath();c.arc(x,y-43,35,0,7);c.fill();c.globalAlpha=1;}}
-  }else{c.strokeStyle='#967750';c.lineWidth=6;c.beginPath();c.rect(COURT_BOUNDS.left,COURT_BOUNDS.top,COURT_BOUNDS.right-COURT_BOUNDS.left,COURT_BOUNDS.bottom-COURT_BOUNDS.top);c.stroke();for(const rock of COURT_ROCKS){if(Math.abs(rock.x-cx)>extent||Math.abs(rock.y-cy)>extent)continue;c.save();c.translate(rock.x,rock.y);c.rotate(rock.angle);if(this.courtRidge)c.drawImage(this.courtRidge,-245,-132,490,264);c.restore();}}
+  }else{c.strokeStyle='#967750';c.lineWidth=6;c.beginPath();c.rect(COURT_BOUNDS.left,COURT_BOUNDS.top,COURT_BOUNDS.right-COURT_BOUNDS.left,COURT_BOUNDS.bottom-COURT_BOUNDS.top);c.stroke();for(const rock of COURT_ROCKS){if(Math.abs(rock.x-cx)>extent||Math.abs(rock.y-cy)>extent)continue;c.save();c.translate(rock.x,rock.y);c.rotate(rock.angle);if(this.courtRidge)c.drawImage(this.courtRidge,-245*HUNT_MAP_SCALE,-132*HUNT_MAP_SCALE,490*HUNT_MAP_SCALE,264*HUNT_MAP_SCALE);c.restore();}}
   if(!g){this.drawSovereign(c,0,0,time,0,3.5);c.restore();return;}
   const detail=this.low?3:this.fxLevel;this.loadChampionVfx(g.monster.id);
   const halfW=w/this.scale/2+100,halfH=h/this.scale/2+100;
   if(g.court)for(const shrine of g.court.shrines){if(Math.abs(shrine.x-cx)>extent||Math.abs(shrine.y-cy)>extent)continue;const ready=g.time>=shrine.readyAt;c.save();c.globalAlpha=ready?1:.5;if(this.courtShrine)c.drawImage(this.courtShrine,shrine.x-78,shrine.y-90,156,156);c.font='bold 12px Arial';c.textAlign='center';c.fillStyle=ready?'#b6f5e8':'#e1d3ba';c.fillText(ready?'HEALING OASIS':Math.ceil(shrine.readyAt-g.time)+'s',shrine.x,shrine.y+80);c.restore();}
   for(const e of g.enemies){if(!e.active||Math.abs(e.x-cx)>halfW||Math.abs(e.y-cy)>halfH)continue;const def=ENEMIES[e.kind],size=def.radius*4;
-   if(e.windup>0){c.strokeStyle='#ff5a56';c.fillStyle='#e6404030';c.lineWidth=3;const r=e.court?.role==='captain'?210:e.kind==='titan'?240:140;c.beginPath();c.arc(e.x,e.y,r,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(e.x,e.y,r*(1-e.windup/(e.court?.role==='captain'?1.05:1.2)),0,Math.PI*2);c.stroke();}
+   if(e.windup>0){if(e.court?.role==='captain'){const progress=1-e.windup/COURT.slamWarning;this.drawVfx(c,'court-slam',e.x,e.y,COURT.slamRadius*2,0,.38+progress*.45);c.strokeStyle='#ff7b66';c.lineWidth=1.5;c.beginPath();c.arc(e.x,e.y,COURT.slamRadius,0,Math.PI*2);c.stroke();}else{c.strokeStyle='#ff5a56';c.fillStyle='#e6404030';c.lineWidth=3;const r=e.kind==='titan'?240:140;c.beginPath();c.arc(e.x,e.y,r,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(e.x,e.y,r*(1-e.windup/1.2),0,Math.PI*2);c.stroke();}}
    const sprite=e.court?this.sprites.get('court-'+e.court.role):null,drawSize=e.court?.role==='captain'?114:e.court?96:size;
    c.drawImage(sprite??this.sprites.get(e.kind)!,e.x-drawSize/2,e.y-drawSize/2+(detail>=3?0:Math.sin(time*8+e.serial)*1.5),drawSize,drawSize);
-   if(e.court){const unit=e.court;c.save();c.translate(e.x,e.y);if(unit.guard>0){c.strokeStyle='#e6c78b';c.lineWidth=4;c.beginPath();c.arc(0,0,32,unit.facing-Math.PI*.44,unit.facing+Math.PI*.44);c.stroke();c.fillStyle='#715d32';c.fillRect(-25,-53,50,3);c.fillStyle='#e6c78b';c.fillRect(-25,-53,50*unit.guard/unit.maxGuard,3);}if(unit.role==='captain'){c.textAlign='center';c.font='bold 10px Arial';c.fillStyle='#171218dd';c.fillRect(-35,-70,70,15);c.fillStyle='#f2d99d';c.fillText('CAPTAIN',0,-59);}c.restore();}
+   if(e.court){const unit=e.court;c.save();c.translate(e.x,e.y);if(unit.guard>0){this.drawVfx(c,'court-guard-front',0,0,84,unit.facing,.82);c.fillStyle='#715d32';c.fillRect(-25,-53,50,3);c.fillStyle='#e6c78b';c.fillRect(-25,-53,50*unit.guard/unit.maxGuard,3);}if(unit.role==='captain'){c.textAlign='center';c.font='bold 10px Arial';c.fillStyle='#171218dd';c.fillRect(-35,-70,70,15);c.fillStyle='#f2d99d';c.fillText('CAPTAIN',0,-59);}c.restore();}
    if((e.corruptUntil||0)>g.time)this.drawVfx(c,'overlord-soul-brand',e.x,e.y,Math.max(44,def.radius*3.1),0,.62);
    if(e.flash>0)this.drawVfx(c,'enemy-hit',e.x,e.y,Math.max(44,def.radius*3),e.serial*2.399,e.flash/.1);
    if(e.kind==='elite'||e.kind==='titan'||e.hp<e.maxHp&&e.kind==='brute'){c.fillStyle='#21121c';c.fillRect(e.x-def.radius,e.y-def.radius*1.9,def.radius*2,4);c.fillStyle=def.color;c.fillRect(e.x-def.radius,e.y-def.radius*1.9,def.radius*2*Math.max(0,e.hp/e.maxHp),4);}
@@ -108,6 +109,7 @@ export class Renderer {
   const sparse=detail>=1;
   for(const e of g.effects){if(g.monster.id==='devourer'&&(e.kind==='frenzy'||e.kind==='feast'))continue;const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
    if(e.kind==='court-break'){c.strokeStyle='#f1d39a';c.lineWidth=3;for(let i=0;i<5;i++){const a=i*Math.PI*2/5;c.beginPath();c.moveTo(e.x+Math.cos(a)*e.radius*t,e.y+Math.sin(a)*e.radius*t);c.lineTo(e.x+Math.cos(a)*e.radius*(t+.2),e.y+Math.sin(a)*e.radius*(t+.2));c.stroke();}}
+   else if(e.kind==='court-slam'){this.drawVfx(c,'court-slam',e.x,e.y,e.radius*2*(.9+t*.1),0,.9);}
    else if(e.kind==='slam-titan'&&this.drawVfx(c,'hostile-titan',e.x,e.y,e.radius*2.1*(.7+t*.3),time*.08,1)){}
    else if(e.kind==='slam-elite'&&this.drawVfx(c,'hostile-elite',e.x,e.y,e.radius*2.1*(.72+t*.28),time*.13,1)){}
    else if(e.kind==='blood'){if(sparse)continue;c.fillStyle='#b74345';for(let i=0;i<5;i++){const a=i*2.4+e.x;c.beginPath();c.ellipse(e.x+Math.cos(a)*t*e.radius,e.y+Math.sin(a)*t*e.radius,4*(1-t)+1,2,a,0,7);c.fill();}}

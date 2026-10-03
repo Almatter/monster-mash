@@ -36,7 +36,7 @@ export class Game {
  debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
  dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
  identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
- constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
+ constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=this.monster.abilities.map(id=>ABILITIES[id]);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.release=COURT.startRelease;this.lungeCharges=this.maxLungeCharges();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
  insideMap(x:number,y:number){return this.court?insideCourt(x,y):Math.hypot(x,y)<=EVENT.arenaRadius;}
  get arenaRadius(){return this.court?COURT_RADIUS:EVENT.arenaRadius;}
  slideArena(body:{x:number;y:number},radius:number){if(this.court)slideCourt(body,radius);else slideTorches(body,radius);}
@@ -45,8 +45,8 @@ export class Game {
  announce(text:string){if(text.startsWith('RECORD')||text.startsWith('TITLE')){if(this.notifications.length>=10)this.notifications.pop();this.notifications.unshift(text);return;}if(this.noticeTime<=0){this.notice=text;this.noticeTime=2.8;}else if(this.notifications.length<10&&!this.notifications.includes(text))this.notifications.push(text);}
  effect(x:number,y:number,kind:string,radius:number,life=.5,angle=0){if(this.effects.length<180)this.effects.push({x,y,kind,radius,life,max:life,angle});}
  seedOpening(){for(let i=0;i<OPENING.count;i++)this.spawn('thrall',true);this.rebuildGrid();}
- heal(amount:number,recovery=false){if(this.ended||amount<=0)return;const gained=Math.min(amount*(this.court&&!recovery?.18:1),this.player.maxHp-this.player.hp);this.player.hp+=gained;this.sustainStats.healed+=gained;if(gained>0)this.sound('heal');}
- ward(amount:number,cap:number,seconds:number){this.shield=Math.min(cap*(this.court?.35:1),this.shield+amount*(this.court?.25:1));this.shieldTime=seconds*(1+.2*upgradeRank(this,'duration'));this.sound('shield');}
+ heal(amount:number,recovery=false){if(this.ended||amount<=0)return;const gained=Math.min(amount*(this.court&&!recovery?(this.monster.id==='devourer'?COURT.devourerHealScale:COURT.healScale):1),this.player.maxHp-this.player.hp);this.player.hp+=gained;this.sustainStats.healed+=gained;if(gained>0)this.sound('heal');}
+ ward(amount:number,cap:number,seconds:number){this.shield=Math.min(cap*(this.court?COURT.shieldCapScale:1),this.shield+amount*(this.court?COURT.shieldScale:1));this.shieldTime=seconds*(1+.2*upgradeRank(this,'duration'));this.sound('shield');}
  spawn(kind:EnemyKind,opening=false){
   if(this.alive>=EVENT.maxEnemies-24&&kind!=='elite'&&kind!=='titan')return;
   const e=this.enemies.find(e=>!e.active);if(!e)return;
@@ -67,7 +67,7 @@ export class Game {
  hurt(damage:number){if(this.court&&(this.court.pending||this.court.cleared))return;if(this.dodgeInvuln>0){if(!this.dodgeDeflected){this.dodgeInvuln=Math.max(this.dodgeInvuln,.32);this.dodgeDeflected=true;}return;}if(this.player.invuln>0)return;const raw=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.85:1)*(this.monster.id==='sovereign'&&this.player.rage>0?.75:1),s=SUSTAIN.devourer,guard=this.monster.id==='devourer'&&this.frenzyGuard>0?s.guardBaseReduction+s.guardReductionPerRelease*this.release:0,incoming=raw*(1-guard),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=raw-incoming+blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp>0&&this.player.hp/this.player.maxHp<.25)this.sound('lowHealth');if(this.player.hp<=0){this.ended=true;this.sound('defeat');}}
  damage(e:Enemy,amount:number,source:string,origin?:{x:number;y:number}){
   if(!e.active||this.court?.cleared)return false;
-  const actual=e.court?courtDamage(this,e,amount,source,origin):amount;e.hp-=actual;e.flash=.1;
+  const actual=e.court?courtDamage(this,e,amount,source,origin):amount;if(this.court&&this.monster.id==='devourer'&&source==='devour'&&e.court?.role==='captain'&&actual>0){const drain=Math.min(this.healBudget,Math.max(this.player.maxHp*COURT.devourMinimum,Math.max(0,Math.min(e.hp,actual))*COURT.devourDrain));this.healBudget-=drain;this.heal(drain);}e.hp-=actual;e.flash=.1;
   if(e.hp>0)return false;
   e.active=false;this.alive--;this.score.kill(this.court?(e.court?.role==='captain'?600:e.kind==='elite'||e.kind==='titan'?ENEMIES[e.kind].score:Math.round(ENEMIES[e.kind].score*.7)):ENEMIES[e.kind].score,e.kind,this.time,source,e.court?.role==='captain');if(e.court)courtKill(this,e);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath.'+e.kind);if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
   if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
@@ -96,7 +96,7 @@ export class Game {
   if(this.dash){const d=this.dash;p.x+=Math.cos(d.angle)*d.speed*dt;p.y+=Math.sin(d.angle)*d.speed*dt;d.remaining-=dt;}
   this.slideArena(p,23);
   const fromCenter=Math.hypot(p.x,p.y);if(!this.court&&fromCenter>this.arenaRadius){p.x*=this.arenaRadius/fromCenter;p.y*=this.arenaRadius/fromCenter;}
-  if(this.monster.id==='titan'){const s=SUSTAIN.titan,distance=Math.hypot(p.x-startX,p.y-startY);if(distance>=.7){this.momentum=Math.min(1,this.momentum+distance/s.momentumDistance);this.momentumGrace=s.momentumGrace;if(this.momentum>.1){this.shield=Math.min(s.cap*(this.court?.35:1),this.shield+s.movingRegen*this.momentum*dt*(this.court?.25:1));this.shieldTime=Math.max(this.shieldTime,2.5*(1+.2*upgradeRank(this,'duration')));}}else{this.momentumGrace=Math.max(0,this.momentumGrace-dt);if(this.momentumGrace===0){this.momentum=Math.max(0,this.momentum-dt/s.momentumDecay);this.shield=Math.max(0,this.shield-s.idleDrain*(1-this.momentum)*dt);}}}
+  if(this.monster.id==='titan'){const s=SUSTAIN.titan,distance=Math.hypot(p.x-startX,p.y-startY);if(distance>=.7){this.momentum=Math.min(1,this.momentum+distance/s.momentumDistance);this.momentumGrace=s.momentumGrace;if(this.momentum>.1){this.shield=Math.min(s.cap*(this.court?COURT.shieldCapScale:1),this.shield+s.movingRegen*this.momentum*dt*(this.court?COURT.shieldScale:1));this.shieldTime=Math.max(this.shieldTime,2.5*(1+.2*upgradeRank(this,'duration')));}}else{this.momentumGrace=Math.max(0,this.momentumGrace-dt);if(this.momentumGrace===0){this.momentum=Math.max(0,this.momentum-dt/s.momentumDecay);this.shield=Math.max(0,this.shield-s.idleDrain*(1-this.momentum)*dt);}}}
   if(input.aiming)p.angle=Math.atan2(input.aimY-p.y,input.aimX-p.x);
   else if(length>.1&&(input.x||input.y))p.angle=Math.atan2(input.y,input.x);
   else {let nearest:Enemy|null=null,best=500;for(const e of this.enemies)if(e.active){const d=Math.hypot(e.x-p.x,e.y-p.y);if(d<best){nearest=e;best=d;}}if(nearest)p.angle=Math.atan2(nearest.y-p.y,nearest.x-p.x);}
@@ -114,8 +114,8 @@ export class Game {
    if(d>430)e.rushing=true;if(d<140)e.rushing=false;
    let speed=enemyMovementSpeed(e.kind,this.court?3+this.court.stats.captains*2:this.wave,this.pressure.pursuit,!!e.rushing);
    if(def.behavior==='ranged'&&d<380){speed=d<250?-def.speed:0;if(e.timer<=0&&this.shots.length<180){this.shots.push({x:e.x,y:e.y,vx:dx/d*220,vy:dy/d*220,life:4,damage:def.damage*threat});e.timer=2.5;}}
-   if((def.behavior==='slam'||e.court?.role==='captain')&&d<220&&e.timer<=0&&e.windup<=0){e.windup=e.court?.role==='captain'?1.05:1.2;e.timer=e.court?.role==='captain'?3.8:e.kind==='titan'?4:5;}
-   if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.court?.role==='captain'?210:e.kind==='titan'?240:140;this.effect(e.x,e.y,e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(d<r+20)this.hurt(e.court?.role==='captain'?160*(1+.09*(e.court.tier||0)):def.damage*threat);}}
+   if((def.behavior==='slam'||e.court?.role==='captain')&&d<220&&e.timer<=0&&e.windup<=0){e.windup=e.court?.role==='captain'?COURT.slamWarning:1.2;e.timer=e.court?.role==='captain'?COURT.slamCycle:e.kind==='titan'?4:5;}
+   if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.court?.role==='captain'?COURT.slamRadius:e.kind==='titan'?240:140;this.effect(e.x,e.y,e.court?.role==='captain'?'court-slam':e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(d<r+20)this.hurt(e.court?.role==='captain'?COURT.slamDamage*(1+.07*(e.court.tier||0)):def.damage*threat);}}
    const weave=def.behavior==='weave'?Math.sin(this.time*5+e.serial)*45:0;
    const courtMotion=e.court?courtEnemyMotion(this,e,dt):this.court?(()=>{const v=courtSteer(e.x,e.y,p.x,p.y);return {dx:v.x,dy:v.y,speed};})():null;
    if(courtMotion&&e.windup>0)courtMotion.speed=0;
