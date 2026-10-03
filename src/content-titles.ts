@@ -22,6 +22,16 @@ export const TITLES:PrestigeTitle[]=[
  title('overlord2','Emperor of the Fallen','Overlord mastery',req('overlord','owned',100000,'servant kills'),req('overlord','chain',25000,'corruption explosion kills'),req('overlord','runs',20,'Overlord incarnations ≥60s')),
  title('sovereign1','The Ravenous Crown','Sovereign mastery',req('sovereign','devour',5000,'Sovereign consumed prey'),req('sovereign','beam',5000,'Sovereign beam kills'),req('sovereign','runs',5,'Sovereign incarnations ≥60s')),
  title('sovereign2','The First and Last','Sovereign mastery',req('sovereign','devour',50000,'Sovereign consumed prey'),req('sovereign','beam',50000,'Sovereign beam kills'),req('sovereign','runs',20,'Sovereign incarnations ≥60s')),
+ title('wildsHunter','Hunter of the Wilds','Ashen Wilds',req('total','courtClears',1,'completed Stage 2 hunts')),
+ title('wildsVeteran','Ashen Warden','Ashen Wilds',req('total','courtClears',3,'completed Stage 2 hunts')),
+ title('wildsCollector','Captain Reaper','Ashen Wilds',req('total','courtCaptains',50,'Stage 2 captains slain')),
+ title('wildsGuards','The Shieldbreaker','Ashen Wilds',req('best','courtGuardRun',40,'guards broken in one Stage 2 hunt')),
+ title('wildsClose','Into the Lion’s Teeth','Ashen Wilds',req('best','courtCloseClear',8,'close-range captain kills in a completed hunt')),
+ title('wildsFast','Sandstorm Pursuer','Ashen Wilds',req('best','courtFastClear',1,'complete Stage 2 in 12 minutes or less')),
+ title('wildsSwift','Before the Ash Settles','Ashen Wilds',req('best','courtSwiftClear',1,'complete Stage 2 in 10 minutes or less')),
+ title('wildsHaste','Desert Wind','Ashen Wilds',req('best','courtHasteClear',1,'complete a hunt with Wayfarer at rank 3')),
+ title('wildsTempo','A Thousand Cuts','Ashen Wilds',req('best','courtTempoClear',1,'complete a hunt with Rending Rhythm at rank 3')),
+ title('wildsDuration','The Lingering Catastrophe','Ashen Wilds',req('best','courtDurationClear',1,'complete a hunt with Enduring Power at rank 3')),
  ...STAGE_GATES.map(gate=>title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different festival days with one champion: finish Stage ${gate.sourcePhase+1} ${gate.ending==='overwhelmed'?'naturally ':''}after ≥${Math.floor(gate.minSeconds/60)}:${String(gate.minSeconds%60).padStart(2,'0')} and ≥${gate.minKills.toLocaleString()} kills each day`)))
 ];
 export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return gate&&r.metric==='days'?trialDays(p.trials,gate):0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}

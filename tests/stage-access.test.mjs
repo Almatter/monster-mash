@@ -42,7 +42,7 @@ test('the release clock comes from a fresh network HEAD response and fails close
  assert.equal(await serverTime(async()=>{throw Error('offline');}),null);assert.equal(stageAccess(1,{titles:{gatebreaker:'2026-10-07'},trials:{gatebreaker:{titan:['2026-10-01','2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07']}}},null),'clock');
 });
 
-test('selected Stage 2 uses the existing harder Adaptation scenario instead of Stage 1 pressure',()=>{
+test('selected Stage 2 replaces some crowd pressure with finite Court hunt objectives; Stage 1 remains unchanged',()=>{
  const base=new Game(11,{monsterId:'titan'},0),next=new Game(11,{monsterId:'titan'},1),input={x:0,y:0,aimX:0,aimY:0,aiming:false};base.update(1/60,input);next.update(1/60,input);
- assert.equal(next.phase,1);assert.ok(next.spawnBank>base.spawnBank);assert.equal(new Game(11,{monsterId:'titan'},99).phase,0);
+ assert.equal(next.phase,1);assert.ok(next.spawnBank<next.pressure.rate*1.08/60);assert.ok(next.court);assert.equal(base.court,null);assert.equal(new Game(11,{monsterId:'titan'},99).phase,0);
 });

@@ -32,7 +32,7 @@ export function saveProfile(profile:Profile,storage?:StorageLike){try{storage?.s
 export function updateRecords(profile:Profile,metrics:Metrics,identity:Identity,now=new Date().toISOString()){
  const unlocked:string[]=[];for(const a of ACHIEVEMENTS){if(a.archetype&&a.archetype!==identity.monsterId)continue;const r=profile.records[a.id]??{best:0};r.best=Math.max(r.best,metrics[a.metric]||0);if(!r.unlockedAt&&r.best>=a.target){r.unlockedAt=now;r.name=identity.name;r.monsterId=identity.monsterId;unlocked.push(a.id);}profile.records[a.id]=r;}return unlocked;
 }
-export type RunProgress={id:string;monsterId:string;phase?:number;reason?:'overwhelmed'|'retired';values:Totals;best:Totals};
+export type RunProgress={id:string;monsterId:string;phase?:number;reason?:'overwhelmed'|'retired'|'cleared';values:Totals;best:Totals};
 export function recordProgress(profile:Profile,run:RunProgress,finished=false,endedAt=new Date()){
  const p=profile.progress;if(p.finished.includes(run.id)||!Object.hasOwn(MONSTERS,run.monsterId))return [];
  const prior=p.ledger?.id===run.id?p.ledger.values:{},values=totals(run.values),kit=p.archetypes[run.monsterId]??={};

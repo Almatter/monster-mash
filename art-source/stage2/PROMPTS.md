@@ -1,0 +1,14 @@
+# Stage 2 original enemy artwork
+
+Generated with the built-in imagegen tool, transparent background, separate calls for each asset. Masters saved as `art-source/stage2/captain.png` and `art-source/stage2/vanguard.png`. `node tools/pack-stage2-enemies.mjs` trims transparent margins, resizes and pads to 320×320, then creates `public/assets/enemies/court-captain.webp` and `court-vanguard.webp`. Existing enemy art is unchanged. The renderer requests these two sprites only in Stage 2.
+
+## Vanguard prompt
+
+Use case: game-asset. Create one original anime isekai dark-fantasy enemy sprite for a small top-down arena action game, Monster Mash. Subject: Shattered Court Vanguard, a broad heavily armored ogre footsoldier with pale ash skin, squat powerful body, immense weathered ivory-and-bronze tower shield covering its left arm, short black iron cleaver in right hand, teal crystal clasps. Distinct from player characters. Three-quarter front overhead view about 35 degrees, facing slightly left, full body and both feet completely visible, dynamic readable stance. Sharply inked hand-painted anime game illustration, bold clean silhouette, rich subdued bronze and ivory armor with restrained teal accents, clear shield anatomical regions. Designed to read at 96 pixels in game. Exactly one creature centered filling 85% of square canvas, transparent background, no ground, no environment, no text, no border, no extra figures, no realistic photograph, no UI circles, no aura. Keep shield silhouette strong and vertical. All weapons and limbs inside canvas.
+
+## Captain prompt
+
+Use case: game-asset. Create one original anime isekai dark-fantasy enemy sprite for Monster Mash, a top-down arena action game. Subject: Shattered Court Hunt Captain, a lean regal ash-skinned goblin war-knight with a tall broken antler-crown helmet, angular ivory plate armor over a ragged dark burgundy royal mantle, luminous jade eyes, an ornate bronze double-ended poleaxe held diagonally. Full body and both feet visible, three-quarter overhead view about 35 degrees facing slightly left, imposing poised stance. Sharply inked hand-painted anime game illustration, bold readable distinctive silhouette and clean interior shapes. Pale ivory, muted gold/bronze and rich burgundy contrast; restrained jade gemstones, no surrounding glows. Designed to read clearly at 110 pixels. Exactly one enemy centered and occupying 85% of a square canvas. Transparent background, no text, no environment, no ground, no UI rings, no frames, no extra people. Keep complete weapon and antlers inside canvas. A threatening lesser enemy captain, not a player champion, not a giant boss.
+
+
+The new ash terrain and rocky ridge masters/runtime paths and exact prompts are recorded in [TERRAIN_PROMPTS.md](TERRAIN_PROMPTS.md). These also use the built-in imagegen tool.

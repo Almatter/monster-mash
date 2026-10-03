@@ -11,7 +11,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
 };
 export const PHASES = [
  { name:'THE SWARM', pressure:1, weights:[72,13,4,5,6], eliteEvery:4, titanEvery:8 },
- { name:'ADAPTATION', pressure:1.08, weights:[40,20,16,14,10], eliteEvery:3, titanEvery:7 },
+ { name:'THE HUNT', pressure:1.08, weights:[40,20,16,14,10], eliteEvery:3, titanEvery:7 },
  { name:'TITANS', pressure:1.12, weights:[42,15,10,13,20], eliteEvery:2, titanEvery:4 },
  { name:'THRONE WAR', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
 ];

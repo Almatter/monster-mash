@@ -32,7 +32,7 @@ export function mergeProgress(local:Profile,incoming:Profile):Profile{
  p.legacyTitles=[...new Set([...a.progress.legacyTitles,...b.progress.legacyTitles])];
  p.finished=[...new Set([...a.progress.finished,...b.progress.finished])].slice(-64);p.ledger=null;
  for(const gate of STAGE_GATES){p.trials[gate.titleId]??={};for(const id of Object.keys(p.archetypes))p.trials[gate.titleId][id]=[...new Set([...(a.progress.trials[gate.titleId]?.[id]||[]),...(b.progress.trials[gate.titleId]?.[id]||[])])].sort().slice(-gate.days);}
- for(const [key,best] of Object.entries(a.personalBests)){const other=merged.personalBests[key];merged.personalBests[key]={score:Math.max(best.score,other?.score||0),kills:Math.max(best.kills,other?.kills||0),seconds:Math.max(best.seconds,other?.seconds||0)};}
+ for(const [key,best] of Object.entries(a.personalBests)){const other=merged.personalBests[key];merged.personalBests[key]={score:Math.max(best.score,other?.score||0),kills:Math.max(best.kills,other?.kills||0),seconds:key.endsWith('|cleared')?Math.min(best.seconds,other?.seconds??best.seconds):Math.max(best.seconds,other?.seconds||0)};}
  awardTitles(p);
  return normalizeProfile(merged);
 }

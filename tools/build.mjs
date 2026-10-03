@@ -15,8 +15,11 @@ for (const name of await readdir('src')) {
 const {cp}=await import('node:fs/promises');await cp('public','dist',{recursive:true});
 for(const lab of ['art-lab.html','music-lab.html'])await rm('dist/'+lab);
 await rm('dist/_headers',{force:true});
+await mkdir('dist/stage2-test',{recursive:true});
+const testEntry=(await readFile('dist/index.html','utf8')).replace('<head>','<head>\n<base href="../">');
+await writeFile('dist/stage2-test/index.html',testEntry);
 const modules=(await readdir('src')).filter(n=>n.endsWith('.ts')&&!['art-lab.ts','music-lab.ts'].includes(n)).map(n=>'src/'+n.replace('.ts','.js'));
-const assets=['./','index.html','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
+const assets=['./','index.html','stage2-test/','stage2-test/index.html','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
 const digest=createHash('sha256');
 async function hashTree(dir){for(const item of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){const path=join(dir,item.name);if(item.isDirectory())await hashTree(path);else if(item.isFile()&&path!==join('dist','sw.js')){digest.update(path);digest.update(await readFile(path));}}}
 await writeFile('dist/robots.txt','User-agent: *\nAllow: /\n');

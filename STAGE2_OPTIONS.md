@@ -1,6 +1,6 @@
 # Stage 2: reward pursuit and impact
 
-These are design options, not live balance changes. The organizer reports Overlord leading Dominance, with Calamity and Sovereign also strong. Without a submitted results dataset, the size of those gaps is not yet measured here. Stage 1 remains untouched.
+These began as design options, not live balance changes. A larger Ashen Wilds map, ten seeded captain camps, launchable vanguards and nine paused boon choices now have a public isolated playtest at `/stage2-test/` documented in [STAGE2_PLAYTEST_REPORT.md](STAGE2_PLAYTEST_REPORT.md). The organizer reports Overlord leading live Dominance, with Calamity and Sovereign also strong. Without a submitted live results dataset, the size of those gaps is not yet measured here. Stage 1 remains untouched.
 
 Overlord turns many weak bodies into parallel servant and corruption scoring opportunities. Calamity clears dense groups at range; Sovereign combines ranged magic and close attacks. Devourer benefits from speed, repeated lunges, execution and close feeding. Titan benefits from movement, launches, collisions and trample. Stage 2 should therefore place more value on reaching a target and breaking a formation than simply clearing the largest continuous mass of weak prey.
 
