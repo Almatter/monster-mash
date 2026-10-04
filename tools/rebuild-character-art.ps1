@@ -13,5 +13,7 @@ Get-ChildItem -LiteralPath $root -Recurse -Filter '*.tmp.webp' -File | ForEach-O
 }
 node tools/refine-devourer-selection.mjs
 if ($LASTEXITCODE -ne 0) { throw 'Devourer selection refinement failed' }
+node tools/process-reaper-art.mjs
+if ($LASTEXITCODE -ne 0) { throw 'Reaper art generation failed' }
 node tools/validate-masks.mjs
 if ($LASTEXITCODE -ne 0) { throw 'Mask validation failed' }

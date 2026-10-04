@@ -8,11 +8,13 @@ function release(image:TerrainImage){if('close' in image)image.close();else imag
 export class CourtTerrain {
  tiles=new Map<string,Tile>();pending=new Map<string,Promise<void>>();wanted=new Set<string>();queue:{x:number;y:number;priority:number}[]=[];clock=0;failures=0;peak=0;generation=0;
  readonly capacity=typeof matchMedia==='function'&&matchMedia('(pointer:coarse)').matches?24:cacheLimit;
+ private lastRequest='';private requestAt=0;
  private retryAfter=new Map<string,number>();private bitmapSupported=typeof createImageBitmap==='function';
  private key(x:number,y:number){return x+'-'+y;}
  requestView(cx:number,cy:number,halfW:number,halfH:number){
   const x0=Math.max(0,Math.floor((cx-halfW-left)/size)-1),x1=Math.min(cols-1,Math.floor((cx+halfW-left)/size)+1),y0=Math.max(0,Math.floor((cy-halfH-top)/size)-1),y1=Math.min(rows-1,Math.floor((cy+halfH-top)/size)+1),wanted=new Set<string>(),candidates=[];
   const vx0=Math.floor((cx-halfW-80-left)/size),vx1=Math.floor((cx+halfW+80-left)/size),vy0=Math.floor((cy-halfH-80-top)/size),vy1=Math.floor((cy+halfH+80-top)/size);
+  const signature=[x0,x1,y0,y1,vx0,vx1,vy0,vy1].join(':');if(signature===this.lastRequest&&performance.now()-this.requestAt<500)return;this.lastRequest=signature;this.requestAt=performance.now();
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)candidates.push({x,y,priority:Math.hypot(left+(x+.5)*size-cx,top+(y+.5)*size-cy)-(x>=vx0&&x<=vx1&&y>=vy0&&y<=vy1?1000000:0)});
   const queue=[];for(const item of candidates.sort((a,b)=>a.priority-b.priority).slice(0,this.capacity)){const key=this.key(item.x,item.y);wanted.add(key);const tile=this.tiles.get(key);if(tile)tile.used=++this.clock;else if(!this.pending.has(key)&&performance.now()>=(this.retryAfter.get(key)??0))queue.push(item);}
   this.wanted=wanted;this.queue=queue;this.pump();

@@ -4,7 +4,7 @@ export type Lane={a:Point;b:Point;radius:number;region?:string};
 export const COURT_BOUNDS={left:-5600,right:5600,top:-5400,bottom:5000};
 export const COURT_RADIUS=8000;
 export const REGION_SIZE=3000;
-export const POCKETS=[{x:-1040,y:-930},{x:1010,y:-950},{x:900,y:980},{x:-800,y:950}];
+export const POCKETS=[{x:-1040,y:-980},{x:1010,y:-950},{x:900,y:980},{x:-800,y:950}];
 export const LOOP=[{x:-500,y:-520},{x:560,y:-480},{x:520,y:540},{x:-560,y:500}];
 export const COURT_REGIONS=[
  {id:'crownfall',name:'CROWNFALL KEEP',x:0,y:-3400,accent:'#b35d49'},

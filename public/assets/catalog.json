@@ -148,5 +148,35 @@
       "secondary": "assets/monsters/overlord/portrait-secondary.webp",
       "primary": "assets/monsters/overlord/portrait-primary.webp"
     }
+  },
+  "reaper": {
+    "selection": {
+      "base": "assets/monsters/reaper/selection-base.webp",
+      "primary": "assets/monsters/reaper/selection-primary.webp",
+      "secondary": "assets/monsters/reaper/selection-secondary.webp",
+      "accent": "assets/monsters/reaper/selection-accent.webp",
+      "power": "assets/monsters/reaper/selection-power.webp"
+    },
+    "portrait": {
+      "base": "assets/monsters/reaper/portrait-base.webp",
+      "primary": "assets/monsters/reaper/portrait-primary.webp",
+      "secondary": "assets/monsters/reaper/portrait-secondary.webp",
+      "accent": "assets/monsters/reaper/portrait-accent.webp",
+      "power": "assets/monsters/reaper/portrait-power.webp"
+    },
+    "cutin": {
+      "base": "assets/monsters/reaper/cutin-base.webp",
+      "primary": "assets/monsters/reaper/cutin-primary.webp",
+      "secondary": "assets/monsters/reaper/cutin-secondary.webp",
+      "accent": "assets/monsters/reaper/cutin-accent.webp",
+      "power": "assets/monsters/reaper/cutin-power.webp"
+    },
+    "gameplay": {
+      "base": "assets/monsters/reaper/gameplay-base.webp",
+      "primary": "assets/monsters/reaper/gameplay-primary.webp",
+      "secondary": "assets/monsters/reaper/gameplay-secondary.webp",
+      "accent": "assets/monsters/reaper/gameplay-accent.webp",
+      "power": "assets/monsters/reaper/gameplay-power.webp"
+    }
   }
 }

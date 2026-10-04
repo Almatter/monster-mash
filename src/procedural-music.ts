@@ -1,5 +1,5 @@
 import type {MusicState} from './content-audio.ts';
-export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon';
+export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper';
 type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'};
 const repeat=(bars:number[],count:number)=>Array.from({length:count},(_,i)=>bars[i%bars.length]);
 export const THEMES:Record<ThemeId,Theme>={
@@ -10,6 +10,7 @@ export const THEMES:Record<ThemeId,Theme>={
  titan:{bpm:84,bars:12,mode:'G minor / open-fifth hammering',roots:repeat([31,34,29,31,31,36,34,29],12),third:repeat([3,4,3,3],12),motif:[0,7,0,12,7,0,10,7],drums:[0,2],bass:[0,2],texture:'hammer'},
  devourer:{bpm:144,bars:16,mode:'C Phrygian / predatory 3+3+2 pulse',roots:repeat([36,37,43,36,39,37,34,36],16),third:repeat([3,4,3,3,3,4,4,3],16),motif:[0,1,3,7,1,0,10,7],drums:[0,1.5,3],bass:[0,1.5,3],texture:'breath'},
  calamity:{bpm:132,bars:16,mode:'A harmonic minor / unstable arcana',roots:repeat([45,41,38,40,45,46,43,40],16),third:repeat([3,4,3,3,3,4,3,3],16),motif:[0,12,7,15,19,12,8,7],drums:[0,2.5,3.5],bass:[0,1,2,3.5],texture:'arcane'},
+ reaper:{bpm:124,bars:16,mode:'F sharp harmonic minor / moonlit hunt',roots:repeat([42,38,45,37,42,41,38,37],16),third:repeat([3,4,3,4,3,3,4,4],16),motif:[0,7,12,10,7,3,1,0],drums:[0,1.5,3],bass:[0,2,3.5],texture:'arcane'},
  boon:{bpm:76,bars:4,mode:'D suspended minor / choice sanctuary',roots:[50,46,53,45],third:[3,4,3,4],motif:[0,7,12,5,3,7,14,12],drums:[],bass:[],texture:'bells'}
 };
 export const MUSIC={sampleRate:22050,layers:['drone / harmony','character bass','character percussion','signature motif','Carnage counterline','Unbound and Final Release','Titan threat / results cadence']} as const;
@@ -49,16 +50,19 @@ export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,
 }
 export class ProceduralMusic {
  voices:{source:AudioBufferSourceNode;gain:GainNode}[]=[];buffers:AudioBuffer[]=[];state:MusicState='menu';theme:ThemeId='menu';requestedTheme:ThemeId='menu';ready:Promise<void>|null=null;enabled=true;disposed=false;generation=0;
+ private scoreWorker:Worker|null=null;private cancelScore:()=>void=()=>{};
+ private releaseScore(worker:Worker){worker.terminate();worker.onmessage=null;worker.onerror=null;if(this.scoreWorker===worker){this.scoreWorker=null;this.cancelScore=()=>{};}}
+ private score(theme:ThemeId):Promise<Float32Array[]>{if(typeof Worker==='undefined')return (async()=>{const layers:Float32Array[]=[];for(let i=0;i<MUSIC.layers.length;i++)layers.push(await renderMusicLayer(i,MUSIC.sampleRate,theme));return layers;})();return new Promise((resolve,reject)=>{const worker=new Worker(new URL('./music-worker.js',import.meta.url),{type:'module'}),layers:Float32Array[]=[];this.scoreWorker=worker;this.cancelScore=()=>{this.releaseScore(worker);resolve([]);};worker.onmessage=event=>{if(event.data.error){this.releaseScore(worker);reject(Error(event.data.error));}else if(event.data.complete){this.releaseScore(worker);resolve(layers);}else layers[event.data.layer]=event.data.pcm;};worker.onerror=()=>{this.releaseScore(worker);reject(Error('Background score unavailable'));};worker.postMessage({theme});});}
  context:AudioContext;output:GainNode;filter:BiquadFilterNode;
  constructor(context:AudioContext,destination:AudioNode){this.context=context;this.output=context.createGain();this.filter=context.createBiquadFilter();this.filter.type='lowpass';this.filter.frequency.value=4200;this.filter.Q.value=.4;this.output.gain.value=.75;this.output.connect(this.filter);this.filter.connect(destination);}
- async prepare(theme:ThemeId=this.requestedTheme){if(this.ready&&this.requestedTheme===theme)return this.ready;const gen=++this.generation;this.requestedTheme=theme;this.ready=(async()=>{const next:AudioBuffer[]=[];for(let layer=0;layer<MUSIC.layers.length;layer++){const pcm=await renderMusicLayer(layer,MUSIC.sampleRate,theme);if(this.disposed||gen!==this.generation)return;const buffer=this.context.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);next.push(buffer);}if(this.disposed||gen!==this.generation)return;const enabled=this.enabled;this.stop();this.theme=theme;this.buffers=next;this.enabled=enabled;this.start();})();return this.ready;}
+ async prepare(theme:ThemeId=this.requestedTheme){if(this.ready&&this.requestedTheme===theme)return this.ready;this.cancelScore();const gen=++this.generation;this.requestedTheme=theme;this.ready=(async()=>{let pieces:Float32Array[];try{pieces=await this.score(theme);}catch{pieces=[];for(let i=0;i<MUSIC.layers.length;i++){if(this.disposed||gen!==this.generation)return;pieces.push(await renderMusicLayer(i,MUSIC.sampleRate,theme));}}if(this.disposed||gen!==this.generation||pieces.length!==MUSIC.layers.length)return;const next:AudioBuffer[]=[];for(const pcm of pieces){if(this.disposed||gen!==this.generation)return;const buffer=this.context.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);next.push(buffer);}if(this.disposed||gen!==this.generation)return;const enabled=this.enabled;this.stop();this.theme=theme;this.buffers=next;this.enabled=enabled;this.start();})();return this.ready;}
  setTheme(theme:ThemeId){if(theme===this.requestedTheme)return;void this.prepare(theme);}
  start(){if(this.disposed||!this.enabled||this.voices.length||this.buffers.length!==7)return;const at=this.context.currentTime+.08;for(const buffer of this.buffers){const source=this.context.createBufferSource(),gain=this.context.createGain();source.buffer=buffer;source.loop=true;gain.gain.value=0;source.connect(gain);gain.connect(this.output);source.start(at);this.voices.push({source,gain});}this.mix();}
  setState(state:MusicState){this.state=state;this.enabled=true;void this.prepare(this.requestedTheme);this.start();this.mix();}
  mix(){const t=this.context.currentTime;this.voices.forEach((v,i)=>{v.gain.gain.cancelAndHoldAtTime(t);v.gain.gain.setTargetAtTime(MIX[this.state][i],t,.45);});}
  duck(){const t=this.context.currentTime;this.output.gain.cancelAndHoldAtTime(t);this.output.gain.linearRampToValueAtTime(.48,t+.04);this.output.gain.setTargetAtTime(.75,t+.22,.3);}
  stop(){this.enabled=false;for(const v of this.voices){try{v.source.stop();}catch{}v.source.disconnect();v.gain.disconnect();}this.voices=[];}
- dispose(){this.disposed=true;this.generation++;this.stop();this.buffers=[];this.output.disconnect();this.filter.disconnect();}
+ dispose(){this.cancelScore();this.disposed=true;this.generation++;this.stop();this.buffers=[];this.output.disconnect();this.filter.disconnect();}
 }
 
 // One cached mono score for choice breaks; battle's seven buffers are reused.

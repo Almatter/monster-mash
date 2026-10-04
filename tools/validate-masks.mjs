@@ -38,4 +38,4 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
  }
  checked++;console.log(monster,type,counts);
 }
-assert.equal(checked,20);console.log('Validated 20 registered art sets / 80 tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.');
+assert.equal(checked,Object.keys(catalog).length*4);console.log(`Validated ${checked} registered art sets / ${checked*4} tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.`);

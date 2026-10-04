@@ -5,8 +5,8 @@ type Design={style:Style;duration:number;pitch:number;weight:number};
 function design(kind:string):Design{
  const ability=kind.startsWith('ability.')?ABILITIES[kind.slice(8)]:undefined;
  const owner=ability?Object.values(MONSTERS).find(m=>m.abilities.includes(ability.id))?.id:kind.startsWith('basic.')?kind.slice(6):'';
- const styles:Record<string,Style>={devourer:'tear',titan:'stone',sovereign:'infernal',overlord:'ossuary',calamity:'rift'};
- if(owner){const ultimate=ability&&['blast','dominion','frenzy'].includes(ability.effect);return {style:styles[owner]||'infernal',duration:ultimate?.8:ability?.42:owner==='titan'?.29:.2,pitch:owner==='titan'?62:owner==='devourer'?136:owner==='calamity'?104:86,weight:ultimate?1:.67};}
+ const styles:Record<string,Style>={devourer:'tear',titan:'stone',sovereign:'infernal',overlord:'ossuary',calamity:'rift',reaper:'rift'};
+ if(owner){const ultimate=ability&&['blast','dominion','frenzy','reaperstorm'].includes(ability.effect);return {style:styles[owner]||'infernal',duration:ultimate?.8:ability?.42:owner==='titan'?.29:.2,pitch:owner==='titan'?62:owner==='devourer'?136:owner==='calamity'?104:86,weight:ultimate?1:.67};}
  if(kind==='multikill.extinction')return {style:'cataclysm',duration:1.25,pitch:43,weight:1};
  if(kind==='multikill.annihilation')return {style:'cataclysm',duration:.95,pitch:54,weight:.92};
  if(kind==='multikill.bloodbath'||kind==='multikill')return {style:'cataclysm',duration:.68,pitch:72,weight:.78};

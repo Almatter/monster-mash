@@ -6,7 +6,7 @@ const files=execFileSync('git',['ls-tree','-r','--name-only',base,'src'],{encodi
 for(const file of files)await writeFile(resolve(dir,file.slice(4)),execFileSync('git',['show',base+':'+file]));
 const {Game:Previous}=await import(pathToFileURL(resolve(dir,'simulation.ts')).href);
 const digest=g=>createHash('sha256').update(JSON.stringify({rng:g.rng,time:g.time,wave:g.wave,ended:g.ended,player:g.player,score:g.score,alive:g.alive,enemies:g.enemies,servants:g.servants,shots:g.shots,bolts:g.bolts,clawWaves:g.clawWaves,debris:g.debris,fields:g.fields,shield:g.shield,sustain:g.sustainStats,cooldowns:g.cooldowns})).digest('hex');
-for(const id of Object.keys(MONSTERS))for(const seed of [77,444]){
+for(const id of Object.keys(MONSTERS).filter(id=>id!=='reaper'))for(const seed of [77,444]){
  const a=new Previous(seed,{monsterId:id},0),b=new Game(seed,{monsterId:id},0),input={x:0,y:0,aimX:400,aimY:0,aiming:true};for(const g of [a,b]){g.update(1/60,input);g.seedOpening();}
  for(let frame=0;frame<600*60&&!a.ended;frame++){const angle=a.time*.17,x=Math.cos(angle),y=Math.sin(angle),next={x,y,aimX:a.player.x+400,aimY:a.player.y,aiming:true};for(const g of [a,b]){g.update(1/60,next);if(frame%12===0)for(let i=0;i<4;i++){if(g.powers[i].effect==='devour'&&g.player.hp>g.player.maxHp*.8)continue;g.cast(i);}}}
  assert.equal(digest(b),digest(a),id+' seed '+seed+' changed Stage 1 state');console.log(id+' seed '+seed+': exact deployed Stage 1 state preserved through '+Math.round(a.time)+'s');

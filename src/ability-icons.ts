@@ -1,4 +1,8 @@
 const paths:Record<string,string>={
+ soulsweep:'M5 23c-3-9 2-18 15-19l7 3-11 3 M20 5l-9 22 M9 25l4 2',
+ graveshift:'M4 7h8 M4 4v6 M21 22h8 M25 18v9 M9 23l14-14 M17 5c5 0 9 2 11 6l-9-3',
+ reapingarc:'M4 8c9-5 16-3 22 5 M5 16c9-4 16-2 23 5 M4 24c7-2 12 0 17 5',
+ moonstorm:'M21 3c-8 1-12 7-11 14 1 6 7 10 13 10-10 5-23-2-22-13C3 7 12 2 21 3Z M16 11l-4 17',
  command:'M16 3 21 10 27 8 25 23 7 23 5 8 11 10 16 3Z M10 27h12 M16 12v8',
  curse:'M16 3 27 16 16 29 5 16 16 3Z M10 16h12 M16 10v12',
  legion:'M5 24v-8l5-5 5 5v8 M17 24v-8l5-5 5 5v8 M8 19h2 M21 19h2 M4 27h24',

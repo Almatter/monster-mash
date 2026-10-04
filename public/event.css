@@ -85,3 +85,5 @@
 @media(max-height:500px){.hunt-upgrade-panel{padding:12px!important}.hunt-upgrade-panel h2{font-size:26px;margin:4px 0}.hunt-upgrade-panel p{margin:5px 0;font-size:11px;line-height:1.4}#huntUpgradeChoices{margin:8px 0}#huntUpgradeChoices button{min-height:100px;padding:8px;gap:5px;font-weight:normal;letter-spacing:0}#huntUpgradeChoices b{font-size:16px}#huntUpgradeChoices span{font-size:11px;line-height:1.35}#huntUpgradeChoices small{font-size:10px}}
 
 #courtObjective{white-space:pre-line}
+
+.result-breakdown{border:1px solid #625047;padding:14px;margin:18px 0;text-align:left}.result-breakdown summary{cursor:pointer;color:var(--gold);font-size:12px;letter-spacing:1px}.result-breakdown .stats{margin-top:20px;text-align:center}

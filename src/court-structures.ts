@@ -8,6 +8,19 @@ const centers:Record<string,{ground:number[][];front:number[][];holes?:number[][
  bonebarrow:{ground:[[1190,1260],[1740,1240],[1890,1500],[1790,1700],[1540,1810],[1210,1720],[1080,1500]],front:[[1510,990],[1570,1050],[1740,1170],[1820,1360],[1880,1530],[1750,1710],[1510,1780],[1230,1720],[1120,1480],[1200,1300],[1200,1080],[1300,1160]]},
  wayfarer:{ground:[[1230,1300],[1650,1280],[1790,1500],[1770,1690],[1490,1770],[1180,1690],[1100,1530]],front:[[1360,1010],[1510,1110],[1660,1070],[1760,1300],[1850,1260],[1800,1590],[1700,1700],[1470,1750],[1200,1700],[1130,1510],[1220,1280],[1280,1120]]}
 };
+// Additional rear masonry and curved courtyard walls, traced separately from the cliffs.
+const rearWalls:Record<string,number[][]>={
+ crownfall:[[1350,1060],[1685,1080],[1755,1280],[1740,1370],[1270,1390],[1240,1270]],
+ emberforge:[[1465,1010],[1650,1030],[1825,1160],[1880,1370],[1730,1450],[1350,1370],[1230,1280]],
+ chapel:[[1350,1000],[1490,1030],[1680,1090],[1755,1310],[1750,1480],[1270,1490],[1230,1320]],
+ bonebarrow:[[1250,1160],[1490,1100],[1700,1190],[1820,1390],[1760,1500],[1170,1450]],
+ wayfarer:[[1340,1130],[1500,1170],[1660,1120],[1785,1320],[1740,1450],[1210,1480],[1190,1320]]
+};
+const courtyardWalls=[
+ [[60,300],[140,285],[150,470],[220,565],[345,605],[340,680],[180,630],[85,520]],
+ [[2820,350],[2900,340],[2950,515],[2900,660],[2780,730],[2760,645],[2830,580]]
+];
+
 const bays=[
  [[730,0],[1220,0],[1160,260],[1200,600],[1050,725],[800,680],[770,500],[660,360]],
  [[1790,0],[2250,0],[2280,450],[2150,670],[1900,720],[1800,570],[1840,250]],
@@ -29,6 +42,6 @@ export const COURT_STRUCTURES:Structure[]=[];
 for(const region of COURT_REGIONS){
  const point=([x,y]:number[])=>({x:region.x+x-REGION_SIZE/2,y:region.y+y-REGION_SIZE/2});
  const add=(id:string,ground:number[][],foreground=ground,holes:number[][][]=[])=>{const points=ground.map(point),front=foreground.map(point);COURT_STRUCTURES.push({id:region.id+'-'+id,points,foreground:front,holes:holes.map(h=>h.map(point)),depthY:Math.max(...points.map(p=>p.y)),left:Math.min(...points.map(p=>p.x)),right:Math.max(...points.map(p=>p.x)),top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))});};
- add('landmark',centers[region.id].ground,centers[region.id].front,centers[region.id].holes);bays.forEach((p,i)=>add('ridge-'+i,p));
+ add('landmark',centers[region.id].ground,centers[region.id].front,centers[region.id].holes);add('rear-masonry',rearWalls[region.id],centers[region.id].front,centers[region.id].holes);courtyardWalls.forEach((p,i)=>add('courtyard-wall-'+i,p,p.map(([x,y])=>[x,y-70])));bays.forEach((p,i)=>add('ridge-'+i,p));
  props[region.id].forEach(([x,y,r],i)=>{const ground=Array.from({length:8},(_,n)=>[x+Math.cos(n*Math.PI/4)*r,y+Math.sin(n*Math.PI/4)*r*.7]);const front=ground.map(([px,py])=>[px,py<y?py-r*.5:py]);add('furnishing-'+i,ground,front);});
 }

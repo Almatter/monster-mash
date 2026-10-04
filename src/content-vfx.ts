@@ -1,4 +1,5 @@
 export const CHAMPION_VFX:Record<string,{unbound:string;perks:string[]}>={
+ reaper:{unbound:'reaper-unbound',perks:['reaper-wave','reaper-sweep','reaper-blink','reaper-volley','reaper-eclipse','reaper-siphon']},
  sovereign:{unbound:'sovereign-unbound-aura',perks:['sovereign-rage','sovereign-aegis']},
  titan:{unbound:'titan-unbound-aura',perks:['titan-barrier','titan-cleave']},
  calamity:{unbound:'calamity-unbound-aura',perks:['calamity-ward','calamity-starfall-preview','calamity-vortex-preview']},

@@ -23,10 +23,13 @@ export function slideCourt(body:Point,radius:number){
 }
 // The painting is already behind actors. Excluding its raised pixels from an actor draw
 // reveals that original foreground, without a second texture or per-frame pixel work.
-const fronts=COURT_STRUCTURES.map(s=>({...s,fl:Math.min(...s.foreground.map(p=>p.x)),fr:Math.max(...s.foreground.map(p=>p.x)),ft:Math.min(...s.foreground.map(p=>p.y)),fb:Math.max(...s.foreground.map(p=>p.y))}));
+const fronts=COURT_STRUCTURES.map(s=>({...s,fl:Math.min(...s.foreground.map(p=>p.x)),fr:Math.max(...s.foreground.map(p=>p.x)),ft:Math.min(...s.foreground.map(p=>p.y)),fb:Math.max(...s.foreground.map(p=>p.y)),path:null as Path2D|null}));
+const frontBuckets=new Map<number,typeof fronts>();
+for(const s of fronts){if(typeof Path2D!=='undefined'){const path=new Path2D();path.rect(s.fl-10000,s.ft-10000,20000+s.fr-s.fl,20000+s.fb-s.ft);for(const outline of [s.foreground,...s.holes]){outline.forEach((p,i)=>i?path.lineTo(p.x,p.y):path.moveTo(p.x,p.y));path.closePath();}s.path=path;}for(let x=Math.floor((s.fl-260)/size);x<=Math.floor((s.fr+260)/size);x++)for(let y=Math.floor((s.ft-100)/size);y<=Math.floor((s.fb+360)/size);y++){const k=key(x,y),items=frontBuckets.get(k);if(items)items.push(s);else frontBuckets.set(k,[s]);}}
 export function clipCourtActor(c:CanvasRenderingContext2D,x:number,y:number,halfWidth=70,height=150){
- for(const s of fronts){if(y+20>=s.depthY||s.fr<x-halfWidth||s.fl>x+halfWidth||s.fb<y-height||s.ft>y+70)continue;c.beginPath();c.rect(x-halfWidth-500,y-height-500,halfWidth*2+1000,height+1100);for(const outline of [s.foreground,...s.holes]){outline.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();}c.clip('evenodd');}
+ for(const s of frontBuckets.get(key(Math.floor(x/size),Math.floor(y/size)))??[]){if(y+20>=s.depthY||s.fr<x-halfWidth||s.fl>x+halfWidth||s.fb<y-height||s.ft>y+70)continue;if(s.path){c.clip(s.path,'evenodd');continue;}c.beginPath();c.rect(x-halfWidth-500,y-height-500,halfWidth*2+1000,height+1100);for(const outline of [s.foreground,...s.holes]){outline.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();}c.clip('evenodd');}
 }
+
 export function courtArtVisible(x:number,y:number,width:number,height:number,angle:number,cx:number,cy:number,halfW:number,halfH:number){const co=Math.abs(Math.cos(angle)),si=Math.abs(Math.sin(angle));return Math.abs(x-cx)<=halfW+(co*width+si*height)/2+32&&Math.abs(y-cy)<=halfH+(si*width+co*height)/2+32;}
 function clearStructures(a:Point,b:Point){const dx=b.x-a.x,dy=b.y-a.y;
  const obstacles=new Set<Structure>();for(let x=Math.floor((Math.min(a.x,b.x)-40)/size);x<=Math.floor((Math.max(a.x,b.x)+40)/size);x++)for(let y=Math.floor((Math.min(a.y,b.y)-40)/size);y<=Math.floor((Math.max(a.y,b.y)+40)/size);y++)for(const s of structureBuckets.get(key(x,y))??[])obstacles.add(s);
