@@ -1,5 +1,7 @@
 # Stage 2: five-region tester release
 
+This records the first five-region release (v23). See [STAGE2_TESTER_FIX_REPORT.md](STAGE2_TESTER_FIX_REPORT.md) for the subsequent v24 mobile, scenery, guard and scoring fixes.
+
 Built and validated locally on October 3, 2026, on branch `codex/five-region-layout`, then authorized for the GitHub Pages testing endpoint. This release uses `2026.10-v23-court-test`; Stage 1 retains its shipped v15 rules.
 
 ## Playtesting entry points

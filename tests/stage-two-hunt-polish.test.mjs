@@ -8,13 +8,10 @@ import {renderBoonScore,renderMusicLayer} from '../src/procedural-music.ts';
 const idle={x:0,y:0,aimX:-1000,aimY:0,aiming:true};
 const local=(r,x,y)=>({x:r.x+Math.cos(r.angle)*x-Math.sin(r.angle)*y,y:r.y+Math.sin(r.angle)*x+Math.cos(r.angle)*y});
 
-test('monitor resolution and landscape aspect ratio never increase the visible battlefield',()=>{
- for(const [w,h] of [[842,390],[1280,720],[1440,900],[1920,1080],[3440,1440],[5120,1440]]){
-  const v=cameraViewport(w,h);assert.equal(v.worldWidth,1200);assert.equal(v.worldHeight,760);
-  assert.ok(v.width<=w+.001&&v.height<=h+.001);assert.ok(Math.abs(v.width/v.scale-1200)<1e-8);
- }
- const portrait=cameraViewport(390,842);assert.equal(portrait.worldWidth,760);assert.equal(portrait.worldHeight,1200);
- assert.equal(portrait.worldWidth*portrait.worldHeight,1200*760);
+test('all normal screen aspects fill the device with equal visible battlefield area',()=>{
+ for(const [w,h] of [[842,390],[1280,720],[1440,900],[1920,1080],[3440,1440],[5120,1440],[390,842]]){
+  const v=cameraViewport(w,h);assert.ok(Math.abs(v.worldWidth*v.worldHeight-912000)<1e-7);assert.ok(Math.abs(v.width-w)<1e-7&&Math.abs(v.height-h)<1e-7);assert.ok(Math.abs(v.worldWidth/v.worldHeight-w/h)<1e-7);
+ }assert.deepEqual(cameraViewport(1280,720),{...cameraViewport(2560,1440),scale:cameraViewport(1280,720).scale,width:1280,height:720});
 });
 
 test('camps activate outside the bounded camera before their captain can become visible, and persist after leaving',()=>{

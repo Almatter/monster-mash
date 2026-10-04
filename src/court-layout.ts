@@ -4,7 +4,7 @@ export type Lane={a:Point;b:Point;radius:number;region?:string};
 export const COURT_BOUNDS={left:-5600,right:5600,top:-5400,bottom:5000};
 export const COURT_RADIUS=8000;
 export const REGION_SIZE=3000;
-export const POCKETS=[{x:-1040,y:-930},{x:1010,y:-950},{x:990,y:930},{x:-1040,y:950}];
+export const POCKETS=[{x:-1040,y:-930},{x:1010,y:-950},{x:900,y:980},{x:-800,y:950}];
 export const LOOP=[{x:-500,y:-520},{x:560,y:-480},{x:520,y:540},{x:-560,y:500}];
 export const COURT_REGIONS=[
  {id:'crownfall',name:'CROWNFALL KEEP',x:0,y:-3400,accent:'#b35d49'},
@@ -21,7 +21,7 @@ const path=(points:Point[],radius:number,region?:string)=>{for(let i=1;i<points.
 for(const r of COURT_REGIONS){
  const at=(p:Point)=>({x:r.x+p.x,y:r.y+p.y});
  path([...LOOP,LOOP[0]].map(at),290,r.id);
- for(let i=0;i<4;i++){path([LOOP[i],POCKETS[i]].map(at),250,r.id);COURT_LANES.push({a:at(POCKETS[i]),b:at(POCKETS[i]),radius:365,region:r.id});}
+ for(let i=0;i<4;i++){path([LOOP[i],POCKETS[i]].map(at),250,r.id);COURT_LANES.push({a:at(POCKETS[i]),b:at(POCKETS[i]),radius:300,region:r.id});}
  for(const points of [[{x:0,y:-1500},{x:0,y:-500}],[{x:1500,y:0},{x:540,y:0}],[{x:0,y:1500},{x:0,y:520}],[{x:-1500,y:0},{x:-540,y:0}]])path(points.map(at),265,r.id);
 }
 // Hub spokes and the outer circuit make each district accessible by two routes.

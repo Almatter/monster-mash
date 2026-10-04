@@ -2,7 +2,10 @@ import {createRequire} from 'node:module';import {mkdir,writeFile,stat} from 'no
 import {COURT_REGIONS,COURT_LANES,REGION_SIZE,MAP_CHUNKS} from '../src/court-layout.ts';
 const require=createRequire('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json'),sharp=require('sharp');
 const root='public/assets/arena/five-regions';await mkdir(root,{recursive:true});
-const ground=(await sharp('art-source/stage2/ash-terrain.png').resize(768,768).modulate({brightness:1.12,saturation:1.05}).jpeg({quality:94}).toBuffer()).toString('base64');
+// Reuse the finished district's clear earth so the hub and roads share its palette and brushwork.
+const earth=await sharp('art-source/stage2/regions/crownfall-finished.webp').extract({left:1250,top:160,width:512,height:512}).resize(768,768).webp({quality:96}).toBuffer();
+await writeFile('public/assets/arena/floor-court-links.webp',earth);
+const ground=(await sharp(earth).jpeg({quality:94}).toBuffer()).toString('base64');
 const cliff=(await sharp('art-source/stage2/regions/cliff.png').resize(1536,1536).modulate({brightness:.76,saturation:.72}).jpeg({quality:94}).toBuffer()).toString('base64');
 await sharp('art-source/stage2/regions/cliff.png').resize(512,512).modulate({brightness:.76,saturation:.72}).webp({quality:92}).toFile('public/assets/arena/floor-regions-cliff.webp');
 const masters=[];for(const region of COURT_REGIONS){
