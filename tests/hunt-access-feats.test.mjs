@@ -1,0 +1,31 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {Game} from '../src/simulation.ts';import {MONSTERS} from '../src/content-monsters.ts';import {normalizeProfile,recordProgress} from '../src/profile.ts';
+import {TITLES} from '../src/content-titles.ts';import {championAvailable} from '../src/champion-access.ts';import {defaultContentAccess,titleVisible,visibleIdentity} from '../src/content-visibility.ts';import {stageAccess,STAGE_GATES} from '../src/stage-access.ts';
+import {COURT_FEATS,featsForStage,courtSlamStart,courtSlamEnd} from '../src/court-feats.ts';import {FEATS} from '../src/data.ts';import {COURT,spawnCourtHunt,updateCourt,courtHintMarker} from '../src/stage-two.ts';import {reaperTarget,reaperThreat} from '../src/reaper.ts';
+const idle={x:0,y:0,aimX:0,aimY:0,aiming:false};
+test('locked content disappears without modifying imported rewards or palettes; opening reveals it in either stage',()=>{
+ const p=normalizeProfile(null);p.identity.monsterId='reaper';p.identity.colors={...p.palettes.reaper};p.identity.title='Eclipse Eternal';p.progress.titles.reaper2='2026-10-01';p.progress.titles.wildsHunter='2026-10-01';const before=JSON.stringify(p),locked=defaultContentAccess();
+ assert.equal(visibleIdentity(p,locked).monsterId,'sovereign');assert.equal(visibleIdentity(p,locked).title,'');assert.equal(TITLES.filter(t=>titleVisible(t,locked)).length,27);assert.ok(titleVisible(TITLES.find(t=>t.id==='gatebreaker'),locked));assert.equal(JSON.stringify(p),before);
+ for(let n=1;n<=7;n++)recordProgress(p,{id:'qualify'+n,monsterId:'devourer',phase:0,reason:'overwhelmed',values:{seconds:510,kills:15000},best:{}},true,new Date(Date.UTC(2026,9,n,16)));
+ const access=at=>({champion:id=>championAvailable(id,p.progress,at),stage:phase=>stageAccess(phase,p.progress,at)==='open'}),opened=Date.parse(STAGE_GATES[0].opensAt);
+ assert.equal(visibleIdentity(p,access(opened-1)).monsterId,'sovereign');assert.equal(visibleIdentity(p,access(opened)).monsterId,'reaper');assert.equal(visibleIdentity(p,access(opened)).title,'Eclipse Eternal');assert.equal(TITLES.filter(t=>titleVisible(t,access(opened))).length,TITLES.length);
+});
+test('all six champions can earn every hunt feat through real shared objective events, once per captain',()=>{
+ for(const id of Object.keys(MONSTERS)){
+  const g=new Game(77,{monsterId:id},1);g.update(1/60,idle);g.enemies.forEach(e=>e.active=false);g.alive=0;assert.ok(spawnCourtHunt(g,0));const captain=g.enemies.find(e=>e.active&&e.court?.role==='captain'),guards=g.enemies.filter(e=>e.active&&e.court?.role==='vanguard');g.time=20;g.player.x=captain.x;g.player.y=captain.y;g.damage(captain,1,'direct');
+  courtSlamStart(g,captain,true);courtSlamEnd(g,captain,false);courtSlamStart(g,captain,true);courtSlamEnd(g,captain,false);assert.equal(g.score.feats.hunt_dodge,1);
+  for(const guard of guards)g.damage(guard,1e6,'direct');g.time=30;g.damage(captain,1e6,'direct');g.court.pending=0;const seal=g.court.seals[0];g.player.x=seal.x;g.player.y=seal.y;updateCourt(g,0);assert.ok(spawnCourtHunt(g,1));const second=g.enemies.find(e=>e.active&&e.court?.role==='captain'&&e.court.site===1);g.time=100;g.damage(second,1e6,'direct');
+  for(const feat of COURT_FEATS)assert.ok(g.score.feats[feat.id]>0,id+' missed '+feat.id);assert.equal(g.score.feats.hunt_pace,1);assert.equal(g.score.feats.hunt_claim,1);assert.ok(g.court.scoring.combat<=COURT.combatPerCaptain*3);
+ }
+});
+test('hunt feats require the stated actions, cannot farm one guard or dodge from outside the warning, and replace only Stage 2 feats',()=>{
+ const g=new Game(1,{monsterId:'titan'},1);g.update(1/60,idle);g.enemies.forEach(e=>e.active=false);g.alive=0;spawnCourtHunt(g,0);const captain=g.enemies.find(e=>e.active&&e.court?.role==='captain');courtSlamStart(g,captain,false);courtSlamEnd(g,captain,false);assert.equal(g.score.feats.hunt_dodge,undefined);
+ g.time=1;g.damage(captain,1,'direct');g.time=100;g.damage(captain,1e6,'direct');assert.equal(g.score.feats.hunt_focus,undefined);g.time=110;g.court.pending=0;g.player.x=g.court.seals[0].x;g.player.y=g.court.seals[0].y;updateCourt(g,0);assert.equal(g.score.feats.hunt_claim,undefined);g.resolveFeats({eliteDevoured:100,multi:1000,chain:100,corruption:100});assert.equal(g.score.feats.apex,undefined);
+ assert.deepEqual(featsForStage(0).map(({condition,...f})=>f),FEATS);const arena=new Game(1,{monsterId:'devourer'},0);arena.resolveFeats({eliteDevoured:1});assert.equal(arena.score.feats.apex,1);
+});
+test('Reaper automatic basics prioritize captains; equal-priority focus is stable and stronger threats preempt immediately',()=>{
+ const g=new Game(77,{monsterId:'reaper'},0),fodder=g.spawn('thrall'),spitter=g.spawn('spitter'),guard=g.spawn('brute'),captain=g.spawn('brute');Object.assign(fodder,{x:20,y:0});Object.assign(spitter,{x:50,y:0});Object.assign(guard,{x:90,y:0,court:{role:'vanguard',guard:0,maxGuard:0,broken:true,facing:0,homeX:90,homeY:0,homeAngle:0}});Object.assign(captain,{x:400,y:80,court:{role:'captain',guard:0,maxGuard:0,broken:true,facing:0,homeX:400,homeY:80,homeAngle:0,tier:0}});g.rebuildGrid();assert.equal(reaperTarget(g,500,true),captain);g.update(1/60,idle);assert.deepEqual(g.scytheWaves[0].end,{x:captain.x,y:captain.y});const second=g.spawn('brute');Object.assign(second,{x:300,y:0,court:{role:'captain',guard:0,maxGuard:0,broken:true,facing:0,homeX:400,homeY:80,homeAngle:0,tier:0}});g.rebuildGrid();assert.equal(reaperTarget(g,500,true),captain);captain.active=false;assert.equal(reaperTarget(g,500,true),second);second.active=false;assert.equal(reaperTarget(g,500,true),guard);guard.active=false;assert.equal(reaperTarget(g,500,true),spitter);assert.ok(reaperThreat(spitter)<reaperThreat(fodder));
+});
+test('captain hints stay at the view edge rather than on the champion and keep the late unlock timing',()=>{
+ const g=new Game(77,{monsterId:'titan'},1);g.update(1/60,idle);g.court.hint={site:0,life:8,trail:false};const points=[{angle:1.2}];g.time=719;assert.equal(courtHintMarker(g,844,390,844,points),null);g.time=720;for(const [w,h] of [[844,390],[1440,900],[3440,1440]]){const marker=courtHintMarker(g,w,h,w,points);assert.ok(marker.x-w/2>250);assert.ok(marker.x+85<w);assert.equal(marker.angle,1.2);}assert.equal(courtHintMarker(g,844,390,844,[]),null);
+});

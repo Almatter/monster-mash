@@ -6,3 +6,5 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
 
 #debugCopy{font-size:9px;padding:4px 7px;min-height:28px;background:transparent;color:#d6b69d;border-color:#6e5047}
+
+.record-family{margin:12px 0;border:1px solid #75613c;background:#17121c;padding:14px}.record-family>summary{cursor:pointer;font-weight:bold;color:#e4c585}.record-family[open]>.record-grid{margin-top:14px}.record>summary{cursor:pointer;color:#e6d8c1;font-weight:bold;line-height:1.5}.record[open]>summary{margin-bottom:12px}

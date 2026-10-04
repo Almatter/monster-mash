@@ -1,4 +1,4 @@
-import {courtHintPath,courtHintTarget} from './stage-two.ts';
+import {courtHintPath,courtHintTarget,courtHintMarker} from './stage-two.ts';
 import {cameraViewport} from './camera.ts';
 import {CHAMPION_VFX} from './content-vfx.ts';
 import {COURT} from './stage-two.ts';
@@ -93,12 +93,6 @@ export class Renderer {
   const detail=this.low?3:this.fxLevel;this.loadChampionVfx(g.monster.id);
   const halfW=this.viewWidth/this.scale/2,halfH=this.viewHeight/this.scale/2;
   if(g.court)for(const shrine of g.court.shrines){if(Math.abs(shrine.x-cx)>extent||Math.abs(shrine.y-cy)>extent)continue;const ready=g.time>=shrine.readyAt;c.save();c.globalAlpha=ready?1:.5;if(this.courtShrine)c.drawImage(this.courtShrine,shrine.x-78,shrine.y-90,156,156);c.font='bold 12px Arial';c.textAlign='center';c.fillStyle=ready?'#b6f5e8':'#e1d3ba';c.fillText(ready?'HEALING OASIS':Math.ceil(shrine.readyAt-g.time)+'s',shrine.x,shrine.y+80);c.restore();}
-  if(g.court&&courtHintTarget(g)){
-   const hint=g.court.hint!,key=g.seed+':'+hint.site+':'+Math.floor(g.time*10)+':'+hint.trail;
-   if(this.courtHintCache.key!==key)this.courtHintCache={key,points:courtHintPath(g)};
-   const image=this.vfx.get('court-ash-trace');
-   if(image)for(const point of this.courtHintCache.points){c.save();c.translate(point.x,point.y);c.rotate(point.angle);c.globalAlpha=.82+Math.sin(time*3)*.1;c.drawImage(image,-60,-33.75,120,67.5);c.restore();}
-  }
   for(const e of g.enemies){const margin=e.windup>0?(e.court?.role==='captain'?COURT.slamRadius:e.kind==='titan'?240:140):100;if(!e.active||Math.abs(e.x-cx)>halfW+margin+32||Math.abs(e.y-cy)>halfH+margin+32)continue;const def=ENEMIES[e.kind],size=def.radius*4;
    if(e.windup>0){if(e.court?.role==='captain'){const progress=1-e.windup/COURT.slamWarning;this.drawVfx(c,'court-slam',e.x,e.y,COURT.slamRadius*2,0,.38+progress*.45);c.strokeStyle='#ff7b66';c.lineWidth=1.5;c.beginPath();c.arc(e.x,e.y,COURT.slamRadius,0,Math.PI*2);c.stroke();}else{c.strokeStyle='#ff5a56';c.fillStyle='#e6404030';c.lineWidth=3;const r=e.kind==='titan'?240:140;c.beginPath();c.arc(e.x,e.y,r,0,Math.PI*2);c.fill();c.stroke();c.beginPath();c.arc(e.x,e.y,r*(1-e.windup/1.2),0,Math.PI*2);c.stroke();}}
    const sprite=e.court?this.sprites.get('court-'+e.court.role):null,drawSize=e.court?.role==='captain'?114:e.court?96:size;
@@ -137,10 +131,18 @@ export class Renderer {
    else if(detail<2&&this.drawVfx(c,g.monster.id,e.x,e.y,Math.min(e.radius*2,900)*(e.kind==='devour'?1-t*.5:.65+t*.35),e.angle+time*.7,1)){}
    else if(e.kind==='claw'){c.strokeStyle='#f5d6a0';for(let i=0;i<3;i++){c.beginPath();c.arc(e.x,e.y,e.radius-i*12,e.angle-.9+t,e.angle+1.8+t);c.stroke();}}
    else {const colors:Record<string,string>={devour:'#bfe4a5',catastrophe:'#ffd39a',rupture:'#f1b169',slam:'#ff6265'};c.strokeStyle=e.kind==='slam'?colors.slam:g.identity.colors.power;c.lineWidth=e.kind==='catastrophe'?14:5;c.beginPath();c.arc(e.x,e.y,e.radius*(e.kind==='devour'?1-t:t),0,7);c.stroke();if(!sparse){c.lineWidth=2;c.beginPath();c.arc(e.x,e.y,e.radius*t*.8,0,7);c.stroke();}}
-  }c.globalAlpha=1;c.restore();
+  }c.globalAlpha=1;
+  if(g.court&&courtHintTarget(g)){
+   const hint=g.court.hint!,key=g.seed+':'+hint.site+':'+Math.floor(g.time*10)+':'+hint.trail;
+   if(this.courtHintCache.key!==key)this.courtHintCache={key,points:courtHintPath(g)};
+   const image=this.vfx.get('court-ash-trace');
+   if(image)for(const point of this.courtHintCache.points){c.save();c.translate(point.x,point.y);c.rotate(point.angle);c.globalAlpha=1;c.shadowColor='#171015';c.shadowBlur=5;c.drawImage(image,-60,-33.75,120,67.5);c.restore();}
+  }
+  c.restore();
 
   if(g.ultimateTime>0&&!this.low&&!this.autoLow){const cutin=this.assets.get(g.identity,'cutin')?.cutin;if(cutin){c.globalAlpha=Math.min(1,g.ultimateTime*3);c.drawImage(cutin,w*.62,h*.3,w*.36,w*.18);c.globalAlpha=1;}}
   if(g.releaseTime>0){c.save();c.globalAlpha=Math.min(1,g.releaseTime*2);c.fillStyle='#100b18c9';c.fillRect(w*.12,h*.2,w*.76,64);c.textAlign='center';c.fillStyle=g.identity.colors.power;c.font='bold '+Math.min(30,w*.042)+'px Georgia';c.fillText(RELEASES[g.release].name,w/2,h*.2+28);c.fillStyle='#eee7d8';c.font='14px Georgia';c.fillText(g.identity.name,w/2,h*.2+51);c.restore();}
+  const marker=courtHintMarker(g,w,h,this.viewWidth,this.courtHintCache.points);if(marker){c.save();c.translate(marker.x,marker.y);c.fillStyle='#171019ef';c.strokeStyle='#f5d188';c.lineWidth=2;c.fillRect(-85,-36,170,72);c.strokeRect(-85,-36,170,72);c.textAlign='center';c.fillStyle='#fff4d8';c.font='bold 12px Arial';c.fillText('CAPTAIN TRACE',0,-18);const trace=this.vfx.get('court-ash-trace');if(trace){c.save();c.translate(0,9);c.rotate(marker.angle);c.globalAlpha=.65;c.drawImage(trace,-38,-21.4,76,42.8);c.globalAlpha=1;c.font='bold 25px Arial';c.textBaseline='middle';c.strokeStyle='#171019';c.fillStyle='#ffdf80';c.lineWidth=4;c.strokeText('➤',0,0);c.fillText('➤',0,0);c.restore();}c.restore();}
   if(g.player.hp<g.player.maxHp*.25){c.strokeStyle='#dc494b88';c.lineWidth=12;c.strokeRect(0,0,w,h);}
  }
  drawPreview(canvas:HTMLCanvasElement,time:number){this.loadChampionVfx(this.previewIdentity.monsterId);const c=canvas.getContext('2d')!;c.clearRect(0,0,canvas.width,canvas.height);const pack=this.assets.get(this.previewIdentity,'selection'),portrait=pack?.selection;if(portrait){const scale=Math.min(canvas.width/portrait.width,canvas.height/portrait.height);c.drawImage(portrait,(canvas.width-portrait.width*scale)/2,0,portrait.width*scale,portrait.height*scale);}else if(this.assets.status(this.previewIdentity,'selection')==='failed')this.drawSovereign(c,canvas.width/2,canvas.height*.56,time,0,2.6*MONSTERS[this.previewIdentity.monsterId].visual.scale,0,this.previewIdentity.colors);else this.drawLoading(c,canvas.width/2,canvas.height*.48,time,Math.min(canvas.width,canvas.height)*.23);}
