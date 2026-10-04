@@ -6,7 +6,7 @@ export type Achievement={id:string;name:string;description:string;condition:stri
 export const ACHIEVEMENTS:Achievement[]=[
  {id:'wildsFirst',name:'CAPTAIN DOWN',description:'The hunt begins.',condition:'Slay a captain in Stage 2.',metric:'courtCaptains',target:1,icon:'◆',hidden:false},
  {id:'wildsGuard',name:'SHATTERED VANGUARD',description:'No shield lasts forever.',condition:'Break 20 guards in one Stage 2 hunt.',metric:'courtGuards',target:20,icon:'◇',hidden:false},
- {id:'wildsImpact',name:'BREACH THE LINE',description:'Turn force into opportunity.',condition:'Break 10 Stage 2 guards with impact attacks in one hunt.',metric:'courtImpact',target:10,icon:'◉',hidden:false},
+ {id:'wildsImpact',name:'BREACH THE LINE',description:'Open a path through the retinue.',condition:'Break 10 guard protections in one Stage 2 hunt.',metric:'courtGuards',target:10,icon:'◉',hidden:false},
  {id:'wildsClear',name:'WILDS CONQUERED',description:'Ten captains, one hunter.',condition:'Complete a Stage 2 hunt.',metric:'courtClear',target:1,icon:'♛',hidden:false},
  {id:'wildsFast',name:'ASHEN PURSUIT',description:'Search swiftly. Strike decisively.',condition:'Complete Stage 2 in 12 minutes or less.',metric:'courtFast',target:1,icon:'✦',hidden:false},
  {id:'bloodbath',name:'FIRST BLOODBATH',description:'Your legend begins in the horde.',condition:'Slay 500 enemies in one run.',metric:'kills',target:500,title:'The Blooded',icon:'◆',hidden:false},

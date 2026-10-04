@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {Game} from '../src/simulation.ts';import {MONSTERS} from '../src/content-monsters.ts';import {normalizeProfile,recordProgress} from '../src/profile.ts';
+import {Game} from '../src/simulation.ts';import {MONSTERS} from '../src/content-monsters.ts';import {normalizeProfile,recordProgress,updateRecords} from '../src/profile.ts';
 import {TITLES} from '../src/content-titles.ts';import {championAvailable} from '../src/champion-access.ts';import {defaultContentAccess,titleVisible,visibleIdentity} from '../src/content-visibility.ts';import {stageAccess,STAGE_GATES} from '../src/stage-access.ts';
 import {COURT_FEATS,featsForStage,courtSlamStart,courtSlamEnd} from '../src/court-feats.ts';import {FEATS} from '../src/data.ts';import {COURT,spawnCourtHunt,updateCourt,courtHintMarker} from '../src/stage-two.ts';import {reaperTarget,reaperThreat} from '../src/reaper.ts';
 const idle={x:0,y:0,aimX:0,aimY:0,aiming:false};
@@ -29,3 +29,5 @@ test('Reaper automatic basics prioritize captains; equal-priority focus is stabl
 test('captain hints stay at the view edge rather than on the champion and keep the late unlock timing',()=>{
  const g=new Game(77,{monsterId:'titan'},1);g.update(1/60,idle);g.court.hint={site:0,life:8,trail:false};const points=[{angle:1.2}];g.time=719;assert.equal(courtHintMarker(g,844,390,844,points),null);g.time=720;for(const [w,h] of [[844,390],[1440,900],[3440,1440]]){const marker=courtHintMarker(g,w,h,w,points);assert.ok(marker.x-w/2>250);assert.ok(marker.x+85<w);assert.equal(marker.angle,1.2);}assert.equal(courtHintMarker(g,844,390,844,[]),null);
 });
+
+test('Breach the Line uses shared guard protection breaks and keeps both old partial credit and earned records',()=>{const p=normalizeProfile({version:3,records:{wildsImpact:{best:7}}});assert.equal(p.records.wildsImpact.best,7);for(const id of Object.keys(MONSTERS)){const record=normalizeProfile(p);assert.deepEqual(updateRecords(record,{courtGuards:10},new Game(1,{monsterId:id},1).identity,'2026-10-04T12:00:00Z'),['wildsImpact']);assert.equal(record.records.wildsImpact.best,10);const saved=normalizeProfile(record);assert.equal(saved.records.wildsImpact.unlockedAt,'2026-10-04T12:00:00Z');assert.equal(saved.records.wildsImpact.best,10);}});
