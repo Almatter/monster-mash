@@ -11,7 +11,7 @@ Validated October 4, 2026. Local entry: http://127.0.0.1:4173/stage2-test/. Publ
 
 ## Reaper
 
-Adult gothic anime monster with two long high twin tails and an ornate scythe. Generated selection art, portrait, ultimate cut-in, five gameplay animation states and seven character-specific effects. Four continuous shaded material masks preserve ink, skin and fine silhouette detail in contrasting palettes. The complete recolored gameplay, portrait and cut-in load before her match starts. Scythe effects follow the selected soul-energy color.
+Adult gothic anime monster with two long high twin tails and an ornate scythe. Generated selection art, portrait, ultimate cut-in, five gameplay animation states and seven character-specific effects. Four continuous shaded material masks preserve ink, skin and fine silhouette detail in contrasting palettes. Armor and flowing fabric use PRIMARY, twin tails and hair use SECONDARY, metal ornament uses ACCENT, and soul energy uses POWER. Changing fabric color leaves hair unchanged and changing hair leaves fabric unchanged, verified across all four presentation types. The complete recolored gameplay, portrait and cut-in load before her match starts. Scythe effects follow the selected soul-energy color.
 
 - **Crescent Sever:** automatic piercing ranged scythe waves aimed at nearby prey.
 - **Soul Harvest:** scythe sweep, knockback and life steal.
@@ -59,3 +59,5 @@ All 18 automated Stage 2 runs cleared. Reaper's Stage 1 survival ranged 9:44–1
 - Offline cached reload, safe worker update, bounded cache, equal camera area and the relative-path GitHub Pages build pass. Source art and developer files are excluded from the production artifact.
 
 Machine-readable measurements and browser screenshots are in ignored `test-results/`, including `balance-v25-final.json`, `stage2-v25-balance-final.json`, `reaper-browser-v25.json`, and `stage2-v25-mobile-performance.json`.
+
+Hair/fabric follow-up: the generated guides now assign ALL woven clothing panels and armor to the armor/fabric channel, and ONLY hair to the twin-tails/hair channel. Anatomical guide samples, independent mask coverage, contrasting browser composites and a downloaded result-card rendering verify the separation. Commands: `node tools/check-reaper-color-regions.mjs` and `node tests/reaper-colors-browser.mjs`. These cosmetic changes retain v25 combat rules and the measured balance above.

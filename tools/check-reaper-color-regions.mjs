@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';import {createRequire} from 'node:module';
+const sharp=createRequire(import.meta.url)('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
+const path='art-source/reaper/selection-color-guide.png',guide=await sharp(path).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+const at=(x,y)=>[...guide.data.subarray((y*guide.info.width+x)*4,(y*guide.info.width+x)*4+3)];
+console.log('Guide samples', {hair:at(200,400),fabric:at(450,1100)});
+const hairSample=at(200,400);assert.ok(hairSample[0]>170&&hairSample[1]<40&&hairSample[2]>170,'Flowing twin tail must belong to hair');for(const [x,y] of [[450,1100],[550,1050],[800,1050]]){const fabric=at(x,y);assert.ok(fabric[0]<30&&fabric[1]<30&&fabric[2]>200,'Flowing skirt panels must belong to armor / fabric');}
+for(const type of ['selection','portrait','cutin','gameplay']){const primary=await sharp('public/assets/monsters/reaper/'+type+'-primary.webp').ensureAlpha().raw().toBuffer(),hair=await sharp('public/assets/monsters/reaper/'+type+'-secondary.webp').ensureAlpha().raw().toBuffer();let independentHair=0,independentFabric=0;for(let i=3;i<hair.length;i+=4){if(hair[i]>150&&primary[i]<8)independentHair++;if(primary[i]>150&&hair[i]<8)independentFabric++;}assert.ok(independentHair>1000,type+' needs independent hair coverage');assert.ok(independentFabric>1000,type+' needs independent armor / fabric coverage');console.log(type,{independentHair,independentFabric});}
