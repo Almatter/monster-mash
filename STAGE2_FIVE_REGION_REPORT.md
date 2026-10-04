@@ -1,12 +1,14 @@
-# Stage 2: five-region local build
+# Stage 2: five-region tester release
 
-Built locally on October 3, 2026, on branch `codex/five-region-layout`. **Nothing has been pushed or deployed.** The public Stage 2 test site remains on v22. Local Stage 2 uses `2026.10-v23-court-test`; Stage 1 retains its shipped v15 rules.
+Built and validated locally on October 3, 2026, on branch `codex/five-region-layout`, then authorized for the GitHub Pages testing endpoint. This release uses `2026.10-v23-court-test`; Stage 1 retains its shipped v15 rules.
 
-## Play locally
+## Playtesting entry points
 
 Open **http://127.0.0.1:4173/stage2-test/**. The existing local server is running and serves the rebuilt `dist/` directory.
 
-This entry bypasses Gatebreaker and the release date for testing. It keeps test progress in the existing separate storage namespace. Normal entry still enforces the title and October 8 opening. No save or progress schema changed. Historical run-code rules are retained, including v22. New v23 codes can be verified locally; the unchanged public verifier does not yet know v23.
+The public testing entry is **https://almatter.github.io/monster-mash/stage2-test/**. The main-branch Pages workflow publishes the same validated build there.
+
+These testing entries bypass Gatebreaker and the release date. They keep test progress in the existing separate storage namespace. Normal entry still enforces the title and October 8 opening. No save or progress schema changed. Historical run-code rules are retained, including v22. The release includes verification support for v23 run codes.
 
 ## Authored geography and finished artwork
 
