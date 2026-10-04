@@ -155,28 +155,32 @@
       "primary": "assets/monsters/reaper/selection-primary.webp",
       "secondary": "assets/monsters/reaper/selection-secondary.webp",
       "accent": "assets/monsters/reaper/selection-accent.webp",
-      "power": "assets/monsters/reaper/selection-power.webp"
+      "power": "assets/monsters/reaper/selection-power.webp",
+      "skin": "assets/monsters/reaper/selection-skin.webp"
     },
     "portrait": {
       "base": "assets/monsters/reaper/portrait-base.webp",
       "primary": "assets/monsters/reaper/portrait-primary.webp",
       "secondary": "assets/monsters/reaper/portrait-secondary.webp",
       "accent": "assets/monsters/reaper/portrait-accent.webp",
-      "power": "assets/monsters/reaper/portrait-power.webp"
+      "power": "assets/monsters/reaper/portrait-power.webp",
+      "skin": "assets/monsters/reaper/portrait-skin.webp"
     },
     "cutin": {
       "base": "assets/monsters/reaper/cutin-base.webp",
       "primary": "assets/monsters/reaper/cutin-primary.webp",
       "secondary": "assets/monsters/reaper/cutin-secondary.webp",
       "accent": "assets/monsters/reaper/cutin-accent.webp",
-      "power": "assets/monsters/reaper/cutin-power.webp"
+      "power": "assets/monsters/reaper/cutin-power.webp",
+      "skin": "assets/monsters/reaper/cutin-skin.webp"
     },
     "gameplay": {
       "base": "assets/monsters/reaper/gameplay-base.webp",
       "primary": "assets/monsters/reaper/gameplay-primary.webp",
       "secondary": "assets/monsters/reaper/gameplay-secondary.webp",
       "accent": "assets/monsters/reaper/gameplay-accent.webp",
-      "power": "assets/monsters/reaper/gameplay-power.webp"
+      "power": "assets/monsters/reaper/gameplay-power.webp",
+      "skin": "assets/monsters/reaper/gameplay-skin.webp"
     }
   }
 }

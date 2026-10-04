@@ -2,7 +2,7 @@
 
 Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Reaper, a ranged scythe hunter, unlocks with Stage 2 and can then play either stage. Name and palette are cosmetic identity; The Gatebreaker grants Stage 2 access after its October 8 opening. No accounts, tracking, external assets, server or runtime dependencies are required.
 
-Current tester changes and measured balance: [Stage 2 v25 release report](STAGE2_REAPER_RELEASE_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
+Current tester changes and measured balance: [Reaper v26 colors and controls report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
 
 ## Run and deploy
 

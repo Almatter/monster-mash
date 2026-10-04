@@ -18,3 +18,7 @@ Prompt briefs:
 `tools/process-reaper-art.mjs` packs these real source images into four registered presentation sets and a five-state gameplay atlas. Every presentation includes shaded primary, secondary, accent and power masks. The gameplay sheet keeps the principal silhouette in each pose cell, then builds breathing, running, attack, hurt and ultimate frame sequences. Runtime effects are packed to 512 pixels and tinted to the selected soul-energy color.
 
 Outputs: `public/assets/monsters/reaper/` (20 WebP layers), `public/assets/vfx/reaper*.webp` (seven effects and the basic-attack alias). Source masters and color guides are not included in the Pages artifact.
+
+## Fifth channel: skin (built-in imagegen edits)
+
+Registered guide edits preserve the original poses, hair/fabric boundaries, source shading and transparency. Exposed face, neck, shoulder, chest, abdomen and thigh skin is cyan (#00ffff); armor/fabric stays blue, twin tails/hair magenta, metal yellow and soul energy red. Facial ink remains black and magical eyes red. The gameplay guide received a targeted refinement to include the entire exposed face around the eyes. These production guides are `selection-color-guide.png` and `gameplay-color-guide.png`; packing creates a fifth grayscale `skin` mask for selection, portrait, cut-in and gameplay. No new character illustration or pose was substituted.

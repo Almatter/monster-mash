@@ -13,7 +13,7 @@ import {createIdentity,type Identity} from './identity.ts';
 import {MONSTERS,type Palette} from './content-monsters.ts';
 import {AssetLibrary} from './assets.ts';
 export class Renderer {
- targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;viewWidth=0;viewHeight=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
+ targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'|'reaper-blink'|'reaper-volley'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;viewWidth=0;viewHeight=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
  sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;adaptationBackground:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;adaptationPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
@@ -23,7 +23,7 @@ export class Renderer {
  tintVfx(kind:string,image:HTMLImageElement){if(!kind.startsWith('reaper')||!this.vfxColor)return image;const key=kind+this.vfxColor,hit=this.tintedVfx.get(key);if(hit)return hit;const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;const ctx=canvas.getContext('2d')!;ctx.drawImage(image,0,0);const frame=ctx.getImageData(0,0,canvas.width,canvas.height),rgb=[1,3,5].map(i=>parseInt(this.vfxColor.slice(i,i+2),16));for(let i=0;i<frame.data.length;i+=4){if(!frame.data[i+3])continue;const bright=Math.max(frame.data[i],frame.data[i+1],frame.data[i+2])/255;for(let j=0;j<3;j++)frame.data[i+j]=Math.min(255,rgb[j]*bright+(bright>.92?(bright-.92)*1600:0));}ctx.putImageData(frame,0,0);if(this.tintedVfx.size>=16){const first=this.tintedVfx.keys().next().value!,old=this.tintedVfx.get(first)!;old.width=old.height=1;this.tintedVfx.delete(first);}this.tintedVfx.set(key,canvas);return canvas;}
  drawVfx(c:CanvasRenderingContext2D,kind:string,x:number,y:number,size:number,angle=0,alpha=1){const source=this.vfx.get(kind);if(!source)return false;const image=this.tintVfx(kind,source);if(!angle){const previous=c.globalAlpha;c.globalAlpha*=alpha;c.drawImage(image,x-size/2,y-size/2,size,size);c.globalAlpha=previous;return true;}c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha*=alpha;c.drawImage(image,-size/2,-size/2,size,size);c.restore();return true;}
  drawTargetArea(c:CanvasRenderingContext2D,kind:string,x:number,y:number,radius:number,time:number,valid:boolean,placing:boolean){
-  c.save();const vortex=kind==='vortex';
+  c.save();if(kind.startsWith('reaper-')){this.drawVfx(c,kind,x,y,radius*2.12,time*.3,valid?.65:.22);c.strokeStyle=valid?'#efdfc7':'#ff625d';c.lineWidth=2;c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.stroke();c.restore();return;}const vortex=kind==='vortex';
   this.drawVfx(c,vortex?'calamity-vortex-preview':'calamity-starfall-preview',x,y,radius*2.12,time*(vortex?-.12:.035),valid?(placing?.48:.32):.18);
   // Artwork supplies identity; this boundary supplies the precise gameplay radius.
   c.strokeStyle=valid?(vortex?'#c9a0ff':'#f0ce87'):'#ff625d';c.lineWidth=placing?2.5:1.5;
@@ -34,7 +34,7 @@ export class Renderer {
  drawChampionAuras(c:CanvasRenderingContext2D,g:Game,time:number){
   const id=g.monster.id,scale=g.monster.visual.scale,x=g.player.x,y=g.player.y;
   const perk=g.shield>0||g.frenzy>0||g.frenzyGuard>0||id==='sovereign'&&g.player.rage>0;
-  if(id==='reaper'){if(g.reaperStorm>0)this.drawVfx(c,'reaper-eclipse',x,y,340*scale,time*.2,.55);if(g.soulGlow>0)this.drawVfx(c,'reaper-siphon',x,y,200*scale,-time*.2,g.soulGlow);}
+  if(id==='reaper'){if(g.reaperStorm>0)this.drawVfx(c,'reaper-eclipse',x,y,360*g.releaseStats.radius,time*.2,.40);if(g.soulGlow>0)this.drawVfx(c,'reaper-siphon',x,y,200*scale,-time*.2,g.soulGlow);}
   if(g.release>0){const size=(172+g.release*25)*scale*(1+Math.sin(time*2.1)*.02);this.drawVfx(c,CHAMPION_VFX[id].unbound,x,y,size,time*(id==='titan'?.035:.10),(.17+g.release*.05)*(perk?.75:1));}
   if(g.shield>0&&(id==='titan'||id==='calamity')){const cap=id==='titan'?SUSTAIN.titan.cap:SUSTAIN.calamity.cap,ratio=Math.min(1,g.shield/cap);this.drawVfx(c,id==='titan'?'titan-barrier':'calamity-ward',x,y,(id==='titan'?194:184)*scale,time*.035,.35+.3*ratio);}
   if(id==='sovereign'&&g.shield>0){const s=SUSTAIN.sovereign,ratio=Math.min(1,g.shield/(s.wardCap+s.wardCapPerRelease*g.release));this.drawVfx(c,'sovereign-aegis',x,y,196*scale,-time*.035,.38+.22*ratio);}
@@ -113,7 +113,7 @@ export class Renderer {
   for(const f of g.fields)this.drawTargetArea(c,f.kind,f.x,f.y,f.radius,time,true,false);
   for(const s of g.servants){if(!s.active)continue;c.save();if(g.court)clipCourtActor(c,s.x,s.y,32,60);c.globalAlpha=Math.min(1,s.life);c.drawImage(this.sprites.get('thrall')!,s.x-20,s.y-20,40,40);this.drawVfx(c,'overlord-soul-brand',s.x,s.y,61,s.serial*.12+time*.04,.78);c.restore();}
   for(const b of g.bolts){if(!courtArtVisible(b.x,b.y,40,40,0,cx,cy,halfW,halfH))continue;if(this.drawVfx(c,g.monster.id,b.x,b.y,32,Math.atan2(b.vy,b.vx)+time*5))continue;c.strokeStyle=g.identity.colors.power;c.lineWidth=5;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-b.vx*.03,b.y-b.vy*.03);c.stroke();}
-  for(const w of g.scytheWaves)if(courtArtVisible(w.x,w.y,w.width*3,w.width*3,0,cx,cy,halfW,halfH))this.drawVfx(c,'reaper-wave',w.x-Math.cos(w.angle)*w.width*.35,w.y-Math.sin(w.angle)*w.width*.35,w.width*3.2,w.angle,.9);
+  for(const w of g.scytheWaves)if(courtArtVisible(w.x,w.y,w.width*3,w.width*3,0,cx,cy,halfW,halfH))this.drawVfx(c,'reaper-wave',w.x-Math.cos(w.angle)*w.width*.35,w.y-Math.sin(w.angle)*w.width*.35,w.width*3.2,w.rotation,.9);
   for(const w of g.clawWaves)this.drawVfx(c,'devourer-claw-wave',w.x-Math.cos(w.angle)*w.width*.65,w.y-Math.sin(w.angle)*w.width*.65,w.width*3.15,w.angle,.72);
   for(const b of g.debris){if(this.drawVfx(c,'titan',b.x,b.y,26,time*10))continue;c.fillStyle='#bc9a81';c.fillRect(b.x-7,b.y-7,14,14);}
   for(const s of g.shots){if(!courtArtVisible(s.x,s.y,32,32,0,cx,cy,halfW,halfH))continue;if(this.drawVfx(c,'hostile-bolt',s.x,s.y,28,Math.atan2(s.vy,s.vx)))continue;c.fillStyle='#ed9bea';c.beginPath();c.arc(s.x,s.y,6,0,7);c.fill();}

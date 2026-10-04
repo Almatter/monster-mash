@@ -1,7 +1,7 @@
 import {MONSTERS,type Channel,type Palette} from './content-monsters.ts';
 import type {Identity} from './identity.ts';
 import {BUILD_VERSION} from './config.ts';
-export type LayerSet={base:string;primary?:string;secondary?:string;accent?:string;power?:string};
+export type LayerSet={base:string;primary?:string;secondary?:string;accent?:string;power?:string;skin?:string};
 export type ArtEntry={gameplay?:LayerSet;portrait?:LayerSet;selection?:LayerSet;cutin?:LayerSet};
 type ArtPack=Partial<Record<keyof ArtEntry,HTMLCanvasElement>>;
 async function loadImage(url:string){
@@ -14,7 +14,7 @@ async function loadImage(url:string){
 }
 export function tintLayer(image:CanvasImageSource,width:number,height:number,color:string){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d')!;ctx.drawImage(image,0,0);const frame=ctx.getImageData(0,0,width,height),pixels=frame.data,r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);for(let i=0;i<pixels.length;i+=4){if(!pixels[i+3])continue;const shade=pixels[i]/255;pixels[i]=Math.round(r*shade);pixels[i+1]=Math.round(g*shade);pixels[i+2]=Math.round(b*shade);}ctx.putImageData(frame,0,0);return c;}
 export const ART_DIMENSIONS={gameplay:[1536,1280],portrait:[512,512],selection:[768,1024],cutin:[1024,512]} as const;
-export async function compose(set:LayerSet,colors:Palette,type:keyof ArtEntry,loader=loadImage,onBase?:(canvas:HTMLCanvasElement)=>void){const base=await loader(set.base);const dims=ART_DIMENSIONS[type];if(base.width!==dims[0]||base.height!==dims[1])throw Error(type+' must be '+dims.join(' × ')+' pixels');const canvas=document.createElement('canvas');canvas.width=base.width;canvas.height=base.height;const c=canvas.getContext('2d')!;c.drawImage(base,0,0);onBase?.(canvas);for(const key of ['primary','secondary','accent','power'] as Channel[]){if(!set[key])continue;const layer=await loader(set[key]!);if(layer.width!==base.width||layer.height!==base.height)throw Error('Tint layers must share identical dimensions');const tinted=tintLayer(layer,base.width,base.height,colors[key]);c.drawImage(tinted,0,0);tinted.width=tinted.height=1;}return canvas;}
+export async function compose(set:LayerSet,colors:Palette,type:keyof ArtEntry,loader=loadImage,onBase?:(canvas:HTMLCanvasElement)=>void){const base=await loader(set.base);const dims=ART_DIMENSIONS[type];if(base.width!==dims[0]||base.height!==dims[1])throw Error(type+' must be '+dims.join(' × ')+' pixels');const canvas=document.createElement('canvas');canvas.width=base.width;canvas.height=base.height;const c=canvas.getContext('2d')!;c.drawImage(base,0,0);onBase?.(canvas);for(const key of ['primary','secondary','accent','power','skin'] as Channel[]){if(!set[key])continue;const layer=await loader(set[key]!);if(layer.width!==base.width||layer.height!==base.height)throw Error('Tint layers must share identical dimensions');const tinted=tintLayer(layer,base.width,base.height,colors[key]||'#f3dfd1');c.drawImage(tinted,0,0);tinted.width=tinted.height=1;}return canvas;}
 // Compose only the art needed by the current screen. A prior completed frame stays visible during recoloring.
 export class AssetLibrary {
  catalog:Record<string,ArtEntry>={};ready=false;cache=new Map<string,ArtPack>();pending=new Set<string>();failed=new Set<string>();lastGood=new Map<string,HTMLCanvasElement>();desired=new Map<string,string>();sourceCache=new Map<string,Promise<HTMLImageElement>>();

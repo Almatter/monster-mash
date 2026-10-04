@@ -17,7 +17,7 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
   console.log(monster+' minimum gameplay crop margin: '+margin+'px');
  }
  const counts={};
- for(const channel of ['primary','secondary','accent','power']){
+ for(const channel of ['primary','secondary','accent','power',...(monster==='reaper'?['skin']:[])]){
   assert.ok(set[channel],monster+' '+type+' missing '+channel);
   const mask=await sharp('public/'+set[channel]).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   assert.equal(mask.info.width,w,monster+' '+type+' '+channel+' width');assert.equal(mask.info.height,h,monster+' '+type+' '+channel+' height');
@@ -38,4 +38,4 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
  }
  checked++;console.log(monster,type,counts);
 }
-assert.equal(checked,Object.keys(catalog).length*4);console.log(`Validated ${checked} registered art sets / ${checked*4} tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.`);
+assert.equal(checked,Object.keys(catalog).length*4);console.log(`Validated ${checked} registered art sets / ${checked*4+4} tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.`);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';import {writeFile} from 'node:fs/promises';
 const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH).href),browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH}),rows=[];
-try{for(const monster of ['devourer','overlord','sovereign','reaper']){
+try{for(const monster of (process.env.PERFORMANCE_KITS||'devourer,overlord,sovereign,reaper').split(',')){
  const context=await browser.newContext({viewport:{width:1280,height:720},serviceWorkers:'block'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:4173/stage2-test/');await page.evaluate(async()=>{
   const {Game}=await import('./src/simulation.js'),u=Game.prototype.update;Game.prototype.update=function(...a){window.g=this;const t=performance.now(),v=u.apply(this,a);if(window.uc)uc.push(performance.now()-t);return v;};
@@ -11,4 +11,4 @@ try{for(const monster of ['devourer','overlord','sovereign','reaper']){
  });const cdp=await context.newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});await page.locator('#resume').click();await page.waitForTimeout(1200);
  const row=await page.evaluate(async()=>{window.uc=[];window.dc=[];let frames=0,start=performance.now(),last=start;await new Promise(resolve=>{const tick=now=>{frames++;last=now;if(now-start<5000)requestAnimationFrame(tick);else resolve();};requestAnimationFrame(tick);});const stats=a=>{a.sort((a,b)=>a-b);return {mean:+(a.reduce((a,b)=>a+b,0)/a.length).toFixed(2),p95:+a[Math.floor(a.length*.95)].toFixed(2)};};return {fps:+(frames*1000/(last-start)).toFixed(1),updateMs:stats(uc),drawMs:stats(dc),enemies:g.alive,servants:g.servants.filter(s=>s.active).length,cachePeak:r.courtTerrain.peak,failures:r.courtTerrain.failures};});
  assert.deepEqual(errors,[]);assert.equal(row.failures,0);assert.ok(row.cachePeak<=36);rows.push({monster,...row});console.log(rows.at(-1));await context.close();
-}await writeFile('test-results/stage2-v25-performance.json',JSON.stringify({cpuThrottle:4,initialEnemies:200,rows},null,2));}finally{await browser.close();}
+}await writeFile('test-results/stage2-v26-performance.json',JSON.stringify({cpuThrottle:4,initialEnemies:200,rows},null,2));}finally{await browser.close();}
