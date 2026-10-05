@@ -1,5 +1,5 @@
 import {ABILITIES,MONSTERS} from './content-monsters.ts';
-export type Cue={bus:'sfx'|'ui';priority:number;gap:number;frequency?:number;duration?:number};
+export type Cue={bus:'sfx'|'ui';priority:number;gap:number;frequency?:number;duration?:number;gain?:number};
 export const CUES:Record<string,Cue>={
  menu:{bus:'ui',priority:3,gap:.08,frequency:520,duration:.08},confirm:{bus:'ui',priority:4,gap:.1,frequency:680,duration:.13},
  heal:{bus:'sfx',priority:3,gap:.4,frequency:460,duration:.16},shield:{bus:'sfx',priority:3,gap:.5,frequency:760,duration:.2},
@@ -13,9 +13,14 @@ export const CUES:Record<string,Cue>={
 };
 for(const kind of ['thrall','hound','wing','spitter'])CUES['enemyDeath.'+kind]={...CUES.enemyDeath};
 export const isDeathCue=(kind:string)=>kind==='enemyDeath'||kind.startsWith('enemyDeath.')||['heavyDeath','eliteDeath','titanDeath','defeat'].includes(kind);
-export const isOrganicCue=(kind:string)=>kind==='basic.devourer'||isDeathCue(kind)||['heal','shield','collision','devour','corruption','ultimateImpact'].includes(kind);
+export const isFissureCue=(kind:string)=>kind==='ability.faultline'||kind.startsWith('fissure.');
+export const isOrganicCue=(kind:string)=>isFissureCue(kind)||kind==='basic.devourer'||isDeathCue(kind)||['heal','shield','collision','devour','corruption','ultimateImpact'].includes(kind);
 export const cueVariantCount=(kind:string)=>kind==='basic.devourer'||kind==='enemyDeath'||kind.startsWith('enemyDeath.')?12:isDeathCue(kind)?8:isOrganicCue(kind)?6:kind.startsWith('basic.')?4:2;
 for(const [i,a] of Object.values(ABILITIES).entries())CUES['ability.'+a.id]={bus:'sfx',priority:4,gap:.15,...(['beam','curse','vortex','dominion'].includes(a.effect)?{frequency:180+i*17,duration:.3}:{})};
+// Shared throttles keep overlapping fields audible without multiplying their voices.
+CUES['ability.faultline']={bus:'sfx',priority:5,gap:.15,gain:1.1};
+CUES['fissure.rumble']={bus:'sfx',priority:2,gap:.48,gain:.48};
+CUES['fissure.hit']={bus:'sfx',priority:3,gap:.48,gain:.85};
 for(const m of Object.values(MONSTERS))CUES['basic.'+m.id]={bus:'sfx',priority:1,gap:.15,...(m.basic.ranged?{frequency:m.id==='calamity'?290:220,duration:.07}:{})};
 export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'results'|'boon';
 export type AudioCatalog={sfx?:Record<string,string[]>;music?:Partial<Record<MusicState,{file:string;loopStart?:number;loopEnd?:number}>>};

@@ -1,8 +1,11 @@
 import {ABILITIES,MONSTERS} from './content-monsters.ts';
 import {CUES,isDeathCue,isOrganicCue} from './content-audio.ts';
-type Style='tear'|'stone'|'infernal'|'ossuary'|'rift'|'death'|'cataclysm'|'rune';
+type Style='tear'|'stone'|'infernal'|'ossuary'|'rift'|'death'|'cataclysm'|'rune'|'fracture'|'tremor';
 type Design={style:Style;duration:number;pitch:number;weight:number};
 function design(kind:string):Design{
+ if(kind==='ability.faultline')return {style:'fracture',duration:.78,pitch:92,weight:.9};
+ if(kind==='fissure.hit')return {style:'fracture',duration:.24,pitch:148,weight:.7};
+ if(kind==='fissure.rumble')return {style:'tremor',duration:.56,pitch:98,weight:.6};
  const ability=kind.startsWith('ability.')?ABILITIES[kind.slice(8)]:undefined;
  const owner=ability?.id==='faultline'?'titan':ability?Object.values(MONSTERS).find(m=>m.abilities.includes(ability.id))?.id:kind.startsWith('basic.')?kind.slice(6):'';
  const styles:Record<string,Style>={devourer:'tear',titan:'stone',sovereign:'infernal',overlord:'ossuary',calamity:'rift',reaper:'rift'};
@@ -36,6 +39,8 @@ export function synthesizeCue(context:AudioContext,kind:string,variant=0){
   const reverse=Math.pow(p,1.7)*Math.pow(1-p,.6)*3;
   let sample=0;
   if(style==='tear'){const bite=devourerBasic?1+.18*Math.sin(variant*1.7):1,rasp=devourerBasic?1+.16*Math.cos(variant*2.1):1;sample=.48*bite*throat*Math.sin(phase*.18+1)+.45*rasp*hiss*(.4+.6*Math.abs(Math.sin(phase*.11)))+.25*sub+.43*grit*crack;}
+  else if(style==='fracture')sample=.55*sub*Math.exp(-p*3)+.72*grit+.95*hiss*crack+.25*Math.sin(phase*2.4)*Math.exp(-p*12);
+  else if(style==='tremor')sample=.58*lowSlow+.52*grit*(.55+.45*Math.abs(Math.sin(phase*.12)))+.38*sub;
   else if(style==='stone')sample=.7*sub*Math.exp(-p*5)+.55*grit+.8*hiss*crack+.12*choir;
   else if(style==='infernal')sample=.62*choir+.25*throat+.22*sub+.32*grit*crack;
   else if(style==='ossuary')sample=.64*choir+.31*lowSlow+.32*hiss*Math.abs(Math.sin(phase*.37))+.2*sub;
@@ -43,7 +48,7 @@ export function synthesizeCue(context:AudioContext,kind:string,variant=0){
   else if(style==='death')sample=(.43+(death?Math.sin(variant*1.7)*.08:0))*throat+(.55+(death?Math.cos(variant*2.1)*.1:0))*hiss*Math.pow(1-p,1.5)+.16*sub;
   else if(style==='cataclysm')sample=.65*sub+.36*choir+.5*grit+.73*hiss*crack;
   else sample=.32*choir+.18*grit*crack+.22*hiss*Math.exp(-p*11)+.08*sub;
-  const attack=Math.min(1,t/(style==='rift'?.035:.006));
+  const attack=Math.min(1,t/(style==='tremor'?.045:style==='rift'?.035:.006));
   const release=Math.pow(1-p,style==='cataclysm'?1.2:style==='rune'?2.4:1.65);
   const envelope=attack*release*(style==='rift'?.35+.65*Math.min(1,p*4):1);
   sample=Math.tanh(sample*1.85)*envelope*weight;

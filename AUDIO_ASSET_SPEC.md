@@ -28,3 +28,9 @@ All common species share the original 180 ms death throttle; splitting species d
 Owned/commissioned files may replace cues in `public/assets/audio/catalog.json`: `sfx` maps cue IDs to up to eight paths under `assets/audio/`; `music` maps menu/combat/escalation/unbound/final/titan/results to a path plus optional loop endpoints. Decode limits are 2 MiB/8s for SFX and 24 MiB/180s for music. Audio remains optional if decode/autoplay fails. This catalog need not be filled for beta/public tests because procedural audio already works.
 
 Automated browser checks verify six distinct theme signatures, state transitions without source restarts, stable node counts, nonclipping finite PCM, 100% fresh default, saved preference preservation, pause/mute/resume, and disposal. **Human headphone/speaker audition remains a launch acceptance check**; this environment had no listening-capable tool.
+
+## Titan Fissure feedback
+
+`ability.faultline` has its own staggered stone-fracture opening, rather than the generic Titan impact. `fissure.rumble` is a quiet rolling tremor on nearby field pulses; `fissure.hit` adds a sharper crunch only when those pulses actually damage health or protection. These three cues each have six related variants with recent-repeat avoidance and subtle pitch/envelope variation. Rumble gain is 48% of the ordinary organic cue gain; damage ticks are 85%. Nearby overlapping fields emit each pulse cue only once per update, with a shared 480 ms throttle and the existing ten-SFX voice cap. Walking away, field expiry, defeat, pause or mute stops the relevant feedback.
+
+Titan Fissure runs prepare their small PCM pools asynchronously alongside character/terrain loading, avoiding first-cast synthesis during combat. Audio preparation failure remains optional. Effects are identical in Stage 2 and the earned Stage 1 Fissure kit; damage, cooldowns, scoring, unlocks and simulation RNG are unchanged.
