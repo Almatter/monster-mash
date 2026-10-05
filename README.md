@@ -2,7 +2,7 @@
 
 Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Reaper, a ranged scythe hunter, unlocks with Stage 2 and can then play either stage. Name and palette are cosmetic identity; The Gatebreaker grants Stage 2 access after its October 8 opening. No accounts, tracking, external assets, server or runtime dependencies are required.
 
-Current changes and measured balance: [Hunt v30 optional Colossus detour report](HUNT_V30_REPORT.md). Previous kit/control changes: [Hunt v29 report](HUNT_V29_REPORT.md). Previous encounter changes: [Hunt v28 Ashen Colossus report](HUNT_V28_REPORT.md). Previous access/records work: [Hunt v27 report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
+Current changes and measured timing: [Hunt v31 Colossus window and boon ranks report](HUNT_V31_REPORT.md). Previous placement/balance study: [Hunt v30 report](HUNT_V30_REPORT.md). Previous kit/control changes: [Hunt v29 report](HUNT_V29_REPORT.md). Previous encounter changes: [Hunt v28 Ashen Colossus report](HUNT_V28_REPORT.md). Previous access/records work: [Hunt v27 report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
 
 ## Run and deploy
 
@@ -19,7 +19,7 @@ The server builds once at startup. Rebuild after source changes. The permanent p
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: original Stage 1 `2026.10-v15-autotarget-squad`, earned Titan Fissure Stage 1 `2026.10-v29-titan-fissure`, Reaper Stage 1 `2026.10-v29-reaper`, Stage 2 `2026.10-v30-court-hunts` / `2026.10-v30-court-test`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: original Stage 1 `2026.10-v15-autotarget-squad`, earned Titan Fissure Stage 1 `2026.10-v29-titan-fissure`, Reaper Stage 1 `2026.10-v29-reaper`, Stage 2 `2026.10-v31-court-hunts` / `2026.10-v31-court-test`.
 
 ## Play
 

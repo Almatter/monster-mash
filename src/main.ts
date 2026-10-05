@@ -1,3 +1,4 @@
+import {boonPreview} from './boon-preview.ts';
 import {colossusLocation,checkColossusArrival} from './ashen-colossus.ts';
 import {titanKitForStage,titanKitLabel} from './champion-kits.ts';
 import {reaperTappedEnemy,reaperSuggestedTarget,reaperTargetName} from './reaper.ts';
@@ -83,7 +84,25 @@ $('startForm').addEventListener('submit',e=>{e.preventDefault();start();});$('ag
 $('howButton').onclick=()=>{$('help').hidden=false;};$('closeHelp').onclick=()=>{$('help').hidden=true;};
 function setPaused(value:boolean){if(!game||game.ended)return;if(game.court?.pending){showHuntUpgrade();return;}paused=value;audio.setPaused(value);$('paused').hidden=!paused;clearInput();accumulator=0;}
 function showHuntUpgrade(){if(!game?.court?.pending)return;checkColossusArrival(game);paused=true;audio.setPaused(false);void audio.setMusic('boon');clearInput();accumulator=0;$('paused').hidden=true;$('huntUpgrade').hidden=false;$('huntUpgradeCount').textContent=`${game.court.stats.captains} / ${COURT.total} captains slain · choose your next boon`;
- const root=$('huntUpgradeChoices');root.replaceChildren();for(const option of COURT_UPGRADES){const rank=upgradeRank(game,option.id),button=document.createElement('button');button.dataset.upgrade=option.id;button.disabled=rank>=3;const name=document.createElement('b'),detail=document.createElement('span'),level=document.createElement('small');name.textContent=option.name;detail.textContent=option.description;level.textContent=rank>=3?'MAXIMUM RANK':`RANK ${rank+1} / 3`;button.append(name,detail,level);button.onclick=()=>{if(!game||!chooseCourtUpgrade(game,option.id))return;audio.play('confirm');if(game.court!.pending){showHuntUpgrade();return;}$('huntUpgrade').hidden=true;paused=false;audio.setPaused(false);clearInput();accumulator=0;updateUI();};root.append(button);}root.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();}
+ const root=$('huntUpgradeChoices');root.replaceChildren();const touchPreview=matchMedia('(hover: none)').matches;
+ for(const option of COURT_UPGRADES){
+  const rank=upgradeRank(game,option.id),button=document.createElement('button'),next=boonPreview(option.id,rank);
+  button.type='button';button.dataset.upgrade=option.id;button.disabled=rank>=3;
+  const name=document.createElement('b'),detail=document.createElement('span'),level=document.createElement('small');
+  name.textContent=option.name;detail.id='boon-preview-'+option.id;detail.textContent=touchPreview||rank>=3?next:option.description;
+  level.textContent=`CURRENT ${rank}/3`+(rank>=3?' · MAX':'');button.setAttribute('aria-describedby',detail.id);button.append(name,detail,level);
+  const inspect=(sound=true)=>{if(button.disabled)return;detail.textContent=next;if(sound)audio.play('menu');};
+  const restore=()=>{if(!touchPreview&&!button.matches(':hover,:focus'))detail.textContent=option.description;};
+  let pointerFocus=false;button.onpointerdown=()=>{pointerFocus=true;};button.onpointerup=button.onpointercancel=()=>{pointerFocus=false;};
+  button.onpointerenter=e=>{if(e.pointerType!=='touch')inspect();};button.onpointerleave=restore;
+  button.onfocus=()=>inspect(!pointerFocus&&!button.matches(':hover'));button.onblur=restore;
+  button.onclick=e=>{e.stopPropagation();if(!game||!chooseCourtUpgrade(game,option.id))return;audio.unlock();audio.play('confirm');
+   if(game.court!.pending){showHuntUpgrade();return;}$('huntUpgrade').hidden=true;paused=false;audio.setPaused(false);clearInput();accumulator=0;updateUI();};
+  root.append(button);
+ }
+ // Keep keyboard entry usable without playing a navigation cue for automatic focus.
+ const first=root.querySelector<HTMLButtonElement>('button:not(:disabled)');if(first){const focus=first.onfocus;first.onfocus=null;first.focus();first.onfocus=focus;first.querySelector('span')!.textContent=boonPreview(first.dataset.upgrade as typeof COURT_UPGRADES[number]['id'],upgradeRank(game,first.dataset.upgrade as typeof COURT_UPGRADES[number]['id']));}
+}
 $('pause').onclick=()=>setPaused(true);$('resume').onclick=()=>{audio.unlock();setPaused(false);};$('endRun').onclick=()=>{if(game){game.ended=true;void finish('retired');}};
 $('back').onclick=()=>{audio.setPaused(false);audio.setChampion('menu');void audio.setMusic('menu');game=null;$('result').hidden=true;$('menu').hidden=false;for(const id of ['hud','combatInfo','controls'])$(id).hidden=true;document.body.classList.remove('playing');$('menu').scrollTop=0;refreshSelection();renderStages();renderer.previewIdentity=previewIdentity();if(reloadForUpdate)location.reload();else{void refreshStageClock();activateSafeUpdate();}};
 const bindings:Record<string,number>={'1':0,q:0,'2':1,e:1,'3':2,r:2,'4':3,' ':3};

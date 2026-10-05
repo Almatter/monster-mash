@@ -1,6 +1,8 @@
 import type {Game,Enemy} from './simulation.ts';
 import {insideCourt,courtSteer,courtRegionAt,COURT_SITES} from './court-map.ts';
-export const COLOSSUS={captains:8,lastArrival:540,window:120,reward:1200000,hp:180000,range:700,radius:65,warning:1.25,scorch:1.35,cycle:3.2,maxZones:18,impact:78,burn:22,titanImpact:4,playerSeparation:1500,captainSeparation:1600,territory:850,roam:240};
+export const COLOSSUS={captains:8,lastArrival:540,window:180,reward:1200000,hp:180000,range:700,radius:65,warning:1.25,scorch:1.35,cycle:3.2,maxZones:18,impact:78,burn:22,titanImpact:4,playerSeparation:1500,captainSeparation:1600,territory:850,roam:240};
+// Historical competition codes retain the two-minute encounter limit.
+export const colossusWindowForRules=(rules:string)=>/-v(28|29|30)-court-/.test(rules)?120:COLOSSUS.window;
 export type ColossusZone={x:number;y:number;radius:number;placedAt:number;impactAt:number;endsAt:number;tickAt:number;erupted:boolean};
 export type ColossusEncounter={status:'unseen'|'active'|'defeated'|'expired'|'departed';serial:number;retryAt:number;missedWindowAnnounced:boolean;spawnedAt:number;expiresAt:number;defeatedAt?:number;home?:{x:number;y:number};attackAt:number;castUntil:number;pattern:number;zones:ColossusZone[]};
 export type ColossusResult={spawnedAt:number;defeatedAt?:number;reward:number};
