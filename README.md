@@ -2,7 +2,7 @@
 
 Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Reaper, a ranged scythe hunter, unlocks with Stage 2 and can then play either stage. Name and palette are cosmetic identity; The Gatebreaker grants Stage 2 access after its October 8 opening. No accounts, tracking, external assets, server or runtime dependencies are required.
 
-Current tester changes and measured balance: [Hunt v27 access, records and targeting report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
+Current tester changes and measured balance: [Hunt v28 Ashen Colossus report](HUNT_V28_REPORT.md). Previous access/records work: [Hunt v27 report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
 
 ## Run and deploy
 
@@ -19,7 +19,7 @@ The server builds once at startup. Rebuild after source changes. The permanent p
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: `2026.10-v6-tester`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: original Stage 1 `2026.10-v15-autotarget-squad`, Reaper Stage 1 `2026.10-v27-reaper`, Stage 2 `2026.10-v28-court-hunts` / `2026.10-v28-court-test`.
 
 ## Play
 

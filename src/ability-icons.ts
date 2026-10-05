@@ -17,6 +17,7 @@ const paths:Record<string,string>={
  frenzy:'M7 5l-3 17 5 6 M16 3l-4 18 4 8 M25 5l-5 17 5 6 M3 11l5-2 M12 9l5-2 M21 11l6-2',
  worldbreaker:'M16 3v9 M7 9l6 6-5 8 M25 9l-6 6 5 8 M3 27h26 M11 27l2-5 M21 27l-2-5',
  stampede:'M5 5l6 6-2 10 7 7 7-7-2-10 6-6 M11 11l5 3 5-3 M11 22l5-4 5 4',
+ faultline:'M3 24l7-5-3-5 9-5-2-6 M10 29l7-8-2-5 12-7 M3 12l4 1 M21 26l7-2',
  kingfall:'M3 22l15-11 M13 4l15 10-5 14-15-4-3-12 8-8Z M18 11l5 5-3 7 M8 20l-4 4',
  heavenfall:'M17 2l-2 13 M9 5l5 11 M25 4l-8 12 M5 23h22 M8 27h16 M11 19l5-4 5 4',
  rupture:'M16 3l4 8 8 1-5 6 4 9-10-3-8 5-1-10-6-5 10-2 4-9Z M12 13l7 8',

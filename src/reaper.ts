@@ -8,7 +8,7 @@ export function harvestLife(g:Game,damage:number){if(g.time>=g.soulWindow){g.sou
 export function visibleReaperEnemy(g:Game,e:Enemy){return e.active&&Math.abs(e.x-g.player.x)<=g.targetView.x&&Math.abs(e.y-g.player.y)<=g.targetView.y;}
 // An empty Blink tap never spends its cooldown.
 export function reaperTappedEnemy(g:Game,point:Point){let best:Enemy|null=null,distance=Infinity;g.nearby(g.player.x,g.player.y,Math.hypot(g.targetView.x,g.targetView.y)+100,e=>{if(!visibleReaperEnemy(g,e))return;const d=Math.hypot(e.x-point.x,e.y-point.y);if(d<=ENEMIES[e.kind].radius+48&&d<distance){best=e;distance=d;}});return best;}
-export const reaperThreat=(e:Enemy)=>e.court?.role==='captain'?0:e.kind==='titan'?1:e.kind==='elite'?2:e.court?.role==='vanguard'?3:e.kind==='spitter'?4:e.kind==='brute'?5:e.kind==='hound'?6:7;
+export const reaperThreat=(e:Enemy)=>e.colossus?-1:e.court?.role==='captain'?0:e.kind==='titan'?1:e.kind==='elite'?2:e.court?.role==='vanguard'?3:e.kind==='spitter'?4:e.kind==='brute'?5:e.kind==='hound'?6:7;
 // Keep equal-priority prey in focus; a stronger threat immediately takes precedence.
 export function reaperTarget(g:Game,range:number,priority=false){let best:Enemy|null=null,focus:Enemy|null=null,rank=Infinity;g.nearby(g.player.x,g.player.y,range,e=>{const d=Math.hypot(e.x-g.player.x,e.y-g.player.y);if(d>range)return;if(e.serial===g.reaperFocus)focus=e;const score=(priority?reaperThreat(e)*100000:0)+d;if(score<rank){rank=score;best=e;}});if(priority){if(focus&&best&&reaperThreat(focus)===reaperThreat(best))best=focus;g.reaperFocus=best?.serial??0;}return best;}
 export function reaperAim(g:Game,range:number){const enemy=reaperTarget(g,range,true);return enemy?Math.atan2(enemy.y-g.player.y,enemy.x-g.player.x):g.movementAngle;}

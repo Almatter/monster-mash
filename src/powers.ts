@@ -1,3 +1,4 @@
+import {castFissure} from './titan-fissure.ts';
 import {reaperSweep,reaperBlink,reaperVolley} from './reaper.ts';
 import {upgradeRank} from './stage-two.ts';
 import {SUSTAIN} from './balance.ts';
@@ -5,7 +6,7 @@ import type {Game} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
 import {addServant,dominate,corrupt} from './servants.ts';
 export const POWER_HANDLERS:Record<string,(game:Game,power:AbilityDef)=>void>={
- reapersweep:reaperSweep,reaperblink:reaperBlink,reapervolley:reaperVolley,
+ fissure:castFissure,reapersweep:reaperSweep,reaperblink:reaperBlink,reapervolley:reaperVolley,
  reaperstorm(g,p){g.reaperStorm=p.duration||8;g.reaperPulse=0;g.reaperSweeps=0;},
  dominate(g,p){dominate(g,p.radius,12+g.release*3,28*(1+.2*upgradeRank(g,'duration')));},
  curse(g,p){corrupt(g,p.radius,p.duration);g.area(g.player.x,g.player.y,p.radius,p.damage,'curse');},
