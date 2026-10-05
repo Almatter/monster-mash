@@ -1,3 +1,4 @@
+import {normalizeTitanKit,type TitanKit} from './champion-kits.ts';
 import {normalizeBests,type PersonalBests} from './personal-bests.ts';
 import {MONSTERS,paletteFor,BASE_TITLES,type Palette} from './content-monsters.ts';
 import {createIdentity,sanitizeName,type Identity} from './identity.ts';
@@ -5,7 +6,7 @@ import {ACHIEVEMENTS,type Metrics} from './content-records.ts';
 import {TITLES,awardTitles,type Progression,type Totals} from './content-titles.ts';
 import {STAGE_GATES,eventDay,recordStageTrial,trialDays} from './stage-access.ts';
 export type RecordProgress={best:number;unlockedAt?:string;name?:string;monsterId?:string};
-export type Profile={version:3;identity:Identity;palettes:Record<string,Palette>;records:Record<string,RecordProgress>;progress:Progression;personalBests:PersonalBests};
+export type Profile={version:3;titanKit:TitanKit;identity:Identity;palettes:Record<string,Palette>;records:Record<string,RecordProgress>;progress:Progression;personalBests:PersonalBests};
 export interface StorageLike{getItem(key:string):string|null;setItem(key:string,value:string):void}
 const object=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const number=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(1e12,v)):0;
@@ -24,7 +25,7 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
  progress.legacyTitles=raw.version===1||raw.version===2?ACHIEVEMENTS.filter(a=>a.title&&records[a.id]?.unlockedAt).map(a=>a.title!):Array.isArray(p.legacyTitles)?p.legacyTitles.filter((t:unknown)=>legacy.includes(String(t))):[];
  if(object(p.ledger)&&typeof p.ledger.id==='string')progress.ledger={id:p.ledger.id.slice(0,100),values:totals(p.ledger.values)};
  progress.finished=Array.isArray(p.finished)?p.finished.filter((s:unknown)=>typeof s==='string').slice(-64):[];
- const profile:Profile={version:3,identity,palettes,records,progress,personalBests:normalizeBests(raw.personalBests)};identity.colors={...palettes[identity.monsterId]};if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
+ const profile:Profile={version:3,titanKit:normalizeTitanKit(raw.titanKit),identity,palettes,records,progress,personalBests:normalizeBests(raw.personalBests)};identity.colors={...palettes[identity.monsterId]};if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
 }
 export function availableTitles(profile:Profile){return [...new Set([...BASE_TITLES,...profile.progress.legacyTitles,...TITLES.filter(t=>profile.progress.titles[t.id]).map(t=>t.name)])];}
 export function loadProfile(storage?:StorageLike):Profile{try{return normalizeProfile(JSON.parse(storage?.getItem('mm-profile')||'null'),storage?.getItem('mm-name')||'');}catch{return normalizeProfile(null);}}

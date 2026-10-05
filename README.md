@@ -2,7 +2,7 @@
 
 Public-anonymous, static browser horde arcade game. The original **Sovereign** remains playable alongside four distinct packages: **Titan, Devourer, Calamity, Overlord**. Reaper, a ranged scythe hunter, unlocks with Stage 2 and can then play either stage. Name and palette are cosmetic identity; The Gatebreaker grants Stage 2 access after its October 8 opening. No accounts, tracking, external assets, server or runtime dependencies are required.
 
-Current tester changes and measured balance: [Hunt v28 Ashen Colossus report](HUNT_V28_REPORT.md). Previous access/records work: [Hunt v27 report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
+Current changes and measured balance: [Hunt v29 kit, controls and hunt feedback report](HUNT_V29_REPORT.md). Previous encounter changes: [Hunt v28 Ashen Colossus report](HUNT_V28_REPORT.md). Previous access/records work: [Hunt v27 report](HUNT_V27_REPORT.md). Previous color/control work: [Reaper v26 report](REAPER_V26_REPORT.md). The `/stage2-test/` endpoint allows Reaper immediately and isolates tester progress from official progress.
 
 ## Run and deploy
 
@@ -19,14 +19,14 @@ The server builds once at startup. Rebuild after source changes. The permanent p
 
 Build uses Node's native TypeScript erasure, which emits an experimental warning and does **not type-check**. Use erasable TypeScript syntax. Runtime behavior is covered by deterministic and real-browser tests.
 
-**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: original Stage 1 `2026.10-v15-autotarget-squad`, Reaper Stage 1 `2026.10-v27-reaper`, Stage 2 `2026.10-v28-court-hunts` / `2026.10-v28-court-test`.
+**Offline cache during development:** the build derives the worker cache version from shipped runtime files. Reopen a tab to check for a new version; an active run defers its reload until results. Bump `EVENT.rules` when gameplay/scoring rules change; do not compare scores across rules versions. Current rules: original Stage 1 `2026.10-v15-autotarget-squad`, earned Titan Fissure Stage 1 `2026.10-v29-titan-fissure`, Reaper Stage 1 `2026.10-v29-reaper`, Stage 2 `2026.10-v29-court-hunts` / `2026.10-v29-court-test`.
 
 ## Play
 
-Choose a name, one of five packages, an optional title and four tint channels. The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM4 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
+Choose a name, one of five packages, an optional title and four tint channels (five for Reaper, including skin). The same identity snapshot is used in the live HUD, pause screen, run result, result card, copied text and MM4 code. Fantasy punctuation, spaces, mixed case, non-Latin names and emoji are supported, up to 32 Unicode code points. The sole blank-name fallback is **Unnamed Calamity**.
 
 - WASD / arrows or left thumb stick: move. Mouse: aim; ranged basic attacks automatically choose a nearby threat when not mouse-aiming. Touch movement does not require fine ranged aiming.
-- Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attacks fire only when prey is in range. Calamity Starfall and Vortex enter placement mode: click/tap the arena to cast, or use Cancel/Escape. Devourer Lunge gains two charges at Unbound II and three at Final Release; each cast starts with a short dodge window.
+- Q/E/R/Space or 1/2/3/4: selected kit's three powers and ultimate. Basic attacks fire only when prey is in range. Calamity Starfall and Vortex enter placement mode: click/tap the arena to cast, or use Cancel/Escape. Reaper Blink and Arc suggest a visible priority target; press the same power again to confirm, or click/tap to choose another. Devourer Lunge gains two charges at Unbound II and three at Final Release; each cast starts with a short dodge window.
 - P/Escape: pause. Backgrounding or entering touch portrait pauses combat. Menus work in portrait; combat requests landscape.
 - Mute, shake and low-effects toggles remain available. The Settings panel also has optional SHOW PERFORMANCE (off by default), which displays smoothed FPS and enemy/ally/projectile/effect counts. Repeated runs grant no statistical advantage.
 
@@ -38,9 +38,11 @@ Choose a name, one of five packages, an optional title and four tint channels. T
 | Overlord | Control up to 24–28 active servants; curse damage, conversion, summons and iterative corruption cascades |
 | Sovereign | Original mixed claw/shockwave/devour/beam/catastrophe package; Feeding Rage briefly reduces damage |
 
+Titan keeps Throw in Stage 1 until real Stage 2 access opens for the account. After Gatebreaker and the October 8 opening, Stage 1 offers a saved Throw/Fissure choice with separate personal bests; ordinary timed unbindings still apply. Stage 2 always uses Fissure.
+
 ## Feats, records and titles
 
-Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 27 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect combat stats. The Gatebreaker title opens Stage 2 after seven different days with a single champion, with at least 8:30 and 15,000 kills in each Stage 1 run; either defeat or a manual ending counts. Stage 2 still waits until October 8, 2026. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
+Run Feats repeat and reset each run. Monster Records preserve best-run achievements. The 41 prestige titles use lifetime totals and explicit mastery challenges; all requirements and progress are shown in separate Records sections. Titles never affect combat stats. The Gatebreaker title opens Stage 2 after seven different days with a single champion, with at least 8:30 and 15,000 kills in each Stage 1 run; either defeat or a manual ending counts. Stage 2 still waits until October 8, 2026. Version 3 storage migrates old identity, palettes, records and earned legacy titles. See [PROGRESSION.md](PROGRESSION.md) for thresholds, persistence limits and safe developer reset.
 
 See [BALANCE_REPORT.md](BALANCE_REPORT.md) for the five distinct sustain loops, threat curve and before/after scripted-play measurements. [ART_ASSET_SPEC.md](ART_ASSET_SPEC.md) documents the shipped layered anime art and the developer-only art-lab.html validator. [AUDIO_ASSET_SPEC.md](AUDIO_ASSET_SPEC.md) documents the master/three-bus mix, synthesized sound effects, loop/crossfade states and music delivery slots. Six distinct procedural menu/champion themes ship without external music masters.
 

@@ -52,7 +52,7 @@ test('late captain bearings start at twelve minutes; persistent route guidance f
 
 test('guidance retargets living captains after a kill and boon deliberation cannot advance its clock',()=>{
  const g=new Game(77,{},1);initializeCourt(g);g.time=901;updateCourt(g,.01);const site=g.court.hint.site,target=courtHintTarget(g);
- spawnCourtHunt(g,site);g.damage(g.enemies.find(e=>e.active&&e.court?.role==='captain'&&e.court.site===site),1e8,'execute');assert.equal(g.court.camps[site].slain,true);assert.equal(courtHintTarget(g),null);
+ spawnCourtHunt(g,site);g.damage(g.enemies.find(e=>e.active&&e.court?.role==='captain'&&e.court.site===site),1e8,'execute');assert.equal(g.court.camps[site].slain,true);assert.ok(courtHintTarget(g));assert.notEqual(g.court.hint.site,site);
  const time=g.time,next=g.court.nextHintAt;g.update(60,idle);assert.equal(g.time,time);assert.equal(g.court.nextHintAt,next);
  chooseCourtUpgrade(g,'power');g.update(.3,idle);assert.ok(courtHintTarget(g));assert.notEqual(g.court.hint.site,site);
  g.court.cleared=true;updateCourt(g,.01);assert.equal(courtHintTarget(g),null);

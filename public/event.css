@@ -87,3 +87,5 @@
 #courtObjective{white-space:pre-line}
 
 .result-breakdown{border:1px solid #625047;padding:14px;margin:18px 0;text-align:left}.result-breakdown summary{cursor:pointer;color:var(--gold);font-size:12px;letter-spacing:1px}.result-breakdown .stats{margin-top:20px;text-align:center}
+
+.titan-kit-choice{margin:16px 0;padding:12px;border:1px solid #79513f;background:#211b2566}.titan-kit-choice p{margin:8px 0 0}

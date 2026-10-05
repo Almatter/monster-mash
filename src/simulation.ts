@@ -1,10 +1,11 @@
+import {titanKitForStage,type TitanKit} from './champion-kits.ts';
 import {courtFeatHit,courtSlamStart,courtSlamEnd} from './court-feats.ts';
 import {harvestLife,scytheWave,updateReaper,reaperTarget,reaperTappedEnemy,type ScytheWave} from './reaper.ts';
 import {releaseAt,releaseStats,releasedPower} from './unbound.ts';
 import {slideTorches} from './arena.ts';
 import {COURT_RADIUS,insideCourt,slideCourt,courtSteer} from './court-map.ts';
 import {fissureMotion,updateFissures,type TitanFissure} from './titan-fissure.ts';
-import {finishColossus,colossusMotion,colossusDamage,dismissColossus} from './ashen-colossus.ts';
+import {checkColossusArrival,finishColossus,colossusMotion,colossusDamage,dismissColossus} from './ashen-colossus.ts';
 import { ENEMIES, EVENT, PHASES, type EnemyKind } from './data.ts';
 import { Score } from './scoring.ts';
 import {ABILITIES,MONSTERS,abilitiesForStage} from './content-monsters.ts';
@@ -40,8 +41,8 @@ export class Game {
  fissures:TitanFissure[]=[];clawWaves:ClawWave[]=[];court:CourtState|null=null;
  debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
  dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
- identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
- constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.powers=abilitiesForStage(this.monster.id,this.phase);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.release=COURT.startRelease;this.lungeCharges=this.maxLungeCharges();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
+ titanKit:TitanKit='throw';identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
+ constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase,titanKit:TitanKit='throw'){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.titanKit=titanKitForStage(this.phase,titanKit,true);this.powers=abilitiesForStage(this.monster.id,this.phase,this.titanKit);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.release=COURT.startRelease;this.lungeCharges=this.maxLungeCharges();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
  insideMap(x:number,y:number){return this.court?insideCourt(x,y):Math.hypot(x,y)<=EVENT.arenaRadius;}
  get arenaRadius(){return this.court?COURT_RADIUS:EVENT.arenaRadius;}
  slideArena(body:{x:number;y:number},radius:number){if(this.court)slideCourt(body,radius);else slideTorches(body,radius);}
@@ -69,7 +70,7 @@ export class Game {
    const bucket=this.grid.get((ix+4096)*8192+iy+4096);if(bucket)for(const e of bucket)if(e.active)visit(e);
   }
  }
- hurt(damage:number){if(this.court&&(this.court.pending||this.court.cleared))return;if(this.dodgeInvuln>0){if(!this.dodgeDeflected){this.dodgeInvuln=Math.max(this.dodgeInvuln,.32);this.dodgeDeflected=true;}return;}if(this.player.invuln>0)return;const raw=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.85:1)*(this.monster.id==='sovereign'&&this.player.rage>0?.75:1),s=SUSTAIN.devourer,guard=this.monster.id==='devourer'&&this.frenzyGuard>0?s.guardBaseReduction+s.guardReductionPerRelease*this.release:0,incoming=raw*(1-guard),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=raw-incoming+blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp>0&&this.player.hp/this.player.maxHp<.25)this.sound('lowHealth');if(this.player.hp<=0){this.ended=true;if(this.court){this.fissures.length=0;dismissColossus(this,true);}this.sound('defeat');}}
+ hurt(damage:number){if(this.court&&(this.court.pending||this.court.cleared))return;if(this.dodgeInvuln>0){if(!this.dodgeDeflected){this.dodgeInvuln=Math.max(this.dodgeInvuln,.32);this.dodgeDeflected=true;}return;}if(this.player.invuln>0)return;const raw=damage*this.monster.armor*(this.monster.passive.id==='surrounded'&&this.surrounded>=3?.85:1)*(this.monster.id==='sovereign'&&this.player.rage>0?.75:1),s=SUSTAIN.devourer,guard=this.monster.id==='devourer'&&this.frenzyGuard>0?s.guardBaseReduction+s.guardReductionPerRelease*this.release:0,incoming=raw*(1-guard),blocked=Math.min(this.shield,incoming);this.shield-=blocked;this.sustainStats.absorbed+=raw-incoming+blocked;this.player.hp=Math.max(0,this.player.hp-incoming+blocked);this.player.invuln=.32;this.score.noHitKills=0;this.shake=7;this.sound('hurt');if(this.player.hp>0&&this.player.hp/this.player.maxHp<.25)this.sound('lowHealth');if(this.player.hp<=0){this.ended=true;this.fissures.length=0;if(this.court){dismissColossus(this,true);}this.sound('defeat');}}
  damage(e:Enemy,amount:number,source:string,origin?:{x:number;y:number}){
   if(!e.active||this.court?.cleared||e.colossus&&this.time>=e.colossus.expiresAt)return false;
   const actual=e.colossus?colossusDamage(this,amount,source):e.court?courtDamage(this,e,amount,source,origin):amount;if(this.court&&this.monster.id==='devourer'&&source==='devour'&&e.court?.role==='captain'&&actual>0){const drain=Math.min(this.healBudget,Math.max(this.player.maxHp*COURT.devourMinimum,Math.max(0,Math.min(e.hp,actual))*COURT.devourDrain));this.healBudget-=drain;this.heal(drain);}if(this.monster.id==='reaper'&&['scythe','reapersweep','graveshift','reapingarc','moonstorm'].includes(source))harvestLife(this,Math.max(0,Math.min(e.hp,actual)));if(e.court)courtFeatHit(this,e,actual);e.hp-=actual;e.flash=.1;
@@ -93,7 +94,7 @@ export class Game {
  findBasicTarget(range:number,ranged:boolean){if(ranged)return this.nearestEnemy(range);const p=this.player;let best:Enemy|null=null,bestScore=Infinity;this.nearby(p.x,p.y,range+65,e=>{const distance=Math.hypot(e.x-p.x,e.y-p.y);if(distance>range+ENEMIES[e.kind].radius)return;const score=distance-(e.windup>0?30:0)-(['elite','titan'].includes(e.kind)?Math.min(35,distance*.1):0);if(score<bestScore){best=e;bestScore=score;}});return best;}
  powerScale(){return this.releaseStats.damage*(this.player.rage>0?1.4:1)*(this.frenzy>0?1.5:1)*(this.monster.passive.id==='hunger'?1+Math.min(.25,this.score.recent.length*.005):1);}
  update(dt:number,input:Input){
-  if(this.ended||this.court?.pending)return;
+  if(this.ended)return;if(this.court?.pending){checkColossusArrival(this);return;}
   this.time+=dt;this.releaseTime=Math.max(0,this.releaseTime-dt);const release=this.court?courtRelease(this):releaseAt(this.time);if(release!==this.release){const oldMax=this.maxLungeCharges();this.release=release;this.lungeCharges=Math.min(this.maxLungeCharges(),this.lungeCharges+this.maxLungeCharges()-oldMax);this.releaseTime=2.8;this.sound('ultimateStart');this.shake=12;this.effect(this.player.x,this.player.y,'release',320,1);}this.sustainCooldown=Math.max(0,this.sustainCooldown-dt);this.shieldTime-=dt;if(this.shieldTime<=0)this.shield=0;this.siphonWindow+=dt;if(this.siphonWindow>=1){this.siphonWindow-=1;this.siphonBudget=SUSTAIN.overlord.perSecond;}this.pressureTime-=dt;if(this.pressureTime<=0){this.pressureTime=.5;this.pressure=threatAt(this.court?60+this.court.stats.captains*35:this.time);}this.score.update(dt,this.time);const tier=Math.floor(this.score.carnage);if(tier>this.lastCarnageTier)this.sound('carnage');this.lastCarnageTier=tier;this.noticeTime-=dt;if(this.noticeTime<=0&&this.notifications.length){this.notice=this.notifications.shift()!;this.noticeTime=2.8;}this.shake=Math.max(0,this.shake-dt*25);
   this.resonance=Math.max(0,this.resonance-dt);this.frenzy=Math.max(0,this.frenzy-dt);this.frenzyGuard=Math.max(0,this.frenzyGuard-dt);this.dodgeInvuln=Math.max(0,this.dodgeInvuln-dt);this.ultimateTime=Math.max(0,this.ultimateTime-dt);const p=this.player;p.invuln=Math.max(0,p.invuln-dt);p.rage=Math.max(0,p.rage-dt);
   for(let i=0;i<4;i++)this.cooldowns[i]=Math.max(0,this.cooldowns[i]-dt);if(this.monster.id==='devourer'){if(this.lungeCharges<this.maxLungeCharges()){this.lungeRecharge-=dt;if(this.lungeRecharge<=0){this.lungeCharges++;this.lungeRecharge=this.lungeCharges<this.maxLungeCharges()?this.powers[0].cooldown*this.releaseStats.cooldown:0;}}this.cooldowns[0]=this.lungeCharges>0?0:this.lungeRecharge;}
@@ -124,14 +125,14 @@ export class Game {
    if(e.windup>0){speed=0;e.windup-=dt;if(e.windup<=0){const r=e.court?.role==='captain'?COURT.slamRadius:e.kind==='titan'?240:140;this.effect(e.x,e.y,e.court?.role==='captain'?'court-slam':e.kind==='titan'?'slam-titan':'slam-elite',r,.45);if(e.court)courtSlamEnd(this,e,d<r+20);if(d<r+20)this.hurt(e.court?.role==='captain'?COURT.slamDamage*(1+.07*(e.court.tier||0)):def.damage*threat);}}
    const weave=def.behavior==='weave'?Math.sin(this.time*5+e.serial)*45:0;
    const courtMotion=e.colossus?colossusMotion(this,e):e.court?courtEnemyMotion(this,e,dt):this.court?(()=>{const v=courtSteer(e.x,e.y,p.x,p.y);return {dx:v.x,dy:v.y,speed};})():null;
-   if(this.court&&this.fissures.length){const factor=fissureMotion(this,e);if(courtMotion)courtMotion.speed*=factor;else speed*=factor;}if(courtMotion&&e.windup>0)courtMotion.speed=0;
+   if(this.fissures.length){const factor=fissureMotion(this,e);if(courtMotion)courtMotion.speed*=factor;else speed*=factor;}if(courtMotion&&e.windup>0)courtMotion.speed=0;
    e.x+=((courtMotion?courtMotion.dx*courtMotion.speed:dx/d*speed)-dy/d*weave+e.vx)*dt;e.y+=((courtMotion?courtMotion.dy*courtMotion.speed:dy/d*speed)+dx/d*weave+e.vy)*dt;
    this.slideArena(e,def.radius);
    e.vx*=Math.exp(-dt*4);e.vy*=Math.exp(-dt*4);
    if(d<def.radius+23){this.hurt(def.damage*courtContactScale(e)*threat*(e.kind==='titan'?.4:e.kind==='elite'?.6:1));e.x-=dx/d*12;e.y-=dy/d*12;this.slideArena(e,def.radius);}
   }
   this.rebuildGrid();
-  if(this.court&&this.fissures.length)updateFissures(this,dt);
+  if(this.fissures.length)updateFissures(this,dt);
   updateServants(this,dt);
   this.passiveTimer-=dt;if(this.passiveTimer<=0){this.passiveTimer=.2;this.surrounded=0;this.nearby(p.x,p.y,130,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<130)this.surrounded++;});}
   if(this.dash){const d=this.dash;this.nearby(p.x,p.y,d.radius+60,e=>{if(Math.hypot(e.x-p.x,e.y-p.y)<d.radius+ENEMIES[e.kind].radius&&this.damage(e,d.damage*this.powerScale()*dt*12,d.source))d.kills++;});if(d.remaining<=0){this.completeAttack(d.kills);this.dash=null;}}

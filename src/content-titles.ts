@@ -26,6 +26,7 @@ export const TITLES:PrestigeTitle[]=[
  title('reaper2','Eclipse Eternal','Reaper mastery',req('reaper','reaped',50000,'prey slain with scythe powers'),req('reaper','moonstorm',15000,'Eclipse kills'),req('reaper','runs',20,'Reaper incarnations ≥60s')),
  title('reaperBlink','Between Worlds','Reaper mastery',req('reaper','graveshift',2000,'Graveshift kills'),req('reaper','runs',5,'Reaper incarnations ≥60s')),
  title('wildsHunter','Hunter of the Wilds','Ashen Wilds',req('total','courtClears',1,'completed Stage 2 hunts')),
+ title('wildsColossus','Colossus Bane','Ashen Wilds',req('total','courtColossusClears',3,'completed Stage 2 hunts with the Ashen Colossus slain')),
  title('wildsVeteran','Ashen Warden','Ashen Wilds',req('total','courtClears',3,'completed Stage 2 hunts')),
  title('wildsCollector','Captain Reaper','Ashen Wilds',req('total','courtCaptains',50,'Stage 2 captains slain')),
  title('wildsGuards','The Shieldbreaker','Ashen Wilds',req('best','courtGuardRun',40,'guards broken in one Stage 2 hunt')),

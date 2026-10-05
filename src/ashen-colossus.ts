@@ -1,18 +1,19 @@
 import type {Game,Enemy} from './simulation.ts';
-import {insideCourt,courtSteer} from './court-map.ts';
+import {insideCourt,courtSteer,courtRegionAt} from './court-map.ts';
 export const COLOSSUS={captains:8,lastArrival:540,window:120,reward:1200000,hp:180000,range:700,radius:65,warning:1.25,scorch:1.35,cycle:3.2,maxZones:18,impact:78,burn:22,titanImpact:4};
 export type ColossusZone={x:number;y:number;radius:number;placedAt:number;impactAt:number;endsAt:number;tickAt:number;erupted:boolean};
-export type ColossusEncounter={status:'unseen'|'active'|'defeated'|'expired'|'departed';serial:number;retryAt:number;spawnedAt:number;expiresAt:number;defeatedAt?:number;attackAt:number;castUntil:number;pattern:number;zones:ColossusZone[]};
+export type ColossusEncounter={status:'unseen'|'active'|'defeated'|'expired'|'departed';serial:number;retryAt:number;missedWindowAnnounced:boolean;spawnedAt:number;expiresAt:number;defeatedAt?:number;attackAt:number;castUntil:number;pattern:number;zones:ColossusZone[]};
 export type ColossusResult={spawnedAt:number;defeatedAt?:number;reward:number};
-export const createColossus=():ColossusEncounter=>({status:'unseen',serial:0,retryAt:0,spawnedAt:0,expiresAt:0,attackAt:0,castUntil:0,pattern:0,zones:[]});
+export const createColossus=():ColossusEncounter=>({status:'unseen',serial:0,retryAt:0,missedWindowAnnounced:false,spawnedAt:0,expiresAt:0,attackAt:0,castUntil:0,pattern:0,zones:[]});
 export const colossusEnemy=(g:Game)=>g.enemies.find(e=>e.active&&e.colossus&&e.serial===g.court?.colossus.serial);
+export const colossusLocation=(g:Game,e=colossusEnemy(g))=>e?(courtRegionAt(e.x,e.y)?.name??'THE PILGRIM ROADS'):'';
 export function colossusResult(g:Game):ColossusResult|undefined{const s=g.court?.colossus;if(!s||s.status==='unseen')return;return {spawnedAt:Math.floor(s.spawnedAt),...(s.defeatedAt!==undefined?{defeatedAt:Math.floor(s.defeatedAt)}:{}),reward:s.status==='defeated'?COLOSSUS.reward:0};}
 export function summonColossus(g:Game){const s=g.court?.colossus;if(!s||s.status!=='unseen'||g.court!.stats.captains<COLOSSUS.captains||g.court!.stats.captains>=10||g.time>=COLOSSUS.lastArrival||g.ended)return false;
  // Retry at most twice a second if a cramped passage has no safe nearby spawn.
  if(g.time<s.retryAt)return false;s.retryAt=g.time+.5;
  // Search nearby walkable positions; never place a large foe inside the scene's walls.
  const heading=g.movementAngle;let point:{x:number;y:number}|null=null;for(let n=0;n<48;n++){const ring=Math.floor(n/16),j=n%16,a=heading+(j%2?1:-1)*Math.ceil(j/2)*Math.PI/8,r=[260,180,350][ring],candidate={x:g.player.x+Math.cos(a)*r,y:g.player.y+Math.sin(a)*r};if(insideCourt(candidate.x,candidate.y,62)){point=candidate;break;}}if(!point)return false;
- const e=g.spawn('titan');if(!e)return false;Object.assign(e,{...point,hp:COLOSSUS.hp,maxHp:COLOSSUS.hp,colossus:{expiresAt:g.time+COLOSSUS.window},timer:99,windup:0,vx:0,vy:0});Object.assign(s,{status:'active',serial:e.serial,spawnedAt:g.time,expiresAt:g.time+COLOSSUS.window,attackAt:g.time+2.5});g.notice='OPTIONAL · ASHEN COLOSSUS · 2:00 · +1.2M';g.noticeTime=5;return true;
+ const e=g.spawn('titan');if(!e)return false;Object.assign(e,{...point,hp:COLOSSUS.hp,maxHp:COLOSSUS.hp,colossus:{expiresAt:g.time+COLOSSUS.window},timer:99,windup:0,vx:0,vy:0});Object.assign(s,{status:'active',serial:e.serial,spawnedAt:g.time,expiresAt:g.time+COLOSSUS.window,attackAt:g.time+2.5});g.notice='ASHEN COLOSSUS · '+colossusLocation(g,e)+' · OPTIONAL +1.2M';g.noticeTime=7;return true;
 }
 // Titan's heavy impacts fracture its basalt shell; this enemy-specific rule leaves both existing stages' foes unchanged.
 export const colossusDamage=(g:Game,amount:number,source:string)=>g.monster.id==='titan'&&['launch','shockwave','trample','collision','fissure-impact','fissure'].includes(source)?amount*COLOSSUS.titanImpact:amount;
@@ -26,6 +27,7 @@ export function colossusVolley(g:Game,e:Enemy){const s=g.court!.colossus,p=g.pla
  for(const [i,point] of points.entries()){if(s.zones.length>=COLOSSUS.maxZones)break;if(!insideCourt(point.x,point.y,20))continue;const impactAt=g.time+COLOSSUS.warning+i*.22;s.zones.push({...point,radius:COLOSSUS.radius,placedAt:g.time,impactAt,endsAt:impactAt+COLOSSUS.scorch,tickAt:impactAt,erupted:false});}s.castUntil=g.time+COLOSSUS.warning;s.attackAt=g.time+COLOSSUS.cycle*(e.hp<e.maxHp*.4?.87:1);
 }
 function strike(g:Game,z:ColossusZone,damage:number){if(Math.hypot(g.player.x-z.x,g.player.y-z.y)<z.radius+23)g.hurt(damage);for(const ally of g.servants)if(ally.active&&Math.hypot(ally.x-z.x,ally.y-z.y)<z.radius+14){ally.hp-=damage;ally.hitTimer=.45;if(ally.hp<=0){ally.active=false;ally.target=null;}}}
-export function updateColossus(g:Game){const s=g.court!.colossus;if(g.ended||g.court!.cleared){dismissColossus(g,true);return;}if(s.status==='unseen')summonColossus(g);if(s.status!=='active')return;if(g.time>=s.expiresAt){dismissColossus(g);return;}const e=colossusEnemy(g);if(!e){s.zones.length=0;return;}if(g.time>=s.attackAt&&Math.hypot(g.player.x-e.x,g.player.y-e.y)<=COLOSSUS.range)colossusVolley(g,e);
+export function checkColossusArrival(g:Game){const s=g.court?.colossus;if(!s)return;if(s.status==='unseen'){if(g.court!.stats.captains>=COLOSSUS.captains&&g.court!.stats.captains<10&&g.time>=COLOSSUS.lastArrival&&!s.missedWindowAnnounced){s.missedWindowAnnounced=true;g.notice='COLOSSUS WINDOW CLOSED · EIGHT CAPTAINS BEFORE 9:00';g.noticeTime=5;}summonColossus(g);}}
+export function updateColossus(g:Game){const s=g.court!.colossus;if(g.ended||g.court!.cleared){dismissColossus(g,true);return;}checkColossusArrival(g);if(s.status!=='active')return;if(g.time>=s.expiresAt){dismissColossus(g);return;}const e=colossusEnemy(g);if(!e){s.zones.length=0;return;}if(g.time>=s.attackAt&&Math.hypot(g.player.x-e.x,g.player.y-e.y)<=COLOSSUS.range)colossusVolley(g,e);
  for(let i=s.zones.length-1;i>=0;i--){const z=s.zones[i];if(g.time>=z.endsAt){s.zones.splice(i,1);continue;}if(!z.erupted&&g.time>=z.impactAt){z.erupted=true;z.tickAt=g.time+.45;strike(g,z,COLOSSUS.impact);g.sound('ultimateImpact');}else if(z.erupted&&g.time>=z.tickAt){z.tickAt=g.time+.45;strike(g,z,COLOSSUS.burn);}if(g.ended){dismissColossus(g,true);return;}}
 }
