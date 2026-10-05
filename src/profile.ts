@@ -4,7 +4,7 @@ import {MONSTERS,paletteFor,BASE_TITLES,type Palette} from './content-monsters.t
 import {createIdentity,sanitizeName,type Identity} from './identity.ts';
 import {ACHIEVEMENTS,type Metrics} from './content-records.ts';
 import {TITLES,awardTitles,type Progression,type Totals} from './content-titles.ts';
-import {STAGE_GATES,eventDay,recordStageTrial,trialDays} from './stage-access.ts';
+import {STAGE_GATES,eventDay,recordStageTrial,gateChallengeComplete} from './stage-access.ts';
 export type RecordProgress={best:number;unlockedAt?:string;name?:string;monsterId?:string};
 export type Profile={version:3;titanKit:TitanKit;identity:Identity;palettes:Record<string,Palette>;records:Record<string,RecordProgress>;progress:Progression;personalBests:PersonalBests};
 export interface StorageLike{getItem(key:string):string|null;setItem(key:string,value:string):void}
@@ -19,8 +19,8 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
  for(const a of ACHIEVEMENTS){const r=object(raw.records)?raw.records[a.id]:null;if(object(r)){const best=number(r.best);records[a.id]={best};if(typeof r.unlockedAt==='string'&&Number.isFinite(Date.parse(r.unlockedAt))&&best>=a.target){records[a.id].unlockedAt=r.unlockedAt;records[a.id].name=sanitizeName(r.name);records[a.id].monsterId=Object.hasOwn(MONSTERS,r.monsterId)?r.monsterId:'sovereign';}}}
  const progress=emptyProgress(),p=raw.version===3&&object(raw.progress)?raw.progress:{};
  progress.total=totals(p.total);progress.best=totals(p.best);for(const id of Object.keys(MONSTERS))progress.archetypes[id]=totals(p.archetypes?.[id]);
- for(const gate of STAGE_GATES){const byChampion=object(p.trials)?p.trials[gate.titleId]:null;if(!object(byChampion))continue;const first=eventDay(new Date(gate.qualifiesFrom));for(const id of Object.keys(MONSTERS)){const days=byChampion[id];if(Array.isArray(days)){progress.trials[gate.titleId]??={};progress.trials[gate.titleId][id]=[...new Set(days.filter((day:unknown)=>typeof day==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(Date.parse(day+'T12:00:00Z'))&&new Date(day+'T12:00:00Z').toISOString().slice(0,10)===day&&day>=first))].sort().slice(-gate.days);}}}
- for(const t of TITLES){const earned=p.titles?.[t.id],gate=STAGE_GATES.find(g=>g.titleId===t.id);if(typeof earned==='string'&&Number.isFinite(Date.parse(earned))&&(!gate||trialDays(progress.trials,gate)>=gate.days))progress.titles[t.id]=earned;}
+ for(const gate of STAGE_GATES){if(gate.kind!=='daily')continue;const byChampion=object(p.trials)?p.trials[gate.titleId]:null;if(!object(byChampion))continue;const first=eventDay(new Date(gate.qualifiesFrom));for(const id of Object.keys(MONSTERS)){const days=byChampion[id];if(Array.isArray(days)){progress.trials[gate.titleId]??={};progress.trials[gate.titleId][id]=[...new Set(days.filter((day:unknown)=>typeof day==='string'&&/^20\d{2}-\d{2}-\d{2}$/.test(day)&&Number.isFinite(Date.parse(day+'T12:00:00Z'))&&new Date(day+'T12:00:00Z').toISOString().slice(0,10)===day&&day>=first))].sort().slice(-gate.days);}}}
+ for(const t of TITLES){const earned=p.titles?.[t.id],gate=STAGE_GATES.find(g=>g.titleId===t.id);if(typeof earned==='string'&&Number.isFinite(Date.parse(earned))&&(!gate||gateChallengeComplete(gate,progress)))progress.titles[t.id]=earned;}
  const legacy=['The Blooded','The World Eater','Kingsbane','The Bloodless King'];
  progress.legacyTitles=raw.version===1||raw.version===2?ACHIEVEMENTS.filter(a=>a.title&&records[a.id]?.unlockedAt).map(a=>a.title!):Array.isArray(p.legacyTitles)?p.legacyTitles.filter((t:unknown)=>legacy.includes(String(t))):[];
  if(object(p.ledger)&&typeof p.ledger.id==='string')progress.ledger={id:p.ledger.id.slice(0,100),values:totals(p.ledger.values)};

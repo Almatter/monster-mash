@@ -31,7 +31,7 @@ try{
  assert.equal(await page.locator('[data-phase="1"]').getAttribute('aria-pressed'),'false');
  assert.match(await page.locator('#stageStatus').textContent(),/remains locked until October 8/);
  await page.locator('[data-phase="2"]').click();
- assert.match(await page.locator('#stageStatus').textContent(),/awaits its own title, map and release date/);
+ assert.match(await page.locator('#stageStatus').textContent(),/is not available yet.*October 15/);
  await page.screenshot({path:'test-results/stage2-locked.png'});
  officialDate='Thu, 08 Oct 2026 04:00:00 GMT';
  await page.locator('[data-phase="1"]').click();
@@ -40,13 +40,13 @@ try{
  await page.screenshot({path:'test-results/stage2-open-menu.png'});
  await page.evaluate(async()=>{const {Game}=await import('./src/simulation.js');const update=Game.prototype.update;Game.prototype.update=function(...args){window.testGame=this;return update.apply(this,args);};});
  await page.locator('#startForm button.primary').click();
- assert.equal(await page.evaluate(()=>testGame.phase),1);
+ await page.waitForFunction(()=>window.testGame);assert.equal(await page.evaluate(()=>testGame.phase),1);
  assert.match(await page.locator('#phaseLabel').textContent(),/THE HUNT/);
- await page.waitForFunction(()=>performance.getEntriesByType('resource').some(item=>item.name.includes('floor-court.webp')));
+ await page.waitForFunction(()=>performance.getEntriesByType('resource').some(item=>item.name.includes('/five-regions/')&&item.name.includes('.webp')));
  await page.screenshot({path:'test-results/stage2-battle.png'});
  await page.locator('#pause').click();await page.locator('#endRun').click();
  await page.waitForFunction(()=>document.querySelector('#runCode').value.startsWith('MM4.'));
- assert.match(await page.locator('#resultContext').textContent(),/STAGE 2.*THE HUNT/);
+ assert.match(await page.locator('#resultContext').textContent(),/STAGE 2.*THE ASHEN WILDS/);
  assert.equal(await page.evaluate(async()=>{const {decodeRun}=await import('./src/run-code.js');return (await decodeRun(document.querySelector('#runCode').value)).phase;}),1);
  assert.deepEqual(errors,[]);
  await page.close();

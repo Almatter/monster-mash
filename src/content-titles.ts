@@ -1,4 +1,4 @@
-import {STAGE_GATES,trialDays,type StageTrials} from './stage-access.ts';
+import {STAGE_GATES,trialDays,masteryChampion,masteryProgress,gateChallengeComplete,type StageTrials} from './stage-access.ts';
 export type Totals=Record<string,number>;
 export type Progression={total:Totals;best:Totals;archetypes:Record<string,Totals>;titles:Record<string,string>;legacyTitles:string[];ledger:{id:string;values:Totals}|null;finished:string[];trials:StageTrials};
 export type Requirement={scope:string;metric:string;target:number;label:string};
@@ -36,8 +36,8 @@ export const TITLES:PrestigeTitle[]=[
  title('wildsHaste','Desert Wind','Ashen Wilds',req('best','courtHasteClear',1,'complete a hunt with Wayfarer at rank 3')),
  title('wildsTempo','A Thousand Cuts','Ashen Wilds',req('best','courtTempoClear',1,'complete a hunt with Rending Rhythm at rank 3')),
  title('wildsDuration','The Lingering Catastrophe','Ashen Wilds',req('best','courtDurationClear',1,'complete a hunt with Enduring Power at rank 3')),
- ...STAGE_GATES.map(gate=>title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different festival days with one champion: finish Stage ${gate.sourcePhase+1} ${gate.ending==='overwhelmed'?'naturally ':''}after ≥${Math.floor(gate.minSeconds/60)}:${String(gate.minSeconds%60).padStart(2,'0')} and ≥${gate.minKills.toLocaleString()} kills each day`)))
+ ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different festival days with one champion: finish Stage ${gate.sourcePhase+1} ${gate.ending==='overwhelmed'?'naturally ':''}after ≥${Math.floor(gate.minSeconds/60)}:${String(gate.minSeconds%60).padStart(2,'0')} and ≥${gate.minKills.toLocaleString()} kills each day`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion'))))
 ];
-export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return gate&&r.metric==='days'?trialDays(p.trials,gate):0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
+export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return !gate?0:gate.kind==='daily'?(r.metric==='days'?trialDays(p.trials,gate):0):masteryProgress(gate,p,masteryChampion(gate,p)).find(g=>g.metric===r.metric)?.value||0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
 export function titleProgress(p:Progression,t:PrestigeTitle){return t.requirements.map(r=>({...r,value:progressValue(p,r)}));}
-export function awardTitles(p:Progression,now=new Date().toISOString()){const earned:string[]=[];for(const t of TITLES)if(!p.titles[t.id]&&t.requirements.every(r=>progressValue(p,r)>=r.target)){p.titles[t.id]=now;earned.push(t.id);}return earned;}
+export function awardTitles(p:Progression,now=new Date().toISOString()){const earned:string[]=[];for(const t of TITLES)if(!p.titles[t.id]&&(STAGE_GATES.some(g=>g.titleId===t.id)?gateChallengeComplete(STAGE_GATES.find(g=>g.titleId===t.id)!,p):t.requirements.every(r=>progressValue(p,r)>=r.target))){p.titles[t.id]=now;earned.push(t.id);}return earned;}

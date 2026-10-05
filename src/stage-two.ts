@@ -1,3 +1,4 @@
+import {MASTERY_BOONS} from './stage-access.ts';
 import {TITAN_FISSURE_RULES,type TitanKit} from './champion-kits.ts';
 import {createCourtFeats,courtFeatGuard,courtFeatCaptain,courtFeatClaim,type CourtFeatState} from './court-feats.ts';
 import {createColossus,colossusResult,updateColossus,dismissColossus,type ColossusEncounter,type ColossusResult} from './ashen-colossus.ts';
@@ -46,7 +47,7 @@ export function updateCourt(g:Game,dt:number){const state=g.court;if(!state)retu
 
 
 export function courtProgress(g:Game,finished=false){if(!g.court)return {values:{},best:{},metrics:{}};const s=g.court.stats,clear=finished&&g.court.cleared?1:0,fast=clear&&g.time<=720?1:0,swift=clear&&g.time<=600?1:0;
- const values={courtCaptains:s.captains,courtGuards:s.guards,courtClears:clear,courtColossusClears:clear&&g.court.colossus.status==='defeated'?1:0};
+ const values={courtCaptains:s.captains,courtGuards:s.guards,courtClears:clear,courtColossusClears:clear&&g.court.colossus.status==='defeated'?1:0,...Object.fromEntries(MASTERY_BOONS.map(b=>[b.metric,clear&&upgradeRank(g,b.id)===3?1:0]))};
  const best={courtGuardRun:s.guards,courtCloseClear:clear?s.close:0,courtFastClear:fast,courtSwiftClear:swift,courtHasteClear:clear&&upgradeRank(g,'haste')===3?1:0,courtTempoClear:clear&&upgradeRank(g,'tempo')===3?1:0,courtDurationClear:clear&&upgradeRank(g,'duration')===3?1:0};
  return {values,best,metrics:{courtCaptains:s.captains,courtGuards:s.guards,courtClear:clear,courtFast:fast,courtImpact:s.impacts}};
 }
