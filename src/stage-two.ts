@@ -6,7 +6,7 @@ import {FISSURE} from './titan-fissure.ts';
 import {EVENT} from './data.ts';
 import {COURT_SITE_GROUPS,COURT_SHRINES,slideCourt,courtSteer,courtWaypoint} from './court-map.ts';
 import type {Game,Enemy} from './simulation.ts';
-export const COURT_RULES='2026.10-v31-court-hunts',COURT_TEST_RULES='2026.10-v31-court-test';
+export const COURT_RULES='2026.10-v32-court-hunts',COURT_TEST_RULES='2026.10-v32-court-test';
 export const REAPER_RULES='2026.10-v29-reaper';
 export const rulesForStage=(phase:number,testing=false,monsterId='',titanKit:TitanKit='throw')=>phase===1?(testing?COURT_TEST_RULES:COURT_RULES):monsterId==='reaper'?REAPER_RULES:phase===0&&monsterId==='titan'&&titanKit==='fissure'?TITAN_FISSURE_RULES:EVENT.rules;
 export const COURT={total:10,activationRadius:1200,hintStart:720,hintTrail:900,hintPeriod:30,hintLife:8,sealLife:120,sealRadius:60,sealBonus:500000,guardBonus:10000,impactBonus:20000,closeBonus:25000,closeRange:220,spawnRate:.28,crowdCap:.4,startRelease:4,captainHp:32000,hpPerCaptain:.4,slamRadius:170,slamWarning:1.4,slamCycle:4.6,slamDamage:115,healScale:.4,devourerHealScale:.75,devourDrain:.1,devourMinimum:.18,shieldScale:.4,shieldCapScale:.55,combatPerCaptain:50000,speedMax:3200000,speedFullAt:600,speedZeroAt:900};
@@ -22,14 +22,14 @@ export const COURT_UPGRADES=[
  {id:'vitality',name:'Second Heart',description:'+15% maximum health; recover 30% health instead of 15%.'}
 ] as const;
 export type CourtUpgrade=typeof COURT_UPGRADES[number]['id'];
-export type CourtScoring={combat:number;captain:number;speed:number};
+export type CourtScoring={combat:number;captain:number;speed:number;feats?:number};
 export type CourtMission={upgrades:CourtUpgrade[];cleared:boolean;total:number;scoring?:CourtScoring;colossus?:ColossusResult};
 export type CourtUnit={role:'captain'|'vanguard';guard:number;maxGuard:number;facing:number;broken:boolean;homeX:number;homeY:number;homeAngle:number;site?:number;tier?:number;collisionAt?:number;slamThreatened?:boolean;formation?:number;steerAt?:number;targetX?:number;targetY?:number};
 export type CourtStats={hunts:number;captains:number;guards:number;impacts:number;close:number;seals:number;lost:number;bonus:number};
 export type CourtSeal={x:number;y:number;life:number;serial:number;fallenAt?:number};
 export type CourtCamp={x:number;y:number;visited:boolean;spawned:boolean;slain:boolean};
 export type CourtState={colossus:ColossusEncounter;feats:CourtFeatState;seals:CourtSeal[];stats:CourtStats;leaders:Map<number,Enemy>;camps:CourtCamp[];upgrades:CourtUpgrade[];pending:number;cleared:boolean;initialized:boolean;scoring:CourtScoring;scoreLimitedAt:number;shrines:{x:number;y:number;readyAt:number}[];healingVisits:number;hint:{site:number;life:number;trail:boolean}|null;nextHintAt:number;hintAnnounced:boolean};
-export const createCourt=():CourtState=>({colossus:createColossus(),feats:createCourtFeats(),seals:[],stats:{hunts:0,captains:0,guards:0,impacts:0,close:0,seals:0,lost:0,bonus:0},leaders:new Map(),camps:[],upgrades:[],pending:0,cleared:false,initialized:false,scoring:{combat:0,captain:0,speed:0},scoreLimitedAt:-1,shrines:COURT_SHRINES.map(p=>({...p,readyAt:0})),healingVisits:0,hint:null,nextHintAt:COURT.hintStart,hintAnnounced:false});
+export const createCourt=():CourtState=>({colossus:createColossus(),feats:createCourtFeats(),seals:[],stats:{hunts:0,captains:0,guards:0,impacts:0,close:0,seals:0,lost:0,bonus:0},leaders:new Map(),camps:[],upgrades:[],pending:0,cleared:false,initialized:false,scoring:{combat:0,captain:0,speed:0,feats:0},scoreLimitedAt:-1,shrines:COURT_SHRINES.map(p=>({...p,readyAt:0})),healingVisits:0,hint:null,nextHintAt:COURT.hintStart,hintAnnounced:false});
 export function initializeCourt(g:Game){const state=g.court!;if(state.initialized)return;state.initialized=true;const sites=COURT_SITE_GROUPS.flatMap(group=>{const choices=[...group];for(let i=choices.length-1;i>0;i--){const j=Math.floor(g.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}return choices.slice(0,2);});for(let i=sites.length-1;i>0;i--){const j=Math.floor(g.random()*(i+1));[sites[i],sites[j]]=[sites[j],sites[i]];}state.camps=sites.map(s=>({...s,visited:false,spawned:false,slain:false}));g.notice='THE ASHEN WILDS · HUNT ALL TEN CAPTAINS';g.noticeTime=4;}
 export const upgradeRank=(g:Game,id:CourtUpgrade)=>g.court?.upgrades.filter(u=>u===id).length||0;
 export const courtRelease=(_g:Game)=>COURT.startRelease;

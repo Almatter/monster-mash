@@ -68,3 +68,7 @@ The previous sections record earlier builds. The current build ships all five or
 - Audio browser test passed gesture unlock, master and three-bus volume persistence, cue-burst 12-voice cap, two-track crossfade cap, looping, background pause/resume and cleanup. The results music state is wired, but the test uses a diagnostic buffer; no finished music is claimed.
 - Lossless character layer packing reduced the public payload from 28.4 MiB PNG to 18.2 MiB WebP. Sets load only when the current screen needs them; a composed gameplay atlas is 7.5 MiB. Enemy sprites total about 304 KiB; the floor tile is about 10 KiB.
 - Loaded-art 525-enemy render profile in headless Edge: desktop p95 ranged 1.5–5.2ms across kits; 844×390 mobile viewport p95 ranged 1.6–5.0ms. These are CPU Canvas submission measurements, not device GPU/thermal guarantees. Hardware iOS/Android and offline-cache acceptance remain open.
+
+## October 6 hunt Grade and Records checks
+
+See [Hunt v32 report](HUNT_V32_REPORT.md) for the 229-test suite, six-nature normal-health sample, Overlord tactical follow-up, desktop/mobile result export and Records checks, Stage 3 passage regression and bounded Colossus performance probe. The new UI test is `node tests/hunt-grade-browser.mjs`; it supports `HUNT_ORIGIN` for the deployed site as well as the local preview.

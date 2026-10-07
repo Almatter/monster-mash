@@ -1,6 +1,6 @@
 import type {Game,Enemy} from './simulation.ts';
 import {insideCourt,courtSteer,courtRegionAt,COURT_SITES} from './court-map.ts';
-export const COLOSSUS={captains:8,lastArrival:540,window:180,reward:1200000,hp:180000,range:700,radius:65,warning:1.25,scorch:1.35,cycle:3.2,maxZones:18,impact:78,burn:22,titanImpact:4,playerSeparation:1500,captainSeparation:1600,territory:850,roam:240};
+export const COLOSSUS={captains:8,lastArrival:540,window:180,reward:1200000,hp:180000,range:700,radius:75,warning:1.1,scorch:1.5,cycle:2.6,maxZones:18,impact:125,burn:36,titanImpact:4,playerSeparation:1500,captainSeparation:1600,territory:850,roam:240};
 // Historical competition codes retain the two-minute encounter limit.
 export const colossusWindowForRules=(rules:string)=>/-v(28|29|30)-court-/.test(rules)?120:COLOSSUS.window;
 export type ColossusZone={x:number;y:number;radius:number;placedAt:number;impactAt:number;endsAt:number;tickAt:number;erupted:boolean};
@@ -36,10 +36,11 @@ export function colossusMotion(g:Game,e:Enemy){
  const v=courtSteer(e.x,e.y,goal.x,goal.y);return {dx:v.x,dy:v.y,speed:55};
 }
 export function colossusVolley(g:Game,e:Enemy){const s=g.court!.colossus,p=g.player,pattern=s.pattern++%3,angle=g.movementAngle,points:{x:number;y:number}[]=[];
- if(pattern===0){points.push({x:p.x,y:p.y});for(let i=0;i<3;i++){const a=angle+i*Math.PI*2/3;points.push({x:p.x+Math.cos(a)*185,y:p.y+Math.sin(a)*185});}}
- else if(pattern===1){for(let i=0;i<4;i++){const a=angle+Math.PI/4+i*Math.PI/2;points.push({x:p.x+Math.cos(a)*205,y:p.y+Math.sin(a)*205});}}
- else {const ax=Math.cos(angle),ay=Math.sin(angle),speed=g.moving?g.monster.speed*g.releaseStats.move*(g.monster.passive.id==='hunger'?1+Math.min(.15,g.score.recent.length*.003):1):0;for(let i=0;i<4;i++){const forward=speed*(COLOSSUS.warning+i*.22),side=i%2?45:-45;points.push({x:p.x+ax*forward-ay*side,y:p.y+ay*forward+ax*side});}}
- for(const [i,point] of points.entries()){if(s.zones.length>=COLOSSUS.maxZones)break;if(!insideCourt(point.x,point.y,20))continue;const impactAt=g.time+COLOSSUS.warning+i*.22;s.zones.push({...point,radius:COLOSSUS.radius,placedAt:g.time,impactAt,endsAt:impactAt+COLOSSUS.scorch,tickAt:impactAt,erupted:false});}s.castUntil=g.time+COLOSSUS.warning;s.attackAt=g.time+COLOSSUS.cycle*(e.hp<e.maxHp*.4?.87:1);
+ // Every volley threatens the current footprint, the movement destination, and four nearby escape lanes.
+ const ax=Math.cos(angle),ay=Math.sin(angle),speed=g.moving?g.monster.speed*g.releaseStats.move*(g.monster.passive.id==='hunger'?1+Math.min(.15,g.score.recent.length*.003):1):0;
+ points.push({x:p.x,y:p.y});if(speed>0)points.push({x:p.x+ax*speed*(COLOSSUS.warning+.16),y:p.y+ay*speed*(COLOSSUS.warning+.16)});
+ for(let i=0;i<4;i++){const a=angle+pattern*Math.PI/6+i*Math.PI/2,r=pattern===2?170:150;points.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r});}
+ for(const [i,point] of points.entries()){if(s.zones.length>=COLOSSUS.maxZones)break;if(!insideCourt(point.x,point.y,20))continue;const impactAt=g.time+COLOSSUS.warning+i*.16;s.zones.push({...point,radius:COLOSSUS.radius,placedAt:g.time,impactAt,endsAt:impactAt+COLOSSUS.scorch,tickAt:impactAt,erupted:false});}s.castUntil=g.time+COLOSSUS.warning;s.attackAt=g.time+COLOSSUS.cycle*(e.hp<e.maxHp*.4?.87:1);
 }
 function strike(g:Game,z:ColossusZone,damage:number){if(Math.hypot(g.player.x-z.x,g.player.y-z.y)<z.radius+23)g.hurt(damage);for(const ally of g.servants)if(ally.active&&Math.hypot(ally.x-z.x,ally.y-z.y)<z.radius+14){ally.hp-=damage;ally.hitTimer=.45;if(ally.hp<=0){ally.active=false;ally.target=null;}}}
 export function checkColossusArrival(g:Game){const s=g.court?.colossus;if(!s)return;if(s.status==='unseen'){if(g.court!.stats.captains>=COLOSSUS.captains&&g.court!.stats.captains<10&&g.time>=COLOSSUS.lastArrival&&!s.missedWindowAnnounced){s.missedWindowAnnounced=true;g.notice='COLOSSUS WINDOW CLOSED · EIGHT CAPTAINS BEFORE 9:00';g.noticeTime=5;}summonColossus(g);}}
