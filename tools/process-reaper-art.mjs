@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import {materialLabels} from './material-masks.mjs';
 import {createRequire} from 'node:module';
 const sharp=createRequire(import.meta.url)(process.env.SHARP_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
 sharp.cache(false);
@@ -8,12 +9,8 @@ async function writeAsset(path,bytes){const next=path+'.next';await fs.writeFile
 // Generated continuous region guides supply material boundaries; source pixels supply shading.
 async function split(name,guideName){
  const {data,info}=await sharp(root+'/'+name).ensureAlpha().raw().toBuffer({resolveWithObject:true}),{width,height}=info;
- const guide=await sharp(root+'/'+guideName).resize(width,height,{fit:'fill'}).ensureAlpha().raw().toBuffer(),labels=new Uint8Array(width*height),colors=[[0,0,255],[255,0,255],[255,255,0],[255,0,0],[0,255,255]],layers=Object.fromEntries(channels.map(k=>[k,Buffer.alloc(data.length)]));
- for(let p=0;p<labels.length;p++){const i=p*4,r=data[i],g=data[i+1],b=data[i+2],bright=Math.max(r,g,b),skin=r>g*1.025&&r>b*1.02&&(bright-Math.min(r,g,b))/(bright||1)<.36;
-  if(data[i+3]<3)continue;data.copy(layers.base,i,i,i+4);
-  if(guide[i+3]<20||Math.max(guide[i],guide[i+1],guide[i+2])<90||bright<32)continue;
-  let best=Infinity;for(let channel=0;channel<5;channel++){const rgb=colors[channel],d=(guide[i]-rgb[0])**2+(guide[i+1]-rgb[1])**2+(guide[i+2]-rgb[2])**2;if(d<best){best=d;labels[p]=channel+1;}}
- }
+ const guide=await sharp(root+'/'+guideName).resize(width,height,{fit:'fill'}).ensureAlpha().raw().toBuffer(),labels=materialLabels(data,guide,width,height),layers=Object.fromEntries(channels.map(k=>[k,Buffer.alloc(data.length)]));
+ for(let i=0;i<data.length;i+=4)if(data[i+3]>=3)data.copy(layers.base,i,i,i+4);
  // Keep continuous labels, preserve fine source ink and clip every mask to source alpha.
  const count={};for(let channel=0;channel<5;channel++){const pixels=layers[channels[channel+1]];count[channels[channel+1]]=0;for(let p=0;p<labels.length;p++){if(labels[p]!==channel+1)continue;const i=p*4,bright=Math.max(data[i],data[i+1],data[i+2]),shade=Math.min(255,Math.round(bright*.98));pixels[i]=pixels[i+1]=pixels[i+2]=channel===4?Math.min(255,Math.round(bright*1.04)):shade;pixels[i+3]=Math.round(data[i+3]*Math.min(1,(bright-24)/24));count[channels[channel+1]]++;}}
  console.log(name,{width,height,count});return {layers,width,height};

@@ -36,7 +36,7 @@ test('remote arrival has a safe separate district for every pair of surviving si
    assert.ok(insideCourt(point.x,point.y,65));assert.notEqual(courtRegionAt(point.x,point.y)?.id,courtRegionAt(player.x,player.y)?.id);
    assert.ok(Math.hypot(point.x-player.x,point.y-player.y)>=COLOSSUS.playerSeparation);
    for(const c of g.court.camps.filter(c=>!c.slain)){assert.notEqual(courtRegionAt(point.x,point.y)?.id,courtRegionAt(c.x,c.y)?.id);assert.ok(Math.hypot(point.x-c.x,point.y-c.y)>=COLOSSUS.captainSeparation);}
-   assert.deepEqual(colossusSpawnPoint(g),point);checked++;
+   checked++;
   }
  }
  assert.equal(checked,3990);
@@ -82,4 +82,20 @@ test('v31 authenticated codes accept three-minute kills while v28-v30 retain the
   assert.throws(()=>validateRun({...old,mission:{...old.mission,colossus:{...old.mission.colossus,defeatedAt:old.mission.colossus.spawnedAt+121}}}),/encounter window/);
  }
  assert.throws(()=>validateRun({...r,duration:r.duration+2,wave:Math.floor((r.duration+2)/30)+1,mission:{...r.mission,colossus:{...r.mission.colossus,defeatedAt:r.mission.colossus.spawnedAt+181}}}),/encounter window/);
+});
+
+
+test('identical captain order varies safe arrival pockets across seeds and is reproducible within a seed',()=>{
+ const first=eligible(),other=eligible(),places=new Set();
+ for(let i=0;i<40;i++){const a=colossusSpawnPoint(first),b=colossusSpawnPoint(other);assert.deepEqual(a,b);places.add(a.x+','+a.y);}
+ assert.ok(places.size>=4,'Arrival must vary without changing captain order');
+});
+
+
+test('every authored pocket is within 75 seconds of unopposed Final Release Titan travel',()=>{
+ const g=new Game(77,{monsterId:'titan'},1),speed=g.monster.speed*g.releaseStats.move;
+ for(const player of [{x:0,y:0},...COURT_SITES])for(const goal of COURT_SITES){let x=player.x,y=player.y,n=0;
+  while(n<12000&&Math.hypot(x-goal.x,y-goal.y)>35){const v=courtSteer(x,y,goal.x,goal.y);x+=v.x*5;y+=v.y*5;n++;}
+  assert.ok(Math.hypot(x-goal.x,y-goal.y)<=35);assert.ok(n*5/speed<75);
+ }
 });

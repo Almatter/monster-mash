@@ -12,9 +12,12 @@ export const colossusLocation=(g:Game,e=colossusEnemy(g))=>{const home=g.court?.
 export function colossusSpawnPoint(g:Game){
  const remaining=g.court?.camps.filter(c=>!c.slain)??[],playerRegion=courtRegionAt(g.player.x,g.player.y)?.id;
  const threats=[...remaining,...g.enemies.filter(e=>e.active&&e.court?.role==='captain')];
- // Reuse authored, reachable encounter pockets in a fully cleared district. The
- // nearest eligible pocket limits travel without spawning beside either objective.
- return COURT_SITES.filter(p=>p.region!==playerRegion&&!remaining.some(c=>courtRegionAt(c.x,c.y)?.id===p.region)&&Math.hypot(p.x-g.player.x,p.y-g.player.y)>=COLOSSUS.playerSeparation&&threats.every(c=>Math.hypot(p.x-c.x,p.y-c.y)>=COLOSSUS.captainSeparation)&&insideCourt(p.x,p.y,65)).sort((a,b)=>Math.hypot(a.x-g.player.x,a.y-g.player.y)-Math.hypot(b.x-g.player.x,b.y-g.player.y))[0];
+ // Choose a district first so districts with more safe pockets do not dominate.
+ // Seeded randomness keeps a run reproducible without repeating a fixed route.
+ const pockets=COURT_SITES.filter(p=>p.region!==playerRegion&&!threats.some(c=>courtRegionAt(c.x,c.y)?.id===p.region)&&Math.hypot(p.x-g.player.x,p.y-g.player.y)>=COLOSSUS.playerSeparation&&threats.every(c=>Math.hypot(p.x-c.x,p.y-c.y)>=COLOSSUS.captainSeparation)&&insideCourt(p.x,p.y,65));
+ const regions=[...new Set(pockets.map(p=>p.region))];if(!regions.length)return;
+ const region=regions[Math.floor(g.random()*regions.length)],choices=pockets.filter(p=>p.region===region);
+ return choices[Math.floor(g.random()*choices.length)];
 }
 const inTerritory=(g:Game,e:Enemy)=>{const home=g.court!.colossus.home??e;return Math.hypot(g.player.x-home.x,g.player.y-home.y)<=COLOSSUS.territory;};
 export function colossusResult(g:Game):ColossusResult|undefined{const s=g.court?.colossus;if(!s||s.status==='unseen')return;return {spawnedAt:Math.floor(s.spawnedAt),...(s.defeatedAt!==undefined?{defeatedAt:Math.floor(s.defeatedAt)}:{}),reward:s.status==='defeated'?COLOSSUS.reward:0};}

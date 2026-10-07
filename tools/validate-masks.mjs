@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';import assert from 'node:assert/strict';import
 const require=createRequire(import.meta.url),sharp=require(process.env.SHARP_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
 const catalog=JSON.parse(await fs.readFile('public/assets/catalog.json','utf8'));
 const dimensions={selection:[768,1024],portrait:[512,512],cutin:[1024,512],gameplay:[1536,1280]};
-let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [type,set] of Object.entries(entry)){
+let checked=0,tints=0;for(const [monster,entry] of Object.entries(catalog))for(const [type,set] of Object.entries(entry)){
  const [w,h]=dimensions[type]||[];if(!w)continue;
  const base=await sharp('public/'+set.base).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  assert.equal(base.info.width,w,monster+' '+type+' width');assert.equal(base.info.height,h,monster+' '+type+' height');
@@ -17,8 +17,8 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
   console.log(monster+' minimum gameplay crop margin: '+margin+'px');
  }
  const counts={};
- for(const channel of ['primary','secondary','accent','power',...(monster==='reaper'?['skin']:[])]){
-  assert.ok(set[channel],monster+' '+type+' missing '+channel);
+ for(const channel of ['primary','secondary','accent','power',...(set.skin?['skin']:[]),...(set.hair?['hair']:[])]){
+  tints++;assert.ok(set[channel],monster+' '+type+' missing '+channel);
   const mask=await sharp('public/'+set[channel]).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   assert.equal(mask.info.width,w,monster+' '+type+' '+channel+' width');assert.equal(mask.info.height,h,monster+' '+type+' '+channel+' height');
   let covered=0,outside=0,overAlpha=0,chroma=0,clearColor=0,darkLines=0,maxStraight=0;
@@ -38,4 +38,4 @@ let checked=0;for(const [monster,entry] of Object.entries(catalog))for(const [ty
  }
  checked++;console.log(monster,type,counts);
 }
-assert.equal(checked,Object.keys(catalog).length*4);console.log(`Validated ${checked} registered art sets / ${checked*4+4} tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.`);
+assert.equal(checked,Object.keys(catalog).length*4);console.log(`Validated ${checked} registered art sets / ${tints} tint masks: dimensions, transparency, containment, grayscale, and abrupt horizontal edges.`);
