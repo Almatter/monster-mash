@@ -17,7 +17,8 @@ import {createServants,updateServants} from './servants.ts';
 import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,CLAW_WAVE,enemyMovementSpeed} from './balance.ts';
 import {COURT,createCourt,courtDamage,courtKill,courtEnemyMotion,courtContactScale,updateCourt,courtScoreCredit,courtRelease,upgradeRank,type CourtState,type CourtUnit} from './stage-two.ts';
 export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;corruptUntil?:number;rushing?:boolean;court?:CourtUnit;colossus?:{expiresAt:number};snaredUntil?:number};
-export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number};
+export type DeathArt={source:string;sprite:string};
+export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number;death?:DeathArt};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number};
 export type ClawWave={x:number;y:number;angle:number;remaining:number;width:number;damage:number;kills:number;hit:Set<number>};
 export type Input={x:number;y:number;aimX:number;aimY:number;aiming:boolean};
@@ -39,7 +40,7 @@ export class Game {
  bolts:{x:number;y:number;vx:number;vy:number;life:number;damage:number;source:string}[]=[];
  targetView={x:640,y:360};scytheWaves:ScytheWave[]=[];reaperFocus=0;reaperStorm=0;soulGlow=0;reaperPulse=0;reaperSweeps=0;soulBudget=0;soulWindow=0;
  fissures:TitanFissure[]=[];clawWaves:ClawWave[]=[];court:CourtState|null=null;
- debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number}[]=[];
+ debris:{x:number;y:number;vx:number;vy:number;life:number;kills:number;death?:DeathArt}[]=[];
  dash:{remaining:number;speed:number;damage:number;kills:number;angle:number;radius:number;source:string}|null=null;
  titanKit:TitanKit='throw';identity:Identity;monster=MONSTERS.sovereign;powers=MONSTERS.sovereign.abilities.map(id=>ABILITIES[id]);
  constructor(seed:number,identity:Partial<Identity>={},phase=EVENT.phase,titanKit:TitanKit='throw'){this.seed=seed>>>0;this.rng=this.seed||1;this.phase=Number.isInteger(phase)&&phase>=0&&phase<PHASES.length?phase:0;this.identity=createIdentity(identity);this.monster=MONSTERS[this.identity.monsterId];this.titanKit=titanKitForStage(this.phase,titanKit,true);this.powers=abilitiesForStage(this.monster.id,this.phase,this.titanKit);this.player.hp=this.player.maxHp=this.monster.hp;if(this.phase===1){this.court=createCourt();this.release=COURT.startRelease;this.lungeCharges=this.maxLungeCharges();this.score.setAwardLimit((amount,objective)=>courtScoreCredit(this,amount,objective));}}
@@ -49,7 +50,7 @@ export class Game {
  random(){let x=this.rng;x^=x<<13;x^=x>>>17;x^=x<<5;this.rng=x>>>0;return this.rng/4294967296;}
  notifications:string[]=[];
  announce(text:string){if(text.startsWith('RECORD')||text.startsWith('TITLE')){if(this.notifications.length>=10)this.notifications.pop();this.notifications.unshift(text);return;}if(this.noticeTime<=0){this.notice=text;this.noticeTime=2.8;}else if(this.notifications.length<10&&!this.notifications.includes(text))this.notifications.push(text);}
- effect(x:number,y:number,kind:string,radius:number,life=.5,angle=0){if(this.effects.length<180)this.effects.push({x,y,kind,radius,life,max:life,angle});}
+ effect(x:number,y:number,kind:string,radius:number,life=.5,angle=0,death?:DeathArt){if(this.effects.length<180)this.effects.push({x,y,kind,radius,life,max:life,angle,...(death?{death}:{})});}
  seedOpening(){for(let i=0;i<OPENING.count;i++)this.spawn('thrall',true);this.rebuildGrid();}
  heal(amount:number,recovery=false){if(this.ended||amount<=0)return;const gained=Math.min(amount*(this.court&&!recovery?(this.monster.id==='devourer'?COURT.devourerHealScale:COURT.healScale):1),this.player.maxHp-this.player.hp);this.player.hp+=gained;this.sustainStats.healed+=gained;if(gained>0)this.sound('heal');}
  ward(amount:number,cap:number,seconds:number){this.shield=Math.min(cap*(this.court?COURT.shieldCapScale:1),this.shield+amount*(this.court?COURT.shieldScale:1));this.shieldTime=seconds*(1+.2*upgradeRank(this,'duration'));this.sound('shield');}
@@ -77,10 +78,11 @@ export class Game {
   if(e.hp>0)return false;
   e.active=false;this.alive--;this.score.kill(e.colossus?0:this.court?(e.court?.role==='captain'?600:e.kind==='elite'||e.kind==='titan'?ENEMIES[e.kind].score:Math.round(ENEMIES[e.kind].score*.7)):ENEMIES[e.kind].score,e.kind,this.time,source,e.court?.role==='captain');if(e.court)courtKill(this,e);if(e.colossus)finishColossus(this,e);this.sound(e.kind==='titan'?'titanDeath':e.kind==='elite'?'eliteDeath':e.kind==='brute'?'heavyDeath':'enemyDeath.'+e.kind);if(source==='collision')this.sound('collision');if(source==='devour')this.sound('devour');if(source==='chain')this.sound('corruption');if(source==='ultimate')this.sound('ultimateImpact');
   if(this.monster.id==='overlord'&&(source==='controlled'||source==='summoned')){const amount=Math.min(SUSTAIN.overlord.perKill,this.siphonBudget);this.siphonBudget-=amount;this.heal(amount);}
-  this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5);
+  const death:DeathArt={source,sprite:e.colossus?'ashen-colossus':e.court?'court-'+e.court.role:e.kind};
+  this.effect(e.x,e.y,'blood',ENEMIES[e.kind].radius*2,.5,0,death);
   if(this.frenzy>0){const s=SUSTAIN.devourer;this.frenzyKills++;const heal=Math.min(s.frenzyHealBase+s.frenzyHealPerRelease*this.release,this.frenzyHealing,this.player.maxHp-this.player.hp);this.frenzyHealing-=heal;this.heal(heal);if(this.frenzyKills%s.guardKills===0){if(this.frenzyGuard<=0)this.announce('FEAST GUARD · KEEP FEEDING');this.frenzyGuard=Math.max(this.frenzyGuard,s.guardBaseSeconds+s.guardSecondsPerRelease*this.release);this.effect(this.player.x,this.player.y,'feast',90,.35);}}
   if((e.corruptUntil||0)>this.time&&this.chains.length<128)this.chains.push({x:e.x,y:e.y});
-  if(Math.hypot(e.vx,e.vy)>100&&this.debris.length<80)this.debris.push({x:e.x,y:e.y,vx:e.vx,vy:e.vy,life:.6,kills:0});
+  if(Math.hypot(e.vx,e.vy)>100&&this.debris.length<80)this.debris.push({x:e.x,y:e.y,vx:e.vx,vy:e.vy,life:.6,kills:0,death});
   if(source==='devour'){const heal=Math.min(this.healBudget,e.kind==='elite'?120:18);this.healBudget-=heal;this.heal(heal);}
   return true;
  }
