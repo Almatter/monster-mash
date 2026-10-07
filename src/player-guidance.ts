@@ -4,7 +4,7 @@ export const CHAMPION_TIPS:Record<string,string>={
  reaper:'Cut through prey at range. Harvest pushes crowds away; Blink crosses danger and Eclipse keeps scythe waves flowing. Press Blink or Arc twice to use the suggested target, or click/tap to choose.',
  sovereign:'Keep prey in claw range. Use your large powers to clear space and recover, then keep the killing chain alive.',
  titan:'Keep moving to build Momentum. Spend it on crushing attacks and use your barrier to regroup.',
- calamity:'Fight at range. Place Starfall and Vortex ahead of the swarm; large multikills rebuild your ward.',
+ calamity:'Fight at range. Press Starfall or Vortex twice to use a suggested target, or click/tap to place it. Large multikills rebuild your ward.',
  overlord:'Build an army and fight behind it. Controlled and summoned prey help sustain your reign.',
  devourer:'Keep hunting. Lunge in your movement direction through gaps, use Devour to recover, Execute heavy prey, and trigger Feast for a burst of killing and protection.'
 };

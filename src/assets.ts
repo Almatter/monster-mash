@@ -24,6 +24,9 @@ export class AssetLibrary {
  async prepare(identity:Identity,type:keyof ArtEntry='gameplay',complete=false){const until=performance.now()+30000;while(performance.now()<until){const visible=this.get(identity,type)?.[type],current=this.cache.get(identity.monsterId+Object.values(identity.colors).join(''))?.[type];if(complete?current:visible)return;if(this.status(identity,type)==='failed')throw Error('Character artwork could not load. Use Retry artwork and try again.');await new Promise(resolve=>setTimeout(resolve,50));}throw Error('Character artwork took too long to load. Use Retry artwork and try again.');}
  image(url:string){const hit=this.sourceCache.get(url);if(hit){this.sourceCache.delete(url);this.sourceCache.set(url,hit);return hit;}const pending=loadImage(url).catch(error=>{this.sourceCache.delete(url);throw error;});this.sourceCache.set(url,pending);while(this.sourceCache.size>6)this.sourceCache.delete(this.sourceCache.keys().next().value!);return pending;}
  remember(slot:string,image:HTMLCanvasElement){this.lastGood.delete(slot);this.lastGood.set(slot,image);while(this.lastGood.size>4)this.lastGood.delete(this.lastGood.keys().next().value!);}
+ // Result/record portraits must wait for all masks. The progressive base canvas
+ // is mutated in place and is useful while loading, but is not a final design.
+ completed(identity:Identity,type:keyof ArtEntry){this.get(identity,type);return this.cache.get(identity.monsterId+Object.values(identity.colors).join(''))?.[type];}
  status(identity:Identity,type:keyof ArtEntry){const key=identity.monsterId+Object.values(identity.colors).join('')+':'+type;return this.ready&&!this.catalog[identity.monsterId]?.[type]||this.failed.has(key)?'failed':this.pending.has(key)||!this.ready?'loading':'ready';}
  get(identity:Identity,type:keyof ArtEntry='selection'):ArtPack|null{
   const key=identity.monsterId+Object.values(identity.colors).join(''),entry=this.catalog[identity.monsterId];
