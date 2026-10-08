@@ -8,7 +8,7 @@ export const COURT_FEATS=[
  {id:'hunt_dodge',name:'Read the Threat',bonus:25000,legacyBonus:2000,condition:'Leave a captain’s slam warning before it lands.'},
  {id:'hunt_focus',name:'Decisive Strike',bonus:35000,legacyBonus:3000,condition:'Slay a captain within 60 seconds of first damaging it.'}
 ].map(f=>({...f,cooldown:0}));
-export const featsForStage=(phase:number)=>phase===1?COURT_FEATS:FEATS.map(f=>({...f,condition:FEAT_CONDITIONS[f.id]}));
+export const featsForStage=(phase:number)=>phase===2?[]:phase===1?COURT_FEATS:FEATS.map(f=>({...f,condition:FEAT_CONDITIONS[f.id]}));
 export const featDefinition=(id:string)=>[...COURT_FEATS,...featsForStage(0)].find(f=>f.id===id);
 export type CourtFeatState={earned:Set<string>;firstHit:Map<number,number>;guards:Map<number,Set<number>>;lastCaptainAt:number|null};
 export const createCourtFeats=():CourtFeatState=>({earned:new Set(),firstHit:new Map(),guards:new Map(),lastCaptainAt:null});

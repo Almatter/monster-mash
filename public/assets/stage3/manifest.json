@@ -1,0 +1,78 @@
+{
+  "chunks": {
+    "size": 512,
+    "cols": 10,
+    "rows": 10,
+    "left": -2560,
+    "top": -2560,
+    "cacheLimit": 32
+  },
+  "grottos": [
+    {
+      "id": 0,
+      "x": 0,
+      "y": -1650,
+      "name": "Hollow"
+    },
+    {
+      "id": 1,
+      "x": 1290,
+      "y": -1029,
+      "name": "Veil"
+    },
+    {
+      "id": 2,
+      "x": 1609,
+      "y": 367,
+      "name": "Root"
+    },
+    {
+      "id": 3,
+      "x": 716,
+      "y": 1487,
+      "name": "Cleft"
+    },
+    {
+      "id": 4,
+      "x": -716,
+      "y": 1487,
+      "name": "Deep"
+    },
+    {
+      "id": 5,
+      "x": -1609,
+      "y": 367,
+      "name": "Spire"
+    },
+    {
+      "id": 6,
+      "x": -1290,
+      "y": -1029,
+      "name": "Silence"
+    }
+  ],
+  "source": "Generated production artwork; offline sector composition",
+  "assets": [
+    "titan-body",
+    "titan-head-0",
+    "titan-head-1",
+    "titan-head-2",
+    "titan-mantle-0",
+    "titan-mantle-1",
+    "guardian",
+    "acolyte",
+    "shardhound",
+    "boundary",
+    "slam",
+    "bolt",
+    "breach",
+    "relic-unknown",
+    "relic-overlord",
+    "relic-calamity",
+    "relic-devourer",
+    "relic-titan",
+    "relic-sovereign",
+    "relic-reaper",
+    "relic-dormant"
+  ]
+}

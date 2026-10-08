@@ -1,3 +1,4 @@
+import {TITAN_REALM_RULES,TITAN_REALM_TEST_RULES,SWARM_TEST_RULES} from './stage-three.ts';
 import {MASTERY_BOONS} from './stage-access.ts';
 import {TITAN_FISSURE_RULES,type TitanKit} from './champion-kits.ts';
 import {createCourtFeats,courtFeatGuard,courtFeatCaptain,courtFeatClaim,type CourtFeatState} from './court-feats.ts';
@@ -8,7 +9,7 @@ import {COURT_SITE_GROUPS,COURT_SHRINES,slideCourt,courtSteer,courtWaypoint} fro
 import type {Game,Enemy} from './simulation.ts';
 export const COURT_RULES='2026.10-v33-court-hunts',COURT_TEST_RULES='2026.10-v33-court-test';
 export const REAPER_RULES='2026.10-v29-reaper';
-export const rulesForStage=(phase:number,testing=false,monsterId='',titanKit:TitanKit='throw')=>phase===1?(testing?COURT_TEST_RULES:COURT_RULES):monsterId==='reaper'?REAPER_RULES:phase===0&&monsterId==='titan'&&titanKit==='fissure'?TITAN_FISSURE_RULES:EVENT.rules;
+export const rulesForStage=(phase:number,testing=false,monsterId='',titanKit:TitanKit='throw')=>phase===0&&testing?SWARM_TEST_RULES:phase===2?(testing?TITAN_REALM_TEST_RULES:TITAN_REALM_RULES):phase===1?(testing?COURT_TEST_RULES:COURT_RULES):monsterId==='reaper'?REAPER_RULES:phase===0&&monsterId==='titan'&&titanKit==='fissure'?TITAN_FISSURE_RULES:EVENT.rules;
 export const COURT={total:10,activationRadius:1200,hintStart:720,hintTrail:900,hintPeriod:30,hintLife:8,sealLife:120,sealRadius:60,sealBonus:500000,guardBonus:10000,impactBonus:20000,closeBonus:25000,closeRange:220,spawnRate:.28,crowdCap:.4,startRelease:4,captainHp:32000,hpPerCaptain:.4,slamRadius:170,slamWarning:1.4,slamCycle:4.6,slamDamage:115,healScale:.4,devourerHealScale:.75,devourDrain:.1,devourMinimum:.18,shieldScale:.4,shieldCapScale:.55,combatPerCaptain:50000,speedMax:3200000,speedFullAt:600,speedZeroAt:900};
 export const LEGACY_COURT_SCORE={sealBonus:15000,guardBonus:400,impactBonus:1500,closeBonus:6000,combatPerCaptain:50000,speedMax:1000000,speedFullAt:600,speedZeroAt:900};
 export const courtScorePolicy=(rules=COURT_RULES)=>/-v(16|17|18|19|20|21|22|23)-court-/.test(rules)?LEGACY_COURT_SCORE:COURT;

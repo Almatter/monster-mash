@@ -1,3 +1,4 @@
+import {insideRealm} from './titan-realm-map.ts';
 import type {Game,Enemy} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
 import {ENEMIES} from './data.ts';
@@ -5,13 +6,13 @@ import {insideCourt,courtClearance} from './court-map.ts';
 import {TORCHES} from './arena.ts';
 // Arena Fissure uses the same footprint checks against its circle and stone brazier feet.
 function arenaClearance(g:Game,x:number,y:number){return Math.min(g.arenaRadius-Math.hypot(x,y),...TORCHES.map(t=>Math.hypot(x-t.x,y-t.y)-t.radius));}
-function clearance(g:Game,x:number,y:number){return g.court?courtClearance(x,y):arenaClearance(g,x,y);}
-function fits(g:Game,x:number,y:number,r:number){return g.court?insideCourt(x,y,r):arenaClearance(g,x,y)>=r;}
+function clearance(g:Game,x:number,y:number){if(g.realm){let lo=0,hi=400;for(let i=0;i<10;i++){const r=(lo+hi)/2;if(insideRealm(x,y,r))lo=r;else hi=r;}return lo;}return g.court?courtClearance(x,y):arenaClearance(g,x,y);}
+function fits(g:Game,x:number,y:number,r:number){return g.realm?insideRealm(x,y,r):g.court?insideCourt(x,y,r):arenaClearance(g,x,y)>=r;}
 export const FISSURE={maxFields:3,barrierCost:.35,halfWidth:37,tick:.5,impact:80,captainTick:6,captainImpact:8};
 export type TitanFissure={x:number;y:number;endX:number;endY:number;angle:number;length:number;width:number;life:number;bornAt:number;charge:number;damage:number;tick:number;kills:number};
 export function inFissure(f:TitanFissure,e:{x:number;y:number},radius=0){const ax=Math.cos(f.angle),ay=Math.sin(f.angle),dx=e.x-f.x,dy=e.y-f.y,along=Math.max(0,Math.min(f.length,dx*ax+dy*ay));return (dx-ax*along)**2+(dy-ay*along)**2<=(f.width+radius)**2;}
 function pulse(g:Game,f:TitanFissure,impact=false){let kills=0,hits=0;g.nearby((f.x+f.endX)/2,(f.y+f.endY)/2,f.length/2+f.width+65,e=>{if(!inFissure(f,e,ENEMIES[e.kind].radius))return;if(impact&&f.charge>=.5&&e.kind!=='titan'&&e.kind!=='elite'&&e.court?.role!=='captain')e.snaredUntil=Math.max(e.snaredUntil||0,g.time+.3+.35*f.charge);const hp=e.hp,guard=e.court?.guard??0;if(g.damage(e,impact?FISSURE.impact*(.4+.6*f.charge)*g.powerScale():f.damage,impact?'fissure-impact':'fissure',{x:f.x,y:f.y}))kills++;if(e.hp<hp||(e.court?.guard??0)<guard)hits++;});return {kills,hits};}
-export function castFissure(g:Game,p:AbilityDef){if(g.monster.id!=='titan'||g.titanKit!=='fissure')return;const charge=Math.max(0,Math.min(1,g.momentum)),angle=g.movementAngle,ax=Math.cos(angle),ay=Math.sin(angle),intended=p.radius*(.72+.28*charge),width=Math.min(FISSURE.halfWidth*g.releaseStats.radius*(.7+.3*charge),Math.max(8,(clearance(g,g.player.x,g.player.y)-2)/1.2));let length=0;for(let d=0;d<=intended;d+=20){if(!fits(g,g.player.x+ax*d,g.player.y+ay*d,width*1.2))break;length=d;}const f:TitanFissure={x:g.player.x,y:g.player.y,endX:g.player.x+ax*length,endY:g.player.y+ay*length,angle,length,width,life:(p.duration||4)*(.65+.35*charge),bornAt:g.time,charge,damage:p.damage*(.45+.55*charge)*g.powerScale(),tick:FISSURE.tick,kills:0};
+export function castFissure(g:Game,p:AbilityDef){if(g.monster.id!=='titan'||!g.realm&&g.titanKit!=='fissure')return;const charge=Math.max(0,Math.min(1,g.momentum)),angle=g.movementAngle,ax=Math.cos(angle),ay=Math.sin(angle),intended=p.radius*(.72+.28*charge),width=Math.min(FISSURE.halfWidth*g.releaseStats.radius*(.7+.3*charge),Math.max(8,(clearance(g,g.player.x,g.player.y)-2)/1.2));let length=0;for(let d=0;d<=intended;d+=20){if(!fits(g,g.player.x+ax*d,g.player.y+ay*d,width*1.2))break;length=d;}const f:TitanFissure={x:g.player.x,y:g.player.y,endX:g.player.x+ax*length,endY:g.player.y+ay*length,angle,length,width,life:(p.duration||4)*(.65+.35*charge),bornAt:g.time,charge,damage:p.damage*(.45+.55*charge)*g.powerScale(),tick:FISSURE.tick,kills:0};
  if(g.fissures.length>=FISSURE.maxFields){const old=g.fissures.shift()!;g.completeAttack(old.kills,{},'fissure');}g.momentum=0;g.momentumGrace=0;g.shield*=1-FISSURE.barrierCost;g.fissures.push(f);g.completeAttack(pulse(g,f,true).kills,{},'fissure-impact');
 }
 export function fissureMotion(g:Game,e:Enemy){if(g.time<(e.snaredUntil||0))return 0;let factor=1;for(const f of g.fissures)if(inFissure(f,e,ENEMIES[e.kind].radius))factor=Math.min(factor,(e.kind==='titan'||e.kind==='elite'||e.court?.role==='captain')?.8:.7-.3*f.charge);return factor;}
