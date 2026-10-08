@@ -8,7 +8,7 @@ test('locked content disappears without modifying imported rewards or palettes; 
  assert.equal(visibleIdentity(p,locked).monsterId,'sovereign');assert.equal(visibleIdentity(p,locked).title,'');assert.equal(TITLES.filter(t=>titleVisible(t,locked)).length,27);assert.ok(titleVisible(TITLES.find(t=>t.id==='gatebreaker'),locked));assert.equal(JSON.stringify(p),before);
  for(let n=1;n<=7;n++)recordProgress(p,{id:'qualify'+n,monsterId:'devourer',phase:0,reason:'overwhelmed',values:{seconds:510,kills:15000},best:{}},true,new Date(Date.UTC(2026,9,n,16)));
  const access=at=>({champion:id=>championAvailable(id,p.progress,at),stage:phase=>stageAccess(phase,p.progress,at)==='open'}),opened=Date.parse(STAGE_GATES[0].opensAt);
- assert.equal(visibleIdentity(p,access(opened-1)).monsterId,'sovereign');assert.equal(visibleIdentity(p,access(opened)).monsterId,'reaper');assert.equal(visibleIdentity(p,access(opened)).title,'Eclipse Eternal');assert.equal(TITLES.filter(t=>titleVisible(t,access(opened))).length,TITLES.length);
+ assert.equal(visibleIdentity(p,access(opened-1)).monsterId,'sovereign');assert.equal(visibleIdentity(p,access(opened)).monsterId,'reaper');assert.equal(visibleIdentity(p,access(opened)).title,'Eclipse Eternal');assert.equal(TITLES.filter(t=>titleVisible(t,access(opened))).length,TITLES.filter(t=>t.stage!==2&&!t.requirements.some(r=>r.scope==='lycanthrope'||r.metric.startsWith('realm')||r.scope==='stage:deepGatebreaker')).length);
 });
 test('all six champions can earn every hunt feat through real shared objective events, once per captain',()=>{
  for(const id of Object.keys(MONSTERS)){

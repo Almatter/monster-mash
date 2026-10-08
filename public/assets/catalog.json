@@ -198,5 +198,39 @@
       "power": "assets/monsters/reaper/gameplay-power.webp",
       "skin": "assets/monsters/reaper/gameplay-skin.webp"
     }
+  },
+  "lycanthrope": {
+    "selection": {
+      "base": "assets/monsters/lycanthrope/selection-base.webp",
+      "primary": "assets/monsters/lycanthrope/selection-primary.webp",
+      "secondary": "assets/monsters/lycanthrope/selection-secondary.webp",
+      "accent": "assets/monsters/lycanthrope/selection-accent.webp",
+      "power": "assets/monsters/lycanthrope/selection-power.webp",
+      "skin": "assets/monsters/lycanthrope/selection-skin.webp"
+    },
+    "portrait": {
+      "base": "assets/monsters/lycanthrope/portrait-base.webp",
+      "primary": "assets/monsters/lycanthrope/portrait-primary.webp",
+      "secondary": "assets/monsters/lycanthrope/portrait-secondary.webp",
+      "accent": "assets/monsters/lycanthrope/portrait-accent.webp",
+      "power": "assets/monsters/lycanthrope/portrait-power.webp",
+      "skin": "assets/monsters/lycanthrope/portrait-skin.webp"
+    },
+    "cutin": {
+      "base": "assets/monsters/lycanthrope/cutin-base.webp",
+      "primary": "assets/monsters/lycanthrope/cutin-primary.webp",
+      "secondary": "assets/monsters/lycanthrope/cutin-secondary.webp",
+      "accent": "assets/monsters/lycanthrope/cutin-accent.webp",
+      "power": "assets/monsters/lycanthrope/cutin-power.webp",
+      "skin": "assets/monsters/lycanthrope/cutin-skin.webp"
+    },
+    "gameplay": {
+      "base": "assets/monsters/lycanthrope/gameplay-base.webp",
+      "primary": "assets/monsters/lycanthrope/gameplay-primary.webp",
+      "secondary": "assets/monsters/lycanthrope/gameplay-secondary.webp",
+      "accent": "assets/monsters/lycanthrope/gameplay-accent.webp",
+      "power": "assets/monsters/lycanthrope/gameplay-power.webp",
+      "skin": "assets/monsters/lycanthrope/gameplay-skin.webp"
+    }
   }
 }

@@ -10,14 +10,15 @@ const PRACTICE:Record<string,{metric:string;target:number;label:string}[]>={
  calamity:[{metric:'magic',target:250000,label:'Spell kills'},{metric:'masteryBestCalamityMulti',target:300,label:'Largest spell multikill'}],
  overlord:[{metric:'owned',target:100000,label:'Servant kills'},{metric:'chain',target:25000,label:'Corruption kills'}],
  sovereign:[{metric:'devour',target:50000,label:'Consumed prey'},{metric:'beam',target:50000,label:'Death Beam kills'}],
+ lycanthrope:[{metric:'wolfKills',target:50000,label:'Wolf-power kills'},{metric:'moonfury',target:15000,label:'Bloodmoon Reign kills'},{metric:'wolfbound',target:2000,label:'Vault kills'}],
  reaper:[{metric:'reaped',target:50000,label:'Scythe kills'},{metric:'moonstorm',target:15000,label:'Eclipse kills'},{metric:'graveshift',target:2000,label:'Blink kills'}]
 };
 export type MasteryRow={label:string;value:number;target:number;points:number;max:number;repeatable:boolean};
 const row=(label:string,value:number,target:number,max:number,repeatable=true):MasteryRow=>({label,value,target,points:Math.floor(max*(repeatable?Math.max(0,value)/target:Math.min(1,Math.max(0,value)/target))),max,repeatable});
-export function championMastery(profile:Profile,id:string,courtAvailable=false){
+export function championMastery(profile:Profile,id:string,courtAvailable=false,realmAvailable=false){
  const p=profile.progress,kit=p.archetypes[id]||{},titles=TITLES.filter(t=>t.requirements.some(r=>r.scope===id));
- const baseTitles=titles.filter(t=>t.stage===undefined),courtTitles=titles.filter(t=>t.stage===1),practice=PRACTICE[id]||[];
- const bests=Object.entries(profile.personalBests).filter(([key])=>{const [,stage,champion]=key.split('|');return champion===id&&(stage==='0'||courtAvailable&&stage==='1');}).map(([,b])=>b);
+ const baseTitles=titles.filter(t=>t.stage===undefined),courtTitles=titles.filter(t=>t.stage===1),realmTitles=titles.filter(t=>t.stage===2),practice=PRACTICE[id]||[];
+ const bests=Object.entries(profile.personalBests).filter(([key])=>{const [,stage,champion]=key.split('|');return champion===id&&(stage==='0'||courtAvailable&&stage==='1'||realmAvailable&&stage==='2');}).map(([,b])=>b);
  const bestSeconds=Math.max(kit.masteryBestSeconds||0,kit.stageOneBestSeconds||0,...bests.map(b=>b.seconds)),bestKills=Math.max(kit.stageOneBestKills||0,...bests.map(b=>b.kills));
  const milestones=[bestKills>=500,bestSeconds>=480,(kit.stageOneTitans||0)>0,(kit.masteryBestMulti||0)>=100,(kit.masteryBestCarnage||0)>=60].filter(Boolean).length;
  const abilityGoals=practice.map(r=>({...r,value:kit[r.metric]||0}));
@@ -30,7 +31,9 @@ export function championMastery(profile:Profile,id:string,courtAvailable=false){
   row('Champion hunt titles · 2,000 points each',courtTitles.filter(t=>p.titles[t.id]).length,3,6000),
   row('Different rank-3 boons in completed hunts',Object.entries(kit).filter(([key,n])=>/^courtBoon\w+Clear$/.test(key)&&n>0).length,7,4000,false)
  ]:[];
- const foundations=foundationRows.reduce((n,r)=>n+r.points,0),court=courtRows.reduce((n,r)=>n+r.points,0),points=foundations+court;
+ const realmRows=realmAvailable?[row('Titan victories · 2,500 points each',kit.realmClears||0,20,50000),row('Victories without resetting · 1,500 points each',kit.realmCleanClears||0,20,30000),row('Grottos cleared · 100 points each',kit.realmShrines||0,100,10000),row('First insights · 250 points each',kit.realmInsights||0,100,25000),row('Champion depths titles · 3,000 points each',realmTitles.filter(t=>p.titles[t.id]).length,3,9000)]:[];
+ const realm=realmRows.reduce((n,r)=>n+r.points,0);
+ const foundations=foundationRows.reduce((n,r)=>n+r.points,0),court=courtRows.reduce((n,r)=>n+r.points,0),points=foundations+court+realm;
  const level=[...MASTERY_RANKS].reverse().find(r=>points>=r.points)!,next=MASTERY_RANKS.find(r=>r.points>points);
- return {rank:level.rank,points,next,foundations,court,foundationRows,courtRows,abilityGoals,titles:titles.filter(t=>t.stage===undefined||courtAvailable)};
+ return {rank:level.rank,points,next,foundations,court,realm,foundationRows,courtRows,realmRows,abilityGoals,titles:titles.filter(t=>t.stage===undefined||t.stage===1&&courtAvailable||t.stage===2&&realmAvailable)};
 }

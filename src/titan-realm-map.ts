@@ -1,10 +1,14 @@
 export type RealmPoint={x:number;y:number};
 export const REALM_CHUNKS={size:512,cols:10,rows:10,left:-2560,top:-2560,cacheLimit:32};
-export const REALM_RING=540;
+export const REALM_RING=480;
 export const REALM_START={x:0,y:1030};
-export const REALM_GROTTOS=Array.from({length:7},(_,i)=>{const a=-Math.PI/2+i*Math.PI*2/7;return {id:i,x:Math.round(Math.cos(a)*1650),y:Math.round(Math.sin(a)*1650),name:['Hollow','Veil','Root','Cleft','Deep','Spire','Silence'][i]};});
-const ring=Array.from({length:12},(_,i)=>({x:Math.cos(i*Math.PI/6)*1040,y:Math.sin(i*Math.PI/6)*1040}));
-export const REALM_LANES:{a:RealmPoint;b:RealmPoint;radius:number}[]=[{a:{x:0,y:0},b:{x:0,y:0},radius:REALM_RING},...ring.map((a,i)=>({a,b:ring[(i+1)%ring.length],radius:145})),...[0,1,2,3].map(i=>{const a=i*Math.PI/2;return {a:{x:0,y:0},b:{x:Math.cos(a)*1040,y:Math.sin(a)*1040},radius:120};}),...REALM_GROTTOS.flatMap(s=>{const entrance={x:s.x,y:s.y+505},lower=s.y>500,side={x:s.x+(s.x<0?650:-650),y:s.y+505},upper={x:side.x,y:s.y-540},connection=lower?upper:entrance,near=ring.reduce((a,b)=>Math.hypot(a.x-connection.x,a.y-connection.y)<Math.hypot(b.x-connection.x,b.y-connection.y)?a:b);return [{a:near,b:connection,radius:125},...(lower?[{a:upper,b:side,radius:115},{a:side,b:entrance,radius:115}]:[]),{a:entrance,b:{x:s.x,y:s.y+65},radius:125},{a:{x:s.x,y:s.y+65},b:{x:s.x,y:s.y+65},radius:280}];})];
+export const REALM_GROTTOS=[{id:0,x:0,y:-1536,name:'Hollow'},{id:1,x:1536,y:-1536,name:'Veil'},{id:2,x:1536,y:0,name:'Root'},{id:3,x:1536,y:1536,name:'Cleft'},{id:4,x:-1536,y:1536,name:'Deep'},{id:5,x:-1536,y:0,name:'Spire'},{id:6,x:-1536,y:-1536,name:'Silence'}];
+// Each generated sector shares this authored floor footprint. All visible bridge
+// entrances are usable; chasms and ruin walls lie outside these connected floors.
+export const REALM_LANES:{a:RealmPoint;b:RealmPoint;radius:number}[]=[
+ ...[-1536,0,1536].flatMap(y=>[-1536,0,1536].map(x=>({a:{x,y},b:{x,y},radius:x===0&&y===0?REALM_RING:480}))),
+ ...[-1536,0,1536].flatMap(v=>[{a:{x:-1536,y:v},b:{x:1536,y:v},radius:78},{a:{x:v,y:-1536},b:{x:v,y:1536},radius:78}])
+];
 const closest=(p:RealmPoint,a:RealmPoint,b:RealmPoint)=>{const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));return {x:a.x+dx*t,y:a.y+dy*t};};
 const buckets=new Map<string,typeof REALM_LANES>();
 for(const lane of REALM_LANES)for(let x=Math.floor((Math.min(lane.a.x,lane.b.x)-lane.radius)/400);x<=Math.floor((Math.max(lane.a.x,lane.b.x)+lane.radius)/400);x++)for(let y=Math.floor((Math.min(lane.a.y,lane.b.y)-lane.radius)/400);y<=Math.floor((Math.max(lane.a.y,lane.b.y)+lane.radius)/400);y++){const key=x+':'+y;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key)!.push(lane);}

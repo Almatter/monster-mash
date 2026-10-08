@@ -46,8 +46,8 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
 export function availableTitles(profile:Profile){return [...new Set([...BASE_TITLES,...profile.progress.legacyTitles,...TITLES.filter(t=>profile.progress.titles[t.id]).map(t=>t.name)])];}
 export function loadProfile(storage?:StorageLike):Profile{try{return normalizeProfile(JSON.parse(storage?.getItem('mm-profile')||'null'),storage?.getItem('mm-name')||'');}catch{return normalizeProfile(null);}}
 export function saveProfile(profile:Profile,storage?:StorageLike){try{storage?.setItem('mm-profile',JSON.stringify(profile));return !!storage;}catch{return false;}}
-export function updateRecords(profile:Profile,metrics:Metrics,identity:Identity,now=new Date().toISOString()){
- const unlocked:string[]=[];for(const a of ACHIEVEMENTS){if(a.archetype&&a.archetype!==identity.monsterId)continue;const r=profile.records[a.id]??{best:0};r.best=Math.max(r.best,metrics[a.metric]||0);if(!r.unlockedAt&&r.best>=a.target){r.unlockedAt=now;r.name=identity.name;r.monsterId=identity.monsterId;unlocked.push(a.id);}profile.records[a.id]=r;}return unlocked;
+export function updateRecords(profile:Profile,metrics:Metrics,identity:Identity,now=new Date().toISOString(),phase=0){
+ const unlocked:string[]=[];for(const a of ACHIEVEMENTS){if(a.stage!==undefined&&a.stage!==phase||a.archetype&&a.archetype!==identity.monsterId)continue;const r=profile.records[a.id]??{best:0};r.best=Math.max(r.best,metrics[a.metric]||0);if(!r.unlockedAt&&r.best>=a.target){r.unlockedAt=now;r.name=identity.name;r.monsterId=identity.monsterId;unlocked.push(a.id);}profile.records[a.id]=r;}return unlocked;
 }
 export type RunProgress={id:string;monsterId:string;phase?:number;reason?:'overwhelmed'|'retired'|'cleared';values:Totals;best:Totals};
 export function recordProgress(profile:Profile,run:RunProgress,finished=false,endedAt=new Date()){
@@ -57,6 +57,7 @@ export function recordProgress(profile:Profile,run:RunProgress,finished=false,en
  const gate=STAGE_GATES[0],passage=(run.phase??0)===0&&GATE_CHAMPIONS.includes(run.monsterId)&&gate.kind==='daily'&&endedAt.getTime()>=Date.parse(gate.qualifiesFrom);
  for(const [key,value] of Object.entries(values)){const delta=Math.max(0,value-(prior[key]||0));p.total[key]=(p.total[key]||0)+delta;kit[key]=(kit[key]||0)+delta;values[key]=Math.max(value,prior[key]||0);
   if(passage&&['seconds','titans'].includes(key)){const metric='stageOne'+key[0].toUpperCase()+key.slice(1);kit[metric]=(kit[metric]||0)+delta;}
+  if(run.phase===2&&!key.startsWith('realm')){const metric='realm'+key[0].toUpperCase()+key.slice(1);kit[metric]=(kit[metric]||0)+delta;p.total[metric]=(p.total[metric]||0)+delta;}
   if(run.phase===1&&!key.startsWith('court')){const metric='court'+key[0].toUpperCase()+key.slice(1);kit[metric]=(kit[metric]||0)+delta;p.total[metric]=(p.total[metric]||0)+delta;}
  }
  for(const [key,value] of Object.entries(totals(run.best))){p.best[key]=Math.max(p.best[key]||0,value);const metric='masteryBest'+key[0].toUpperCase()+key.slice(1);kit[metric]=Math.max(kit[metric]||0,value);}

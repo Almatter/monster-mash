@@ -25,6 +25,9 @@ export const TITLES:PrestigeTitle[]=[
  title('reaper1','The Soul Collector','Reaper mastery',req('reaper','reaped',5000,'prey slain with scythe powers'),req('reaper','runs',5,'Reaper incarnations ≥60s')),
  title('reaper2','Eclipse Eternal','Reaper mastery',req('reaper','reaped',50000,'prey slain with scythe powers'),req('reaper','moonstorm',15000,'Eclipse kills'),req('reaper','runs',20,'Reaper incarnations ≥60s')),
  title('reaperBlink','Between Worlds','Reaper mastery',req('reaper','graveshift',2000,'Graveshift kills'),req('reaper','runs',5,'Reaper incarnations ≥60s')),
+ title('lycanthropeHunt','The Moon Huntress','Lycanthrope mastery',req('lycanthrope','wolfKills',5000,'prey slain with wolf powers'),req('lycanthrope','runs',5,'incarnations ≥60s')),
+ title('lycanthropeFury','Bloodmoon Sovereign','Lycanthrope mastery',req('lycanthrope','moonfury',15000,'Bloodmoon Reign kills'),req('lycanthrope','runs',20,'incarnations ≥60s')),
+ title('lycanthropeVault','Beyond the Walls','Lycanthrope mastery',req('lycanthrope','wolfbound',2000,'Moonstrider Vault kills'),req('lycanthrope','runs',5,'incarnations ≥60s')),
  title('wildsHunter','Hunter of the Wilds','Ashen Wilds',req('total','courtClears',1,'completed Stage 2 hunts')),
  title('wildsColossus','Colossus Bane','Ashen Wilds',req('total','courtColossusClears',3,'completed Stage 2 hunts with the Ashen Colossus slain')),
  title('wildsVeteran','Ashen Warden','Ashen Wilds',req('total','courtClears',3,'completed Stage 2 hunts')),
@@ -42,11 +45,17 @@ export const TITLES:PrestigeTitle[]=[
   ['calamity','Calamity','Scourge of the Sands','Desert Cataclysm','Colossus Unmade','courtMagic',10000,'spell kills'],
   ['overlord','Overlord','Warden of Fallen Courts','Legion of Ash','Colossus Usurper','courtOwned',5000,'servant kills'],
   ['sovereign','Sovereign','Crown of the Wilds','Ashen Spellblade','Colossus Kingslayer','courtBeam',3000,'Death Beam kills'],
-  ['reaper','Reaper','Scythe of the Sands','Harvest Moon','Colossus Soulreaper','courtReaped',5000,'scythe-power kills']
+  ['reaper','Reaper','Scythe of the Sands','Harvest Moon','Colossus Soulreaper','courtReaped',5000,'scythe-power kills'],
+  ['lycanthrope','Lycanthrope','Moon over the Dunes','Pale Fang of Ash','Colossus Moonbane','courtWolfKills',5000,'wolf-power kills']
  ].flatMap(([id,champion,hunter,adept,bane,metric,target,label])=>[
   {...title(id+'WildsHunter',String(hunter),champion+' · Ashen Wilds',req(String(id),'courtClears',3,'completed hunts'),req(String(id),'courtGuards',120,'guards broken')),stage:1},
   {...title(id+'WildsArt',String(adept),champion+' · Ashen Wilds',req(String(id),String(metric),Number(target),String(label)+' in Stage 2'),req(String(id),'courtClears',5,'completed hunts')),stage:1},
   {...title(id+'WildsBane',String(bane),champion+' · Ashen Wilds',req(String(id),'courtColossusClears',5,'completed hunts with the Colossus slain'),req(String(id),'courtCaptains',100,'captains slain')),stage:1}
+ ]),
+ ...['overlord','calamity','devourer','titan','sovereign','reaper','lycanthrope'].flatMap((id,i)=>[
+  {...title(id+'DeepSeeker',['Warden of Forgotten Thrones','The Hidden Equation','Hunger for Knowledge','The Patient Mountain','Crown of the Deep','Keeper of Lost Souls','Moon in the Abyss'][i],id[0].toUpperCase()+id.slice(1)+' · Titan depths',req(id,'realmClears',3,'completed Stage 3 challenges'),req(id,'realmShrines',21,'grottos cleared')),stage:2},
+  {...title(id+'DeepResolve',['Unbroken Dominion','Flawless Cataclysm','The Unrelenting Answer','Adamant Resolve','The Unbroken Crown','Unbroken Eclipse','Steadfast Bloodmoon'][i],id[0].toUpperCase()+id.slice(1)+' · Titan depths',req(id,'realmCleanClears',3,'titan victories without resetting')),stage:2},
+  {...title(id+'DeepInsight',['The Knowing Emperor','Mind beyond Magic','The Thinking Predator','Wisdom of Stone','The Sevenfold Sovereign','The Remembering Reaper','Sevenfold Moon Huntress'][i],id[0].toUpperCase()+id.slice(1)+' · Titan depths',req(id,'realmInsights',20,'defenses opened without a wrong altar-power trial'),req(id,'realmClears',7,'completed Stage 3 challenges')),stage:2}
  ]),
  ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different qualifying days with one champion (≥8:30 and ≥15,000 kills each), OR 100 passage points + 6 finished runs + one 8-minute run with one original champion`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion'))))
 ];

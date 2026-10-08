@@ -17,9 +17,9 @@ import {createIdentity,type Identity} from './identity.ts';
 import {MONSTERS,type Palette} from './content-monsters.ts';
 import {AssetLibrary} from './assets.ts';
 export class Renderer {
- targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'|'reaper-blink'|'reaper-volley'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;viewWidth=0;viewHeight=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
+ targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'|'reaper-blink'|'reaper-volley'|'lycanthrope-parkour'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;viewWidth=0;viewHeight=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
- realmArt=new TitanRealmArt();realmTerrain=new CourtTerrain(REALM_CHUNKS,'assets/stage3/map');
+ realmArt=new TitanRealmArt();realmTerrain=new CourtTerrain(REALM_CHUNKS,'assets/stage3/map-v35');
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
  sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;adaptationBackground:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;adaptationPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
  constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.adaptationBackground=this.makeGround();this.loadFloor('assets/arena/floor.webp',this.background,0);const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.loadVfx('hostile-elite-warning');this.loadVfx('hostile-titan-warning');this.loadVfx('enemy-hit');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
@@ -29,7 +29,7 @@ export class Renderer {
 
  drawVfx(c:CanvasRenderingContext2D,kind:string,x:number,y:number,size:number,angle=0,alpha=1){const source=this.vfx.get(kind);if(!source)return false;const image=this.tintVfx(kind,source);if(!angle){const previous=c.globalAlpha;c.globalAlpha*=alpha;c.drawImage(image,x-size/2,y-size/2,size,size);c.globalAlpha=previous;return true;}c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha*=alpha;c.drawImage(image,-size/2,-size/2,size,size);c.restore();return true;}
  drawTargetArea(c:CanvasRenderingContext2D,kind:string,x:number,y:number,radius:number,time:number,valid:boolean,placing:boolean){
-  c.save();if(kind.startsWith('reaper-')){this.drawVfx(c,kind,x,y,radius*2.12,time*.3,valid?.65:.22);c.strokeStyle=valid?'#efdfc7':'#ff625d';c.lineWidth=2;c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.stroke();c.restore();return;}const vortex=kind==='vortex';
+  c.save();if(kind.startsWith('reaper-')||kind.startsWith('lycanthrope-')){this.drawVfx(c,kind,x,y,radius*2.12,time*.3,valid?.65:.22);c.strokeStyle=valid?'#efdfc7':'#ff625d';c.lineWidth=2;c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.stroke();c.restore();return;}const vortex=kind==='vortex';
   this.drawVfx(c,vortex?'calamity-vortex-preview':'calamity-starfall-preview',x,y,radius*2.12,time*(vortex?-.12:.035),valid?(placing?.48:.32):.18);
   // Artwork supplies identity; this boundary supplies the precise gameplay radius.
   c.strokeStyle=valid?this.vfxColor||'#f0ce87':'#ff625d';c.lineWidth=placing?2.5:1.5;
@@ -42,6 +42,7 @@ export class Renderer {
  drawCourtHit(c:CanvasRenderingContext2D,e:Enemy){const image=this.vfx.get('enemy-hit');if(!image)return;if(!this.courtHitArt){const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;const ctx=canvas.getContext('2d')!;ctx.drawImage(image,0,0);const frame=ctx.getImageData(0,0,canvas.width,canvas.height);for(let i=0;i<frame.data.length;i+=4){const b=Math.max(frame.data[i],frame.data[i+1],frame.data[i+2])/255;frame.data[i]=55+b*190;frame.data[i+1]=24+b*205;frame.data[i+2]=90+b*165;}ctx.putImageData(frame,0,0);this.courtHitArt=canvas;}const size=e.court?.role==='captain'?148:104;c.save();c.translate(e.x,e.y-28);c.rotate(e.serial*2.399);c.globalAlpha=Math.max(.8,Math.min(1,e.flash/.1));c.shadowColor='#130d22';c.shadowBlur=8;c.drawImage(this.courtHitArt,-size/2,-size/2,size,size);c.restore();}
  drawChampionAuras(c:CanvasRenderingContext2D,g:Game,time:number){
   const id=g.monster.id,scale=g.monster.visual.scale,x=g.player.x,y=g.player.y;
+  if(g.moonFury>0)this.drawVfx(c,'lycanthrope-fury',x,y,270*scale,time*.15,.20);
   const perk=g.shield>0||g.frenzy>0||g.frenzyGuard>0||id==='sovereign'&&g.player.rage>0;
   if(id==='reaper'||g.realm){if(g.reaperStorm>0)this.drawVfx(c,'reaper-eclipse',x,y,360*g.releaseStats.radius,time*.2,.40);if(g.soulGlow>0)this.drawVfx(c,'reaper-siphon',x,y,200*scale,-time*.2,g.soulGlow);}
   if(g.release>0){const size=(172+g.release*25)*scale*(1+Math.sin(time*2.1)*.02);this.drawVfx(c,CHAMPION_VFX[id].unbound,x,y,size,time*(id==='titan'?.035:.10),(.17+g.release*.05)*(perk?.75:1));}
@@ -51,7 +52,7 @@ export class Renderer {
   if(id==='devourer'||g.realm){
    if(g.frenzyGuard>0)this.drawVfx(c,'devourer-guard',x,y,196*scale,time*.045,.6);
    else if(g.frenzy>0)this.drawVfx(c,'devourer-frenzy',x,y,190*scale,-time*.3,.53+Math.sin(time*7)*.045);
-   if(g.dodgeInvuln>0)this.drawVfx(c,'devourer-dodge',x,y,180*scale,g.player.angle,.75);
+   if(g.dodgeInvuln>0)this.drawVfx(c,id==='lycanthrope'?'lycanthrope-parkour':'devourer-dodge',x,y,180*scale,g.player.angle,.75);
   }
  }
  deathParticle(g:Game,source?:string){if(g.monster.id==='calamity'&&source==='vortex')return 'calamity-vortex-wisp';return ['calamity','sovereign'].includes(g.monster.id)&&(['ultimate','meteor','beam'].includes(source||'')||g.monster.id==='calamity'&&source==='direct')?'arcane-dissolve':null;}
@@ -131,7 +132,8 @@ export class Renderer {
   if(this.targeting){const t=this.targeting;this.drawTargetArea(c,t.kind||'meteor',t.x,t.y,t.radius,time,t.valid,true);}
   const sparse=detail>=1;
   for(const e of g.effects){if(!courtArtVisible(e.x,e.y,e.radius*2.4,e.radius*2.4,0,cx,cy,halfW,halfH))continue;if(g.monster.id==='devourer'&&(e.kind==='frenzy'||e.kind==='feast'))continue;const t=1-e.life/e.max;c.globalAlpha=1-t;c.lineWidth=4;
-   if(e.kind.startsWith('realm-')){this.realmArt.image(c,e.kind==='realm-slam'?'slam':e.kind==='realm-boundary'?'boundary':'breach',e.x,e.y,e.radius*2,0,e.kind==='realm-block'?.5:.9);}
+   if(e.kind.startsWith('lycanthrope-')){this.drawVfx(c,e.kind,e.x,e.y,Math.min(e.radius*2.12,1000),e.angle,e.kind==='lycanthrope-howl'?.38:e.kind==='lycanthrope-parkour'?.28:.45);}else if(e.kind.startsWith('realm-')){this.realmArt.image(c,e.kind==='realm-slam'?'slam':e.kind==='realm-boundary'?'boundary':'breach',e.x,e.y,e.radius*2,0,e.kind==='realm-block'?.5:.9);}
+   else if(e.kind.startsWith('relic-power-')){this.drawVfx(c,e.kind,e.x,e.y,Math.min(e.radius*2,950),e.angle,.85);}
    else if(e.kind.startsWith('relic-cast-')){const nature=e.kind.slice(11);this.drawVfx(c,nature,e.x,e.y,Math.min(e.radius*2,950),e.angle,.85);}
    else if(e.kind==='colossus-eruption'){this.drawVfx(c,'colossus-eruption',e.x,e.y-e.radius*.22,e.radius*2.3,0,.9);}
    else if(e.kind.startsWith('reaper-')){this.drawVfx(c,e.kind,e.x,e.y,Math.min(e.radius*2.12,1100),e.angle+t*.2,.9);}

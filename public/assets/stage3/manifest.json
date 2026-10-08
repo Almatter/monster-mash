@@ -11,68 +11,46 @@
     {
       "id": 0,
       "x": 0,
-      "y": -1650,
+      "y": -1536,
       "name": "Hollow"
     },
     {
       "id": 1,
-      "x": 1290,
-      "y": -1029,
+      "x": 1536,
+      "y": -1536,
       "name": "Veil"
     },
     {
       "id": 2,
-      "x": 1609,
-      "y": 367,
+      "x": 1536,
+      "y": 0,
       "name": "Root"
     },
     {
       "id": 3,
-      "x": 716,
-      "y": 1487,
+      "x": 1536,
+      "y": 1536,
       "name": "Cleft"
     },
     {
       "id": 4,
-      "x": -716,
-      "y": 1487,
+      "x": -1536,
+      "y": 1536,
       "name": "Deep"
     },
     {
       "id": 5,
-      "x": -1609,
-      "y": 367,
+      "x": -1536,
+      "y": 0,
       "name": "Spire"
     },
     {
       "id": 6,
-      "x": -1290,
-      "y": -1029,
+      "x": -1536,
+      "y": -1536,
       "name": "Silence"
     }
   ],
-  "source": "Generated production artwork; offline sector composition",
-  "assets": [
-    "titan-body",
-    "titan-head-0",
-    "titan-head-1",
-    "titan-head-2",
-    "titan-mantle-0",
-    "titan-mantle-1",
-    "guardian",
-    "acolyte",
-    "shardhound",
-    "boundary",
-    "slam",
-    "bolt",
-    "breach",
-    "relic-unknown",
-    "relic-overlord",
-    "relic-calamity",
-    "relic-devourer",
-    "relic-titan",
-    "relic-sovereign",
-    "relic-reaper",
-    "relic-dormant"
-  ]
+  "source": "Nine generated connected ruin sectors, streamed in nearby 512px chunks",
+  "revision": 35
 }

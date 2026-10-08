@@ -1,6 +1,6 @@
 import type {MusicState} from './content-audio.ts';
-export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper';
-type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'};
+export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper'|'titan-realm'|'lycanthrope';
+type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'|'dream'};
 const repeat=(bars:number[],count:number)=>Array.from({length:count},(_,i)=>bars[i%bars.length]);
 export const THEMES:Record<ThemeId,Theme>={
  'ashen-wilds':{bpm:112,bars:16,mode:'D Phrygian dominant / desert pursuit',roots:repeat([38,39,38,36,38,43,39,38],16),third:repeat([4,4,4,3,4,3,4,4],16),motif:[0,1,4,7,8,7,4,1],drums:[0,1.5,2,3.5],bass:[0,2.5],texture:'desert'},
@@ -11,7 +11,9 @@ export const THEMES:Record<ThemeId,Theme>={
  devourer:{bpm:144,bars:16,mode:'C Phrygian / predatory 3+3+2 pulse',roots:repeat([36,37,43,36,39,37,34,36],16),third:repeat([3,4,3,3,3,4,4,3],16),motif:[0,1,3,7,1,0,10,7],drums:[0,1.5,3],bass:[0,1.5,3],texture:'breath'},
  calamity:{bpm:132,bars:16,mode:'A harmonic minor / unstable arcana',roots:repeat([45,41,38,40,45,46,43,40],16),third:repeat([3,4,3,3,3,4,3,3],16),motif:[0,12,7,15,19,12,8,7],drums:[0,2.5,3.5],bass:[0,1,2,3.5],texture:'arcane'},
  reaper:{bpm:124,bars:16,mode:'F sharp harmonic minor / moonlit hunt',roots:repeat([42,38,45,37,42,41,38,37],16),third:repeat([3,4,3,4,3,3,4,4],16),motif:[0,7,12,10,7,3,1,0],drums:[0,1.5,3],bass:[0,2,3.5],texture:'arcane'},
- boon:{bpm:76,bars:4,mode:'D suspended minor / choice sanctuary',roots:[50,46,53,45],third:[3,4,3,4],motif:[0,7,12,5,3,7,14,12],drums:[],bass:[],texture:'bells'}
+ boon:{bpm:76,bars:4,mode:'D suspended minor / choice sanctuary',roots:[50,46,53,45],third:[3,4,3,4],motif:[0,7,12,5,3,7,14,12],drums:[],bass:[],texture:'bells'},
+ lycanthrope:{bpm:136,bars:16,mode:'B minor / moonlit pursuit',roots:repeat([35,38,33,35,35,40,38,33],16),third:repeat([3,4,3,3],16),motif:[0,7,12,3,10,7,2,0],drums:[0,1.5,2.5,3.5],bass:[0,1.5,3],texture:'breath'},
+ 'titan-realm':{bpm:86,bars:16,mode:'E suspended / dream bells and displaced 3+2+3 pulse',roots:repeat([40,41,40,46,40,38,41,40],16),third:repeat([2,2,2,3,2,2,2,2],16),motif:[0,1,6,7,13,6,2,12],drums:[0,1.5,2.5],bass:[0,2.5],texture:'dream'}
 };
 export const MUSIC={sampleRate:22050,layers:['drone / harmony','character bass','character percussion','signature motif','Carnage counterline','Unbound and Final Release','Titan threat / results cadence']} as const;
 const MIX:Record<MusicState,number[]>={menu:[.72,.35,.22,.58,0,0,.08],combat:[.65,.8,.75,.72,0,0,0],escalation:[.7,.86,.88,.84,.55,.12,0],unbound:[.7,.95,.94,.9,.72,.7,0],final:[.74,1,1,.95,.9,1,.18],titan:[.75,.95,.96,.82,.63,.72,.9],results:[.55,0,0,.13,0,0,.5],boon:[0,0,0,0,0,0,0]};
@@ -21,10 +23,12 @@ function midiFrequency(midi:number){return 440*2**((midi-69)/12);}
 export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,themeId:ThemeId='menu'):Promise<Float32Array>{
  const theme=THEMES[themeId],beat=60/theme.bpm,total=theme.bars*4*beat,data=new Float32Array(Math.ceil(total*sampleRate));let seed=9137+layer*7919+Object.keys(THEMES).indexOf(themeId)*1013;
  const noise=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
- function note(at:number,duration:number,midi:number,volume:number,kind:'flute'|'pad'|'bass'|'pluck'|'bell'|'kick'|'tom'|'tick'|'breath'|'arcane'){
+ function note(at:number,duration:number,midi:number,volume:number,kind:'flute'|'pad'|'bass'|'pluck'|'bell'|'kick'|'tom'|'tick'|'breath'|'arcane'|'dreambell'|'drift'){
   const start=Math.round(at*sampleRate),n=Math.round(duration*sampleRate),freq=midiFrequency(midi);for(let i=0;i<n;i++){const t=i/sampleRate,u=i/n,phase=2*Math.PI*freq*t;let value=0,envelope=1;
    if(kind==='flute'){envelope=Math.sin(Math.PI*u)*Math.min(1,t/.04);value=.6*Math.sin(phase+.025*Math.sin(t*32))+.08*Math.sin(phase*2)+noise()*.02;}
    else if(kind==='pad'){envelope=Math.sin(Math.PI*u)**1.5;value=(Math.sin(phase)+.2*Math.sin(phase*2+.2*Math.sin(t*3))+.12*Math.sin(phase*3))*.62;}
+   else if(kind==='dreambell'){envelope=Math.min(1,t/.18)*Math.exp(-u*3)*(1-u);value=.52*Math.sin(phase+.13*Math.sin(t*2.7))+.2*Math.sin(phase*2.71)+.1*Math.sin(phase*4.13);}
+   else if(kind==='drift'){envelope=Math.sin(Math.PI*u)**1.7;value=.43*Math.sin(phase+.36*Math.sin(t*1.1))+.23*Math.sin(phase*1.004)+.1*Math.sin(phase*1.497);}
    else if(kind==='bass'){envelope=Math.min(1,t/.012)*Math.exp(-u*3.4)*(1-u);value=Math.tanh((Math.sin(phase)+.25*Math.sin(phase*2))*1.8)*.7;}
    else if(kind==='pluck'){envelope=Math.min(1,t/.006)*Math.exp(-u*5);value=Math.sin(phase)*.65+Math.sin(phase*2)*.22+Math.sin(phase*3)*.07;}
    else if(kind==='bell'){envelope=Math.min(1,t/.008)*Math.exp(-u*4.5);value=Math.sin(phase)*.65+Math.sin(phase*2.76)*.22+Math.sin(phase*5.4)*.06;}
@@ -37,6 +41,18 @@ export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,
   }
  }
  for(let bar=0;bar<theme.bars;bar++){const at=bar*4*beat,root=theme.roots[bar],third=theme.third[bar],variation=Math.floor(bar/4);
+  // TITAN has its own spacious score. Half-beat offsets and inharmonic bells
+  // unsettle exploration without obscuring warning sounds; threat adds a pulse.
+  if(theme.texture==='dream'){
+   if(layer===0){note(at,5.5*beat,root,.082,'drift');note(at+1.25*beat,4.5*beat,root+14,.029,'drift');}
+   if(layer===1)for(const b of theme.bass)note(at+b*beat,1.4*beat,root-12,.074,'bass');
+   if(layer===2)for(const b of theme.drums)note(at+(b+(bar%2?.25:0))*beat,.5,34,.058,'tom');
+   if(layer===3){const offset=bar%2?.75:.25;for(const [i,b] of [0,1.5,3.25].entries())note(at+(b+offset)*beat,2.4*beat,root+24+theme.motif[(bar*3+i)%8],.053,'dreambell');}
+   if(layer===4)for(const [i,b] of [.5,1.75,3].entries())note(at+b*beat,1.3*beat,root+12+theme.motif[(bar+i+4)%8],.029,'dreambell');
+   if(layer===5){note(at+.5*beat,3.5*beat,root+19,.055,'drift');note(at+2.75*beat,2*beat,root+30,.036,'dreambell');}
+   if(layer===6){note(at,4.3*beat,root-12,.12,'drift');for(const b of [0,.75,1.5,2.5,3.25])note(at+b*beat,.38,29,.13,'tom');note(at+1.5*beat,2.2*beat,root+18,.056,'dreambell');}
+   await new Promise<void>(resolve=>setTimeout(resolve,0));continue;
+  }
   if(layer===0){const pad=theme.texture==='choir'?.085:theme.texture==='hammer'?.055:.067;for(const [off,gain] of [[0,pad],[12,pad*.38],[12+third,pad*.25],[19,pad*.35]])note(at,4.3*beat,root+off,gain,'pad');if(theme.texture==='choir')note(at+2*beat,2.5*beat,root+7,.045,'pad');}
   if(layer===1){for(const b of theme.bass){note(at+b*beat,.7*beat,root+(theme.texture==='breath'&&b===3?1:0),theme.texture==='hammer'?.18:.12,'bass');if(theme.texture==='breath')note(at+(b+.25)*beat,.3*beat,root-12,.035,'breath');}}
   if(layer===2){for(const b of theme.drums)note(at+b*beat,theme.texture==='hammer'?.55:.35,theme.texture==='hammer'?29:36,theme.texture==='hammer'?.24:.16,b%2?'tom':'kick');if(theme.texture==='breath')for(const b of [0.75,2.25,3.75])note(at+b*beat,.16,42,.085,'tom');if(theme.texture==='arcane')for(const b of [.75,1.75,2.75])note(at+b*beat,.2,52,.065,'tom');if(theme.texture==='desert')for(const b of [.75,1.75,3.25])note(at+b*beat,.22,49,.045,'tom');if(theme.texture==='dulcimer')for(const b of [1,3])note(at+b*beat,.24,46,.04,'tom');if(theme.texture==='choir')for(const b of [1,3])note(at+b*beat,.3,38,.09,'tom');if(bar%4===3)for(const b of [3.25,3.5,3.75])note(at+b*beat,.15,46,.04,'tom');}

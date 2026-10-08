@@ -1,4 +1,5 @@
 const paths:Record<string,string>={
+ wolfbound:'M3 25l8-9 6 3 12-15 M4 11l6-5 M19 28l8-4',moonhowl:'M5 23l4-13 7-7 7 7-3 13 M25 8l5 5 M25 20l5-5',ravage:'M8 3 4 23 9 29 M17 3l-5 20 5 6 M26 3l-6 20 6 6',moonfury:'M22 3C5 0-4 24 15 29c-8-8-4-18 7-26 M20 13l-3 13 M26 12l-4 13',soulwrit:'M4 25V9l6 4 6-9 6 9 6-4v16Z',prismcollapse:'M16 2l13 14-13 14L3 16Z M16 6v20 M6 16h20',bloodthread:'M3 7l16 8 10-8-6 16-8 6-6-12',gravitonseal:'M4 9h24 M9 3l7 6 7-6 M16 9v20 M5 26h22',spellsteel:'M4 25 26 3 M19 3h7v7 M4 11l10 5-5 10',soulorbit:'M27 15A12 12 0 1 0 16 28 M23 3l7 6-10 3 M16 8l-4 20',moonrend:'M3 24l7-18 6 12 8-14 6 18 M7 25h18',
  soulsweep:'M5 23c-3-9 2-18 15-19l7 3-11 3 M20 5l-9 22 M9 25l4 2',
  graveshift:'M4 7h8 M4 4v6 M21 22h8 M25 18v9 M9 23l14-14 M17 5c5 0 9 2 11 6l-9-3',
  reapingarc:'M4 8c9-5 16-3 22 5 M5 16c9-4 16-2 23 5 M4 24c7-2 12 0 17 5',
