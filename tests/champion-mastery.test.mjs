@@ -43,14 +43,23 @@ test('incremental saves and repeated finishes cannot inflate passage, court abil
  p=parseProgressExport(progressExport(p));p=mergeProgress(p,p);assert.equal(championMastery(p,'titan',true).points,points);
 });
 
-test('Stage 1 activity can never exceed E, ranks require later-stage pools and account-wide achievements do not leak between champions',()=>{
- assert.deepEqual(MASTERY_RANKS.map(r=>r.rank),['F','E','D','C','B','A','S']);const p=normalizeProfile(null);
- assert.equal(championMastery(p,'devourer').rank,'F');
- for(const id of [...GATE_CHAMPIONS,'reaper']){const kit=p.progress.archetypes[id];for(const r of TITLES.flatMap(t=>t.requirements).filter(r=>r.scope===id&&!r.metric.startsWith('court')))kit[r.metric]=1e9;kit.masteryBestMulti=kit.masteryBestCarnage=kit.masteryBestSeconds=kit.masteryBestCalamityMulti=kit.stageOneBestKills=kit.stageOneTitans=1e9;}
- awardTitles(p.progress);for(const id of [...GATE_CHAMPIONS,'reaper']){const m=championMastery(p,id);assert.equal(m.rank,'E');assert.ok(m.points<10000);assert.equal(m.courtRows.length,0);}
- const independent=normalizeProfile(null);recordProgress(independent,{...run('devourer'),values:{seconds:3600,kills:100000,devour:5000}},true,date);updateRecords(independent,{kills:100000},independent.identity);assert.equal(championMastery(independent,'titan').points,0);
- const kit=p.progress.archetypes.titan;Object.assign(kit,{courtClears:40,courtColossusClears:15,courtCaptains:400,courtGuards:1000,courtFissure:500});for(const boon of ['Haste','Power','Reach','Recharge','Tempo','Duration','Vitality'])kit['courtBoon'+boon+'Clear']=1;awardTitles(p.progress);
- assert.equal(championMastery(p,'titan',false).rank,'E');assert.equal(championMastery(p,'titan',true).rank,'C');assert.ok(championMastery(p,'titan',true).court>championMastery(p,'titan',true).foundations);
+test('mastery has high point requirements but every rank remains reachable through Stage 1 alone',()=>{
+ assert.deepEqual(MASTERY_RANKS.map(r=>r.rank),['F','E','D','C','B','A','S']);assert.equal(MASTERY_RANKS.find(r=>r.rank==='D').points,30000);assert.equal(MASTERY_RANKS.at(-1).points,600000);
+ const p=normalizeProfile(null);assert.equal(championMastery(p,'devourer').rank,'F');
+ for(const id of GATE_CHAMPIONS){for(let n=0;n<6;n++)recordProgress(p,run(id+n,id),true,date);assert.ok(['F','E'].includes(championMastery(p,id).rank));
+  const kit=p.progress.archetypes[id];kit.seconds=720*60;kit.runs=60;const before=championMastery(p,id);kit.seconds+=600;kit.runs++;assert.equal(championMastery(p,id).points-before.points,120,'time and runs keep earning after the former limits');
+  for(const rank of MASTERY_RANKS){kit.seconds=rank.points*6;const m=championMastery(p,id);assert.ok(m.points>=rank.points);assert.ok(MASTERY_RANKS.findIndex(r=>r.rank===m.rank)>=MASTERY_RANKS.findIndex(r=>r.rank===rank.rank));assert.equal(m.courtRows.length,0);}
+  assert.equal(championMastery(p,id).rank,'S');
+ }
+ assert.equal(p.progress.archetypes.reaper.seconds,undefined,'one champion cannot contribute to another rank');
+});
+
+test('ability work and hunt rewards keep earning beyond former targets; finite milestones only reward actual distinct accomplishments',()=>{
+ const p=normalizeProfile(null),kit=p.progress.archetypes.titan;Object.assign(kit,{collision:50000,trample:10000,courtClears:40,courtColossusClears:15,courtCaptains:400,courtGuards:1000});awardTitles(p.progress);const base=championMastery(p,'titan',true);
+ kit.collision*=2;kit.trample*=2;assert.equal(championMastery(p,'titan',true).foundations-base.foundations,1500);
+ const before=championMastery(p,'titan',true);kit.courtClears++;kit.courtColossusClears++;kit.courtCaptains+=10;kit.courtGuards+=50;assert.equal(championMastery(p,'titan',true).court-before.court,2000);
+ assert.equal(championMastery(p,'titan',false).court,0,'hidden hunt content is still excluded until stage access');
+ const restored=parseProgressExport(progressExport(p)),merged=mergeProgress(p,restored);assert.equal(championMastery(merged,'titan',true).points,championMastery(p,'titan',true).points);
 });
 
 test('all champions have three additional hunt titles; titles are hidden until Stage 2 and do not count Stage 1 ability kills',()=>{

@@ -52,7 +52,7 @@ test('outcome milestones celebrate survival without changing retirement category
  assert.equal(runOutcome({reason:'overwhelmed',duration:510,release:4}),'FULLY UNBOUND');
  assert.equal(runOutcome({reason:'overwhelmed',duration:599,release:4}),'FULLY UNBOUND');
  assert.equal(runOutcome({reason:'overwhelmed',duration:600,release:4}),'TEN-MINUTE LEGEND');
- assert.equal(runOutcome({reason:'retired',duration:1000,release:4}),'PRACTICE / MANUALLY ENDED');
+ assert.equal(runOutcome({reason:'retired',duration:1000,release:4}),'MANUALLY ENDED');
  const g=new Game(1,{monsterId:'devourer'});g.time=600;g.update(1/60,idle);assert.equal(g.ended,false);
  const r={name:'Night',title:'The Unbound',monsterId:'devourer',rules:'2026.10-v7-movement',phase:0,reason:'overwhelmed',duration:600,release:4,score:100,kills:12,wave:21,multi:3,titans:0};
  assert.ok(resultText(r).includes('TEN-MINUTE LEGEND'));assert.ok(!resultText(r).includes('OVERWHELMED'));assert.match(outcomeDescription(r),/ten-minute milestone/);

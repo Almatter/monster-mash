@@ -22,8 +22,8 @@ export function recordBest(bests:PersonalBests,run:ComparableRun):Comparison{
 }
 export function comparisonText(value:Comparison,practice=false){
  if(value.metric==='time'){const fmt=(s:number)=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');return value.status==='first'?'First cleared hunt in these conditions':value.status==='record'?'New clear-time best · '+fmt(value.delta)+' faster':value.status==='tie'?'Matched your fastest clear · '+fmt(value.previous!):fmt(Math.abs(value.delta))+' slower than your fastest clear ('+fmt(value.previous!)+')';}
- const label=practice?'practice best':'personal best';
- if(value.status==='first')return 'First '+(practice?'practice':'completed')+' run in these conditions';
+ const label=practice?'manually ended best':'personal best';
+ if(value.status==='first')return 'First '+(practice?'manually ended':'completed')+' run in these conditions';
  if(value.status==='record')return 'New '+label+' · +'+value.delta.toLocaleString()+' Dominance';
  if(value.status==='tie')return 'Matched your '+label+' · '+value.previous!.toLocaleString();
  return Math.abs(value.delta).toLocaleString()+' Dominance below your '+label+' ('+value.previous!.toLocaleString()+')';

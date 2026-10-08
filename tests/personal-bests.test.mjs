@@ -20,7 +20,7 @@ test('scoped bests persist without inventing historical competition scores and r
 test('local history stays bounded while preserving the current result',()=>{const b={};for(let i=0;i<200;i++)recordBest(b,{...run,rules:'2026.10-v'+i});assert.equal(Object.keys(b).length,160);assert.equal(b[bestKey({...run,rules:'2026.10-v199'})].score,100);});
 test('share copy carries prestige, stage, rules and practice status; release guidance matches actual seals',()=>{
  const text=resultText({...run,name:'Night Crown',title:'The Unbound',wave:4,multi:7,titans:0,reason:'retired',comparison:{previous:50,delta:50,status:'record'}},'CODE');
- for(const part of ['Night Crown','The Unbound','STAGE 1','THE SWARM','2026.10-v6-tester','PRACTICE / MANUALLY ENDED','7 slain','practice best','CODE'])assert.ok(text.includes(part),part);
+ for(const part of ['Night Crown','The Unbound','STAGE 1','THE SWARM','2026.10-v6-tester','MANUALLY ENDED','7 slain','manually ended best','CODE'])assert.ok(text.includes(part),part);
  assert.match(comparisonText({previous:150,delta:-50,status:'below'}),/50 Dominance below/);assert.match(releaseGuidance(149,0),/0:01/);assert.match(releaseGuidance(510,4),/FULL POWER/);
 });
 

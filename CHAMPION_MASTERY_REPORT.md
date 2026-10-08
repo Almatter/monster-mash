@@ -13,28 +13,37 @@ Stage 2 still requires the earned Gatebreaker **and server-verified October 8, 2
 
 ## Month-long champion mastery
 
-Ranks: F 0; E 1,000; D 10,000; C 30,000; B 75,000; A 150,000; S 300,000.
+Ranks: F 0; E 1,000; D 30,000; C 75,000; B 150,000; A 300,000; S 600,000.
 
-Each champion has a separate rank on their roster button and a points link beside their preview. Monster Records contains collapsed, expandable champion details, point sources, ability goals and thresholds. Mastery grants prestige without changing combat stats. It is separate from the 100-point passage route.
+Every rank can be earned in any available stage. There are no stage ceilings or capped pools. Repeated activities continue earning at their original rates; high rank thresholds make the climb substantial. The existing totals are re-evaluated retroactively, without changing saves or erasing credit.
 
-Foundations have a 9,000-point cap, guaranteeing that Stage 1 alone cannot advance beyond E:
+Each champion has a separate rank on their roster button and a compact **Mastery + letter** link beside their preview. The preview does not show points. Monster Records provides expandable details, point sources and rank requirements. Its description simply says “F to S.” Mastery grants prestige without changing combat stats and is separate from the 100-point passage route.
 
-- Playtime: 10 points/minute, up to 4,500.
-- Finished runs: 20 points/run, up to 1,000.
-- Native champion titles: 500 each, up to 1,500.
-- Ability practice: up to 1,500, proportionate to champion-specific goals.
-- Five champion combat milestones: 100 each (500 slain in one run; eight-minute survival; a Stage 1 Titan; 100-kill multikill; 60 seconds at ×5 Carnage).
+Foundations:
 
-Stage 2 adds a separate 60,000-point pool, visible only once the stage is accessible:
+- Playtime: 10 points/minute, continually earned.
+- Finished runs: 20 points/run lasting at least 60 seconds, continually earned.
+- Native champion titles: 500 per earned title.
+- Ability practice: continually earned at the champion-specific rates displayed in records. The former practice goals now specify the rate rather than a cap.
+- Five distinct champion combat milestones: 100 each (500 slain in one run; eight-minute survival; a Stage 1 Titan; 100-kill multikill; 60 seconds at ×5 Carnage).
 
-- 500/completed hunt (20,000 cap).
-- 1,000/Colossus victory in a completed hunt (15,000 cap).
-- 25/captain (10,000 cap).
-- 5/guard broken (5,000 cap).
-- 2,000/new champion hunt title (6,000 cap).
-- Distinct rank-3 boons in completed hunts (4,000 total across seven boons).
+Stage 2 adds larger rewards, displayed only after actual access:
 
-Stage 2 can bring a dedicated player through D to C; B–S await later challenges. When Stages 3/4 are designed, add independent stage pools rather than multiplying earlier totals. Suggested future budgets of 90,000 and 180,000 would make the 300,000-point S threshold achievable across the whole event. Those are planning budgets, not currently earned points or invented missions.
+- 500/completed hunt, continually earned.
+- 1,000/Colossus victory in a completed hunt, continually earned.
+- 25/captain and 5/guard broken, continually earned.
+- 2,000/earned champion hunt title.
+- Distinct rank-3 boons in completed hunts (4,000 across the seven unique boons).
+
+Future stages can add their own objective rewards without changing earlier progression rates or imposing rank restrictions.
+
+## Regular player release presentation
+
+Stage 2 has its own landing narrative about hunting captains, claiming seals, choosing boons and healing at oases. Outdated practice-run wording is replaced by accurate “manually ended” descriptions; help now points to both Gatebreaker routes. Device support information is tucked into a collapsed Settings section instead of occupying the footer. Existing authenticated result codes, historical bests and the isolated testing endpoint retain their technical identities and score separation. Regular Stage 2 play contains no playtest banner, tester explanation or debug label. The separate testing endpoint uses a concise Exhibition identifier, preserving score separation without the old tester briefings.
+
+## Completed character artwork
+
+Character composition now publishes only after every color mask is finished. Selection previews, gameplay atlases and ultimate cut-ins request the exact completed palette, so a default image or an earlier palette cannot appear during loading. Match startup retains its preparing message and waits for the complete gameplay atlas before advancing the simulation. Source/artwork cache and concurrent composition limits remain unchanged.
 
 ## New hunt titles
 
@@ -42,6 +51,7 @@ All six champions get three additional Stage 2 titles (18 total): three clears p
 
 ## Verification
 
-- New logic coverage: same-day passage for all original champions, independent champion requirements, minimum runs/survival, retroactive credit, repeated saves/finishes/imports, date/title protection, F–S thresholds, Stage 1 rank ceiling, larger hunt pool and all 18 new title conditions.
-- Real browser checks at desktop and phone sizes: roster badges, direct preview-to-records link, collapsed mastery details, prior-save passage, hidden Stage 2/Reaper content on October 7, reveal on October 8, isolated test progress and no records overflow.
-- Complete existing gameplay/progression suite and production artifact verification run before deployment. No match balance or competition rules changed.
+- New logic coverage: same-day passage for all original champions, independent champion requirements, minimum runs/survival, retroactive credit, repeated saves/finishes/imports, date/title protection, F–S thresholds, unrestricted Stage 1 ranks, continued rewards beyond former limits and all 18 new title conditions.
+- Real browser checks at desktop and phone sizes: compact point-free rank links, direct preview-to-records navigation, collapsed mastery details, prior-save passage, hidden Stage 2/Reaper content on October 7, reveal on October 8, isolated test progress and no records overflow.
+- Delayed-layer browser regression for all six champions, both selection/gameplay formats and two contrasting palettes; verifies no early or prior-palette draws, completed-image identity, bounded caches, and desktop/phone startup waiting.
+- 244 existing gameplay/progression tests passed; production artifact verified. Complete existing gameplay/progression suite and production artifact verification run before deployment. No match balance or competition rules changed.
