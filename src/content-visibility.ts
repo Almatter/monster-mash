@@ -5,8 +5,8 @@ import {createIdentity} from './identity.ts';
 import type {Profile} from './profile.ts';
 export type ContentAccess={champion:(id:string)=>boolean;stage:(phase:number)=>boolean};
 export const defaultContentAccess=(testing=false):ContentAccess=>({champion:id=>!!MONSTERS[id]&&(MONSTERS[id].unlockStage===undefined||testing),stage:phase=>phase===0||testing});
-export function titleVisible(title:PrestigeTitle,access:ContentAccess){return title.requirements.every(r=>{
- if(MONSTERS[r.scope])return access.champion(r.scope);
+export function titleVisible(title:PrestigeTitle,access:ContentAccess){if(title.stage!==undefined&&!access.stage(title.stage))return false;return title.requirements.every(r=>{
+ if(MONSTERS[r.scope]&&!access.champion(r.scope))return false;
  if(r.metric.startsWith('court'))return access.stage(1);
  if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return !!gate&&access.stage(gate.sourcePhase);}
  return true;

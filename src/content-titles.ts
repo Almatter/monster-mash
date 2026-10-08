@@ -2,7 +2,7 @@ import {STAGE_GATES,trialDays,masteryChampion,masteryProgress,gateChallengeCompl
 export type Totals=Record<string,number>;
 export type Progression={total:Totals;best:Totals;archetypes:Record<string,Totals>;titles:Record<string,string>;legacyTitles:string[];ledger:{id:string;values:Totals}|null;finished:string[];trials:StageTrials};
 export type Requirement={scope:string;metric:string;target:number;label:string};
-export type PrestigeTitle={id:string;name:string;family:string;requirements:Requirement[]};
+export type PrestigeTitle={id:string;name:string;family:string;requirements:Requirement[];stage?:number};
 const req=(scope:string,metric:string,target:number,label:string):Requirement=>({scope,metric,target,label});
 const title=(id:string,name:string,family:string,...requirements:Requirement[]):PrestigeTitle=>({id,name,family,requirements});
 const runs=(n:number)=>req('total','runs',n,'incarnations lasting at least 60 seconds');
@@ -36,7 +36,19 @@ export const TITLES:PrestigeTitle[]=[
  title('wildsHaste','Desert Wind','Ashen Wilds',req('best','courtHasteClear',1,'complete a hunt with Wayfarer at rank 3')),
  title('wildsTempo','A Thousand Cuts','Ashen Wilds',req('best','courtTempoClear',1,'complete a hunt with Rending Rhythm at rank 3')),
  title('wildsDuration','The Lingering Catastrophe','Ashen Wilds',req('best','courtDurationClear',1,'complete a hunt with Enduring Power at rank 3')),
- ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different festival days with one champion: finish Stage ${gate.sourcePhase+1} ${gate.ending==='overwhelmed'?'naturally ':''}after ≥${Math.floor(gate.minSeconds/60)}:${String(gate.minSeconds%60).padStart(2,'0')} and ≥${gate.minKills.toLocaleString()} kills each day`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion'))))
+ ...[
+  ['titan','Titan','Dune Shatterer','Faultline Sovereign','Adamant Colossus Bane','courtFissure',500,'Fissure kills'],
+  ['devourer','Devourer','Ashen Stalker','Feast of the Wilds','Colossus Eater','courtDevour',2000,'prey consumed'],
+  ['calamity','Calamity','Scourge of the Sands','Desert Cataclysm','Colossus Unmade','courtMagic',10000,'spell kills'],
+  ['overlord','Overlord','Warden of Fallen Courts','Legion of Ash','Colossus Usurper','courtOwned',5000,'servant kills'],
+  ['sovereign','Sovereign','Crown of the Wilds','Ashen Spellblade','Colossus Kingslayer','courtBeam',3000,'Death Beam kills'],
+  ['reaper','Reaper','Scythe of the Sands','Harvest Moon','Colossus Soulreaper','courtReaped',5000,'scythe-power kills']
+ ].flatMap(([id,champion,hunter,adept,bane,metric,target,label])=>[
+  {...title(id+'WildsHunter',String(hunter),champion+' · Ashen Wilds',req(String(id),'courtClears',3,'completed hunts'),req(String(id),'courtGuards',120,'guards broken')),stage:1},
+  {...title(id+'WildsArt',String(adept),champion+' · Ashen Wilds',req(String(id),String(metric),Number(target),String(label)+' in Stage 2'),req(String(id),'courtClears',5,'completed hunts')),stage:1},
+  {...title(id+'WildsBane',String(bane),champion+' · Ashen Wilds',req(String(id),'courtColossusClears',5,'completed hunts with the Colossus slain'),req(String(id),'courtCaptains',100,'captains slain')),stage:1}
+ ]),
+ ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different qualifying days with one champion (≥8:30 and ≥15,000 kills each), OR 100 passage points + 6 finished runs + one 8-minute run with one original champion`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion'))))
 ];
 export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return !gate?0:gate.kind==='daily'?(r.metric==='days'?trialDays(p.trials,gate):0):masteryProgress(gate,p,masteryChampion(gate,p)).find(g=>g.metric===r.metric)?.value||0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
 export function titleProgress(p:Progression,t:PrestigeTitle){return t.requirements.map(r=>({...r,value:progressValue(p,r)}));}

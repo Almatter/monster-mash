@@ -1,3 +1,4 @@
+import {GATE_CHAMPIONS,gatebreakerExperience} from './gatebreaker.ts';
 // Add later stages here when their challenge, opening date, and map are ready.
 // The same title + server-time gate drives every selectable stage after the first.
 type GateBase={phase:number;sourcePhase:number;titleId:string;title:string;opensAt:string|null;ready?:boolean};
@@ -23,7 +24,7 @@ export function trialFeedback(gate:DailyGate,trials:StageTrials,run:StageRun,end
 export type GateProgress={titles:Record<string,string>;trials:StageTrials;archetypes?:Record<string,Record<string,number>>};
 export function masteryProgress(gate:MasteryGate,p:GateProgress,champion:string){const kit=p.archetypes?.[champion]||{};return gate.goals.map(goal=>({...goal,value:goal.metric==='clears'?(kit.courtClears||0):goal.metric==='colossi'?(kit.courtColossusClears||0):MASTERY_BOONS.filter(b=>(kit[b.metric]||0)>0).length}));}
 export function masteryChampion(gate:MasteryGate,p:GateProgress){return Object.keys(p.archetypes||{}).sort((a,b)=>{const score=(id:string)=>masteryProgress(gate,p,id).reduce((n,r)=>n+Math.min(1,r.value/r.target),0);return score(b)-score(a);})[0]||'';}
-export function gateChallengeComplete(gate:StageGate,p:GateProgress){return gate.kind==='daily'?trialDays(p.trials,gate)>=gate.days:Object.keys(p.archetypes||{}).some(id=>masteryProgress(gate,p,id).every(r=>r.value>=r.target));}
+export function gateChallengeComplete(gate:StageGate,p:GateProgress){return gate.kind==='daily'?trialDays(p.trials,gate)>=gate.days||gate.titleId==='gatebreaker'&&GATE_CHAMPIONS.some(id=>gatebreakerExperience(p,id).complete):Object.keys(p.archetypes||{}).some(id=>masteryProgress(gate,p,id).every(r=>r.value>=r.target));}
 export function stageAccess(phase:number,progress:GateProgress,serverTime:number|null){
  if(phase===0)return 'open' as const;const gate=gateForStage(phase);if(!gate||gate.ready===false||!gate.opensAt)return 'future' as const;
  if(!progress.titles[gate.titleId]||!gateChallengeComplete(gate,progress))return 'title' as const;
