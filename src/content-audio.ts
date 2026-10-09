@@ -24,3 +24,5 @@ CUES['fissure.hit']={bus:'sfx',priority:3,gap:.48,gain:.85};
 for(const m of Object.values(MONSTERS))CUES['basic.'+m.id]={bus:'sfx',priority:1,gap:.15,...(m.basic.ranged?{frequency:m.id==='calamity'?290:220,duration:.07}:{})};
 export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'results'|'boon';
 export type AudioCatalog={sfx?:Record<string,string[]>;music?:Partial<Record<MusicState,{file:string;loopStart?:number;loopEnd?:number}>>};
+
+CUES.colossusArrival={bus:'sfx',priority:10,gap:5};CUES.realmTeleport={bus:'sfx',priority:5,gap:.2};CUES.wolfLanding={bus:'sfx',priority:5,gap:.2};

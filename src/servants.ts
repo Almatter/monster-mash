@@ -1,6 +1,6 @@
 import type {Game,Enemy} from './simulation.ts';
 import {ENEMIES} from './data.ts';
-import {realmSteer} from './titan-realm-map.ts';
+import {realmSteer,realmCachedSteer,moveRealm} from './titan-realm-map.ts';
 import {courtSteer} from './court-map.ts';
 import {courtContactScale} from './stage-two.ts';
 export type Servant={active:boolean;x:number;y:number;life:number;hp:number;hitTimer:number;source:'controlled'|'summoned';timer:number;search:number;target:Enemy|null;serial:number};
@@ -15,7 +15,7 @@ export function updateServants(g:Game,dt:number){
  for(let i=0;i<g.servants.length;i++){const s=g.servants[i];if(!s.active)continue;s.life-=dt;if(s.life<=0){s.active=false;s.target=null;continue;}s.timer-=dt;s.search-=dt;
   s.hitTimer-=dt;if(s.hitTimer<=0){let attacker:Enemy|null=null;g.nearby(s.x,s.y,34,e=>{if(!attacker&&Math.hypot(e.x-s.x,e.y-s.y)<ENEMIES[e.kind].radius+18)attacker=e;});if(attacker){s.hp-=ENEMIES[(attacker as Enemy).kind].damage*courtContactScale(attacker)*.55;s.hitTimer=.65;if(s.hp<=0){s.active=false;s.target=null;g.effect(s.x,s.y,'blood',24,.3);continue;}}}
   if(s.search<=0){if(s.target?.active&&s.target.serial===s.serial)claims.set(s.serial,Math.max(0,(claims.get(s.serial)||0)-1));const sight=ownerThreat?360:700;s.search=.25;s.target=null;let best=Infinity;g.nearby(s.x,s.y,sight,e=>{const d=Math.hypot(e.x-s.x,e.y-s.y),claimed=claims.get(e.serial)||0,rank=d-(e.kind==='titan'?260:e.kind==='elite'?100:0)+claimed*(e.kind==='titan'?40:e.kind==='elite'?110:300);if(d<=sight&&rank<best){best=rank;s.target=e;s.serial=e.serial;}});if(s.target)claims.set(s.serial,(claims.get(s.serial)||0)+1);}
-  const target=s.target?.active&&s.target.serial===s.serial?s.target:null,patrol=i*2.399963229728653+g.time*.06,tx=target?.x??g.player.x+(ownerThreat?0:Math.cos(patrol)*85),ty=target?.y??g.player.y+(ownerThreat?0:Math.sin(patrol)*85),dx=tx-s.x,dy=ty-s.y,d=Math.hypot(dx,dy)||1;const direction=g.realm?realmSteer(s.x,s.y,tx,ty):g.court?courtSteer(s.x,s.y,tx,ty):{x:dx/d,y:dy/d};s.x+=direction.x*180*dt;s.y+=direction.y*180*dt;if(g.court||g.realm)g.slideArena(s,16);
+  const target=s.target?.active&&s.target.serial===s.serial?s.target:null,patrol=i*2.399963229728653+g.time*.06,tx=target?.x??g.player.x+(ownerThreat?0:Math.cos(patrol)*85),ty=target?.y??g.player.y+(ownerThreat?0:Math.sin(patrol)*85),dx=tx-s.x,dy=ty-s.y,d=Math.hypot(dx,dy)||1;const direction=g.realm?realmCachedSteer(s,tx,ty,g.time):g.court?courtSteer(s.x,s.y,tx,ty):{x:dx/d,y:dy/d};const from={x:s.x,y:s.y};s.x+=direction.x*180*dt;s.y+=direction.y*180*dt;if(g.realm)moveRealm(s,from,16);else if(g.court)g.slideArena(s,16);
   if(target&&d<75&&s.timer<=0){s.timer=.7;g.area(s.x,s.y,65,95,s.source);g.effect(s.x,s.y,'servant',65,.2);}
  }
  g.corruptionTick-=dt;if(g.corruptionTick<=0){g.corruptionTick=.5;for(const e of g.enemies)if(e.active&&(e.corruptUntil||0)>g.time)g.damage(e,18*g.powerScale(),'dot');}

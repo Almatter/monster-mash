@@ -1,0 +1,2 @@
+import {readdir} from 'node:fs/promises';import {execFileSync} from 'node:child_process';
+let checked=0;async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){const path=dir+'/'+entry.name;if(entry.isDirectory())await walk(path);else if(path.endsWith('.js')){execFileSync(process.execPath,['--check',path],{stdio:'pipe'});checked++;}}}await walk('dist/src');console.log('Parsed '+checked+' browser modules.');

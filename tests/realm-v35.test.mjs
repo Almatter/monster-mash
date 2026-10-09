@@ -17,7 +17,7 @@ test('new guardians reserve seats in a full crowd and titan warnings remain stri
  g.player.x=0;g.player.y=200;g.realm.engaged=true;g.realm.boss.timer=0;g.realm.zones=Array.from({length:11},()=>({x:0,y:0,radius:100,warning:100,life:1,damage:1,hit:false}));realmEnemyMotion(g,g.realm.boss,1/60);assert.equal(g.realm.zones.length,12);
 });
 test('restoring Titan native powers keeps the stage Fissure kit',()=>{
- const g=new Game(3,{monsterId:'titan'},2);g.seedOpening();const s=REALM_GROTTOS[0];g.player.x=s.x;g.player.y=s.y-150;g.realm.shrines[0].cleared=true;g.powers[2]=ABILITIES.soulwrit;g.relicOwners[2]='overlord';assert.ok(restoreNativePower(g,2));assert.equal(g.powers[2].id,'faultline');
+ const g=new Game(3,{monsterId:'titan'},2);g.seedOpening();const s=REALM_GROTTOS[0];g.player.x=s.x;g.player.y=s.y-150;g.realm.shrines[0].cleared=true;g.realm.relics.find(r=>r.shrine===0).shrine=null;g.powers[2]=ABILITIES.soulwrit;g.relicOwners[2]='overlord';assert.ok(restoreNativePower(g,2));assert.equal(g.powers[2].id,'faultline');
 });
 test('Bloodmoon Reign visits different visible enemies and cannot chain beyond its original view',()=>{
  const g=new Game(3,{monsterId:'lycanthrope'},1);g.seedOpening();g.court.initialized=true;g.court.camps=[];g.enemies.forEach(e=>e.active=false);g.alive=0;g.player.x=g.player.y=0;g.targetView={x:500,y:300};
@@ -27,7 +27,7 @@ test('native core powers expose guardians for all seven bodies; basic hits and f
  for(const id of Object.keys(MONSTERS)){
   const g=new Game(17,{monsterId:id},2);g.seedOpening();const e=g.spawn('brute');Object.assign(e,{x:0,y:0,hp:1000,maxHp:1000,realm:{role:'guardian',shrine:0,homeX:0,homeY:0,variant:0}});
   assert.equal(realmDamage(g,e,10000,'direct'),900);e.hp=100;assert.equal(realmDamage(g,e,10000,'direct'),0);
-  g.realm.castNature=id;g.realm.castAbility=g.powers[1].id;assert.equal(realmDamage(g,e,10000,'direct'),10000);assert.equal(e.realm.exposedUntil,g.time+5);
+  g.realm.castNature=id;g.realm.castAbility=g.powers[1].id;assert.equal(realmDamage(g,e,10000,'direct'),id==='titan'?17000:10000);assert.equal(e.realm.exposedUntil,g.time+5);
  }
 });
 test('native attacks cannot open titan layers even when they belong to the required nature',()=>{
@@ -36,10 +36,10 @@ test('native attacks cannot open titan layers even when they belong to the requi
 test('known relics can only be equipped at their home altar and retain their decoration',()=>{
  const g=new Game(7,{monsterId:'titan'},2),r=g.realm.relics[0],other=g.realm.relics[1];for(const shrine of g.realm.shrines)shrine.cleared=true;r.known=other.known=true;
  const at=REALM_GROTTOS[other.shrine];g.player.x=at.x;g.player.y=at.y-150;assert.equal(equipRelic(g,r.id,0),false);
- const home=REALM_GROTTOS[r.shrine];g.player.x=home.x;g.player.y=home.y-150;assert.ok(claimRelic(g,r.shrine));assert.ok(equipRelic(g,r.id,0));assert.equal(g.realm.shrines[r.shrine].decor,r.nature);
+ const home=REALM_GROTTOS[r.shrine];g.player.x=home.x;g.player.y=home.y-150;const altar=r.shrine;assert.ok(claimRelic(g,altar));assert.ok(equipRelic(g,r.id,0));assert.equal(r.shrine,null);assert.equal(g.realm.shrines[altar].decor,'dormant');
 });
 test('Moonstrider Vault crosses a gap but cannot land in a chasm or outside the map',()=>{
- const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=530;g.player.y=50;const destination={x:430,y:150};assert.equal(insideRealm(480,100,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:600,y:600}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
+ const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=530;g.player.y=50;const destination={x:380,y:130};assert.equal(insideRealm(480,100,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:600,y:600}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
  g.player.x=1920;g.player.y=1536;assert.equal(parkourLanding(g,{x:2600,y:1536}),null);
 });
 test('Howl fears lesser enemies, preserves boss and guardian behavior, and ended games never regenerate',()=>{

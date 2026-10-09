@@ -3,6 +3,7 @@ import {CUES,isDeathCue,isOrganicCue} from './content-audio.ts';
 type Style='tear'|'stone'|'infernal'|'ossuary'|'rift'|'death'|'cataclysm'|'rune'|'fracture'|'tremor'|'howl';
 type Design={style:Style;duration:number;pitch:number;weight:number};
 function design(kind:string):Design{
+ if(kind==='colossusArrival')return {style:'cataclysm',duration:1.7,pitch:39,weight:1};if(kind==='realmTeleport')return {style:'rift',duration:.8,pitch:190,weight:.65};if(kind==='wolfLanding')return {style:'stone',duration:.45,pitch:85,weight:.8};
  if(kind==='ability.moonhowl'||kind==='ability.moonfury')return {style:'howl',duration:kind.endsWith('moonfury')?1.2:.9,pitch:kind.endsWith('moonfury')?170:210,weight:.85};
  if(kind==='ability.wolfbound')return {style:'tear',duration:.35,pitch:220,weight:.55};
  if(kind==='ability.faultline')return {style:'fracture',duration:.78,pitch:92,weight:.9};

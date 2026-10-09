@@ -1,5 +1,5 @@
 export const CHAMPION_VFX:Record<string,{unbound:string;perks:string[]}>={
- lycanthrope:{unbound:'lycanthrope-unbound',perks:['lycanthrope-claw','lycanthrope-parkour','lycanthrope-howl','lycanthrope-fury','lycanthrope-moonrend','lycanthrope-barrier','lycanthrope-hit']},
+ lycanthrope:{unbound:'lycanthrope-unbound',perks:['lycanthrope-claw','lycanthrope-landing','lycanthrope-parkour','lycanthrope-howl','lycanthrope-fury','lycanthrope-moonrend','lycanthrope-barrier','lycanthrope-hit']},
  reaper:{unbound:'reaper-unbound',perks:['reaper-wave','reaper-sweep','reaper-blink','reaper-volley','reaper-eclipse','reaper-siphon']},
  sovereign:{unbound:'sovereign-unbound-aura',perks:['sovereign-rage','sovereign-aegis']},
  titan:{unbound:'titan-unbound-aura',perks:['titan-barrier','titan-cleave']},
