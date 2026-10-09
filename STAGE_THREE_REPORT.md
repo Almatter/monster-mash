@@ -1,103 +1,69 @@
-# Stage 3: TITAN — v36 tester build
+# Stage 3 tester — v37
 
-Updated October 8, 2026. This iteration addresses movement, shrine travel, readable puzzle clues, collision, warnings, pacing and grading.
+This update is intended for `/test/`, with the existing Stage 2/3 test aliases. Official Stage 3 remains unavailable until its configured opening, Gatebreaker requirement and readiness flag allow it. Existing player progress, title IDs, gates, personal bests and previously issued run codes are retained.
 
-## Play and access
+## Controls and presentation
 
-- Shared tester: https://almatter.github.io/monster-mash/test/
-- Local: http://127.0.0.1:4173/test/
-- `/stage2-test/` and `/stage3-test/` remain aliases; all three implemented stages and seven champions are unlocked for testers. Stage 4 remains unavailable.
-- PC: WASD/arrows; Q/E/R/1–4 for powers. Space inspects a nearby inscription or altar; otherwise it activates the ultimate. Targeted powers accept a second button/key press or a battlefield click. Arrow keys navigate relic and portal choices; Enter/Space selects; Escape returns.
-- Mobile: thumb stick, powers and the contextual relic/inscription button. Suggested targeting accepts a repeated tap or a battlefield tap.
+Vault's invalid landing now uses a generated crossed-claw lunar asset instead of a red geometric circle. Bloodmoon and Clinch have a remaining-time bar above the controls. Bloodmoon allows ordinary movement when it has no visible target, while its protection and regeneration continue until its timer expires.
 
-Official Stage 1/2 saves, title IDs, progression and personal bests are retained. Tester progress remains in its separate `mm-stage2-test-*` namespace. Official Stage 3 remains unavailable until its readiness flag is enabled, its October 15 opening arrives and Ashen Gatebreaker is earned. Lycanthrope remains concealed until Stage 3 access, then usable in all three stages. Official Stage 4 remains unavailable until its own map/readiness, October 22 opening and Deep Gatebreaker requirements are met.
+The first relic window now handles arrows, Enter, Space and Escape explicitly, including lost focus and opening-key release. PC can select a relic, choose a power slot, restore a native power at an empty altar, and teleport without using the mouse. Touch buttons provide the same choices.
 
-## Movement and scenery
-
-Floor collision now follows elliptical platform footprints and narrower illustrated bridges. Swept collision prevents ordinary movement, dashes, knockback, enemies and servants from snapping across chasms. Actor feet are aligned to these footprints. Vault intentionally crosses nonwalkable gaps but still requires a safe landing inside the map.
-
-Original generated gates visibly seal outgoing exterior bridges. Generated mana mist veils sector joins and shrouds the exterior. Joins are softened, not a claim that nine independent paintings have become a perfectly continuous painting. Generated titan warning glyphs replace placeholder circle outlines. Terrain is still packed offline into 100 streamed 512-pixel WebP tiles; desktop holds at most 32, touch 24. Old map versions remain available to existing cached builds. Moving actors replan navigation at eight Hz while collision still runs each frame.
+The rotated gate graphics were removed. The actual illustrated outer bridge approaches remain walkable up to a closer baked mana shroud. Map collision and floor routes reach these visible bridge ends. No gate blocks an altar or points sideways. The map remains sector based with bounded terrain caching.
 
 ## Lycanthrope
 
-Moonstrider Vault now travels for 0.64 seconds with an airborne arc and forward flip. Its heroic landing deals area damage and stronger knockback with new lunar impact art and sound. Bloodmoon Reign runs through visible targets using her run animation, damages enemies crossed along its route, remains immune to damage throughout its duration and provides recovery. It prioritizes major threats between passes. It no longer teleports between victims.
+Ravage is now **Savage Clinch** (Clinch). Its internal ID is retained for existing records and codes. She captures a nearby ordinary enemy, carries its real sprite, and sweeps it through surrounding enemies while moving. The held body adds reach; heavier bodies hit harder. She gains 8% movement speed and 15% damage protection while holding it. It breaks after its duration and credits one defeat. Release II permits brutes; Final Release permits elites below 35% health. Captains, guardians and titans cannot be grabbed.
 
-Howl and innate regeneration still create recovery opportunities; native guardians, captains and titans resist fear. Stage 2 captain/Colossus tuning compensates for Bloodmoon's travel time. The nature button now fits Lycanthrope's full name.
+Captured enemies are excluded from normal targeting, movement, damage and pool reuse. Swapping powers releases the captive safely. Knockback velocity is cleared so a held body cannot create accidental endless collision damage.
 
-## Relics, clues and occupation
+Final three-seed Lycanthrope measurements:
 
-Seven grottos surround the central titan. Three distinct guardians protect each; native core abilities expose their wards. All seven natures contribute a fifth altar power. The four required natures and relic locations shuffle each run; only fifth powers open titan defenses. Each has bounded recovery or protection to support mixed kits.
+| Stage | Measurement | Average | Range | Kills | Dominance |
+|---|---|---:|---|---:|---:|
+| 1 | Survival | 11:33 | 11:13–11:59 | 31,876 | 2,920,762 |
+| 2 | Full hunt including Colossus | 9:42 | 9:11–10:23 | 5,829 | 12,945,969 |
+| 3 | Solution-informed clear | 7:15 | 5:55–8:03 | Not the main scoring goal | 26,050,000 |
 
-The relic screen shows only the relic physically at the current altar. An equipped relic leaves that altar; swapping it for another deposits the outgoing relic at the current shrine. Decoration follows the current occupant. Restoring a native power requires an empty cleared altar, so two relics cannot silently occupy one place.
+Stage 2 and Stage 3 clear rates are 3/3, with all three Stage 2 Colossi defeated. These are seeded automated policies, not human play averages. Stage 1/2 changes to this kit do not alter the other champions' abilities.
 
-Activating a relic awakens its generated portal. Activated, unoccupied portals connect cleared grottos. An activated shrine left unvisited for 150 seconds can be occupied once per run by three ordinary raiders. They block its portal and relic interaction until dispersed, without erasing discoveries or rerunning the guardian encounter. This makes returning consequential while limiting repeated chores.
+## Relics and scoring
 
-Four numbered bridge inscriptions reveal the defense emblems in order before battle. Grotto emblems hint which relic nature is inside. The player still remembers the order; results and run codes do not include the solution. Intro, pause and altar counsel explain this relationship and the titan's reset boundary. Three seconds outside the seal restores all health and defenses.
+Every altar randomly offers one of its champion's five powers: the four existing powers or the fifth relic power. Nature, ability, shrine assignment, titan defenses and titan appearance vary independently. The four required natures always have an obtainable offering. Invoking an equipped matching relic near the titan resonates with its defense, including support powers; native powers alone do not open it. This avoids unsolvable rolls involving summons, buffs, fear or movement instead of direct damage. Each newly breached layer grants a finite recovery reserve once; resets cannot farm it.
 
-Unbroken Resolve and First Insight can now be planned from clues. Lingering attacks from a prior layer do not count as a fresh wrong guess; deliberate incorrect fifth-power trials do. Resetting cannot farm layer or insight rewards. Discerning Collector rewards discovering only the four required relics, while Read the Depths rewards inspecting inscriptions.
+Guardians still require the body's native core powers to expose their wards. Borrowed powers use the original body identity for this check, so the donor's temporary ability execution cannot pretend to be a native power.
 
-Stage 3 spawns varied lesser enemies immediately, including thralls, hounds, spitters, wings and brutes. Ordinary enemies gradually reach a cap of 48, the total crowd stays at 64, and titan warning zones stay at 12. Guardian arrivals reserve their places. Overlord has more varied targets throughout travel.
+Precision replaces the reward for clearing all grottos. Each of the four needed grottos contributes 2,100,000 to an 8,400,000 pool. Every unrelated cleared grotto deducts 900,000 from that pool. Partial unrelated guardian kills give no objective score. Discerning Collector requires only the four needed grottos and relics. Unbroken Resolve no longer tells players where to look for the solution.
 
-## Dominance and grades
+The maximum remains **26,050,000**: precision 8,400,000, defenses 6,000,000, victory 6,000,000, feats 5,600,000 and combat 50,000. Grade uses this finite maximum. The result screen, copied summary and saved card show precision instead of encouraging seven clears. Historical v34–v36 results retain their original score policies and payload shapes.
 
-Stage 3 has no speed bonus. Its finite maximum is **26,050,000**:
+## Titan encounter and sustain
 
-| Source | Maximum |
-|---|---:|
-| Seven grotto clears | 8,400,000 |
-| Four defense quarters | 6,000,000 |
-| Titan victory | 6,000,000 |
-| Intelligence feats | 5,600,000 |
-| Ordinary combat | 50,000 |
+The titan actively closes distance and alternates a fast rushing strike, a directional cleave and six clustered eruptions around the player. Generated warnings precede every attack. Rush and cleave directions commit during their windups; the player can dodge rather than circling a stationary boss. The cleave art's origin and direction align with its damage cone. Recovery after an attack gives 1.8× damage, creating a counterattack opportunity. Health is reduced from 750,000 to 280,000 to shorten the grind.
 
-Grade S requires 100%; A 90%, B 80%, C 70%, D 60%, E 50%, F below 50%. Grade, percentage and maximum appear prominently on the result, saved image and copied summary. Each score source shows earned/maximum amounts. Farming ordinary mobs beyond the pool adds no Dominance; resetting cannot duplicate objectives. Issued v34/v35 codes keep their historical budgets and values.
+Heavy damage is capped relative to low-health bodies, preserving existing tank advantages while avoiding disproportionately lethal caster hits. Dodging a rush or cleave restores a small amount of health and ward for every kit, so a randomized loadout without a dedicated healing power remains viable. Eruptions provide 1.35 seconds of warning, enough for the slowest body's movement. They and the crowd remain bounded.
 
-Existing Stage 3 titles, persistent records, champion-specific titles and Deep Gatebreaker remain. Deep Gatebreaker requires eight completed challenges, three victories without resetting, and all seven altar powers used to breach defenses across completed challenges, with one champion and no daily quota. Native Stage 1 feats remain unchanged.
+Calamity's Stage 3 ward trigger adapts to smaller crowds: a six-kill cast rebuilds a smaller ward, using the same 16 ward per kill up to 160 per cast and 240 capacity. Her existing Stage 1/2 sustain and rules are unchanged.
 
-## Existing-stage fixes
+## Encounter measurements and limits
 
-Stage 2 result duration now uses the same ceiling as its clear-speed calculation. This fixes secure run-code rejection for fractional finishes after ten minutes. Error messages distinguish unavailable browser cryptography from an actual validation problem; result progress remains saved.
+The pilot knows the solution, reads all four inscriptions, attempts only required grottos, fights while travelling, recovers at altars, assembles powers locally, and avoids telegraphed attacks. Real cooldowns, movement, damage and relic custody apply. Collateral clearing can lose precision. Failed runs are included in clear rates and grades; averages below include successful clears only.
 
-Vortex no longer drags or consumes higher-tier units. Its damage against titans, elites, captains and guardians is capped per tick rather than instantly deleting them; ordinary mob behavior is retained. Calamity's three-seed Stage 1 survival pilot still averages **11:38** after this fix.
-
-The Stage 2 Colossus has a prominent six-second arrival alert with district and encounter window, plus a distinct audible arrival cue. Existing sound/mute preferences are respected.
-
-## Verification and measured pacing
-
-- 281 unit/regression tests pass: local relic custody, one-time occupation, swept floor movement, Vault landing, full-duration Bloodmoon protection, prebattle clues, finite grades, historical code compatibility and higher-tier Vortex damage.
-- Desktop and touch browser checks pass for all seven starts/restarts, loading retries, shrine/portal controls, Space/arrow navigation, ability confirmation, results, saved cards and real run-code generation. Official future-stage access remains hidden/locked.
-- All 21 informed Stage 3 pilots clear and earn S with real cooldowns, movement and damage; every measured result validates and survives authenticated run-code encode/decode.
-- A low-effects, fourfold CPU-throttled stress scene with 49 enemies, 28 allies and ten warning zones has desktop median 7.5 ms / p95 17.1 ms and touch median 5.7 ms / p95 22.6 ms for simulation plus drawing. Caches stay within their bounds. This is browser emulation, not a low-end phone hardware or thermal guarantee.
-- Untouched Overlord, Devourer, Titan, Sovereign and Reaper simulations match the deployed baseline exactly in both existing stages under identical seeded inputs. Calamity and Lycanthrope have the explicitly requested changes.
-- Result portraits are requested for the exact finished palette and shown only when recoloring is complete.
-- Production build, all 60 emitted JavaScript modules, relative routes, cache versioning and Pages artifact checks pass.
-
-Lycanthrope's three-seed averages:
-
-| Stage | Measurement | Average | Kills | Dominance |
-|---|---|---:|---:|---:|
-| 1 | Survival | 10:11 | 28,359 | 2,567,342 |
-| 2 | Full hunt, including Colossus | 12:16 | 7,541 | 11,646,742 |
-| 3 | Informed perfect clear | 11:38 | Not a scoring goal | 26,050,000 |
-
-Stage 2 clears and Colossus victories are both 3/3; clear range 10:33–13:23. Stage 1 survival range is 9:50–10:52. These are seeded simulation policies, not observed human averages.
-
-Stage 3 pilots inspect all four clues, clear all seven grottos, discover only required relics, reclaim occupied shrines, assemble the kit locally and dodge warnings. They know the solution in advance, so these are lower bounds on human puzzle solving. Across all natures the average is about 10:07; fast casters can finish earlier. Discovery, memory errors and backtracking still need tester feedback for the desired 10–12-minute human window.
-
-| Nature | Clears | Mean informed clear | Grades |
+| Nature | Clears | Mean successful clear | Grades across seeds 17 / 83 / 127 |
 |---|---:|---:|---|
-| Lycanthrope | 3 / 3 | 11:38 | S / S / S |
-| Overlord | 3 / 3 | 10:00 | S / S / S |
-| Calamity | 3 / 3 | 8:32 | S / S / S |
-| Devourer | 3 / 3 | 9:34 | S / S / S |
-| Titan | 3 / 3 | 10:58 | S / S / S |
-| Sovereign | 3 / 3 | 9:45 | S / S / S |
-| Reaper | 3 / 3 | 10:25 | S / S / S |
+| Lycanthrope | 3 / 3 | 7:15 | S / S / S |
+| Overlord | 2 / 3 | 5:48 | A / B / F |
+| Calamity | 2 / 3 | 4:34 | S / A / F |
+| Devourer | 3 / 3 | 6:22 | S / S / S |
+| Titan | 3 / 3 | 6:58 | S / S / S |
+| Sovereign | 2 / 3 | 6:07 | A / A / F |
+| Reaper | 3 / 3 | 6:11 | S / S / S |
 
-Her kit now has a distinct movement identity: safe-floor gap traversal with a landing impact, fear to create space, continuous regeneration, and an invulnerable running pursuit ultimate. It shares familiar combat vocabulary with Devourer and Reaper, but its continuous movement and terrain use differ substantially from their lunge and teleport.
+Every body achieves at least A in this sample. Randomized kits and the aggressive encounter still produce failures for some bodies; this is not proof of equal win rates. The roughly five-to-eight-minute informed clears are lower bounds, not evidence that the desired 10–12-minute human puzzle-solving window is met. Discovery, memory and backtracking need tester feedback. The boss fight is substantially shorter than the prior seven-minute grind.
 
-## Art and reproducibility
+## Verification and assets
 
-New production source art, authoring briefs, packed paths and the packing command are in `art-source/stage3/PROMPTS-V36.md`. Existing character, guardian, titan-part, sector and material-guide sources remain. The original weird Stage 3 procedural score (inharmonic bells, suspended harmony, displaced pulses) remains.
+293 unit/regression tests pass, including 2,000 seeded offering checks, all 35 donor powers breaching on another body, captive lifecycle, valid bridge routes, dodge mechanics, guardian ownership, precision deductions, stage-specific sustain, historical codes and progress/access preservation. PC and touch checks cover first-open keyboard selection and restoration, Vault art and landing, Bloodmoon movement/protection/countdown, Clinch art/countdown, all seven starts/restarts, local swaps/portals, failed-art loading recovery, S result exports and Stage 2 run-code generation. Build, emitted browser module parsing and Pages artifact checks pass.
 
-Commands: `node tools/build.mjs`, `node tools/check-browser-modules.mjs`, `node tools/check-pages-build.mjs`, `node --test tests/*.test.mjs`, `node tests/titan-realm-browser.mjs`, `node tests/realm-v36-browser.mjs`, `node tests/lycan-controls-browser.mjs`, `node tests/hunt-result-code-browser.mjs`, `node tools/measure-titan-realm.mjs`, and `node tests/stage-two-balance.mjs`. Browser checks require the existing Playwright and Edge paths. Seeded measurements and screenshots are saved under ignored `test-results/`.
+New art uses the built-in ImageGen tool with transparent backgrounds. Source PNGs, runtime WebPs and full prompts are listed in `art-source/stage3/PROMPTS-V37.md`. `tools/pack-realm-v37.mjs` reproducibly packs the existing sector art, closer mana shroud and new effects. No runtime procedural placeholder replaces the requested artwork.
+
+Reproduction: `node --test tests/*.test.mjs`, `node tools/build.mjs`, `node tools/check-browser-modules.mjs`, `node tools/check-pages-build.mjs`, `node tests/lycan-controls-browser.mjs`, `node tests/realm-v37-browser.mjs`, `node tests/titan-realm-browser.mjs`, `node tests/hunt-result-code-browser.mjs`, `node tools/measure-titan-realm.mjs`, `node tests/balance.mjs v37-lycan lycanthrope`, and the Lycanthrope subset of `tests/stage-two-balance.mjs`. Measurements and visual artifacts are saved under ignored `test-results/`.

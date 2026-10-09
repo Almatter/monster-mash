@@ -14,7 +14,7 @@ import {encodeRun,decodeRun} from '../src/run-code.ts';
 const idle={x:0,y:0,aimX:0,aimY:0,aiming:false};
 test('new guardians reserve seats in a full crowd and titan warnings remain strictly bounded',()=>{
  const g=new Game(9,{monsterId:'sovereign'},2);g.seedOpening();const shrine=REALM_GROTTOS[0];g.player.x=shrine.x;g.player.y=shrine.y;g.realm.spawnTimer=100;for(let i=1;i<TITAN_REALM.maxCrowd;i++){const e=g.spawn('thrall');e.realm={role:'attendant',homeX:0,homeY:0,variant:4};}assert.equal(g.alive,64);updateTitanRealm(g,0);assert.equal(g.enemies.filter(e=>e.active&&e.realm?.role==='guardian').length,3);assert.equal(g.alive,64);
- g.player.x=0;g.player.y=200;g.realm.engaged=true;g.realm.boss.timer=0;g.realm.zones=Array.from({length:11},()=>({x:0,y:0,radius:100,warning:100,life:1,damage:1,hit:false}));realmEnemyMotion(g,g.realm.boss,1/60);assert.equal(g.realm.zones.length,12);
+ g.player.x=0;g.player.y=200;g.realm.engaged=true;g.realm.boss.timer=0;g.realm.attackIndex=2;g.realm.zones=Array.from({length:11},()=>({x:0,y:0,radius:100,warning:100,life:1,damage:1,hit:false}));realmEnemyMotion(g,g.realm.boss,1/60);realmEnemyMotion(g,g.realm.boss,1);assert.equal(g.realm.zones.length,12);
 });
 test('restoring Titan native powers keeps the stage Fissure kit',()=>{
  const g=new Game(3,{monsterId:'titan'},2);g.seedOpening();const s=REALM_GROTTOS[0];g.player.x=s.x;g.player.y=s.y-150;g.realm.shrines[0].cleared=true;g.realm.relics.find(r=>r.shrine===0).shrine=null;g.powers[2]=ABILITIES.soulwrit;g.relicOwners[2]='overlord';assert.ok(restoreNativePower(g,2));assert.equal(g.powers[2].id,'faultline');
@@ -31,7 +31,7 @@ test('native core powers expose guardians for all seven bodies; basic hits and f
  }
 });
 test('native attacks cannot open titan layers even when they belong to the required nature',()=>{
- for(const id of Object.keys(MONSTERS)){const g=new Game(1,{monsterId:id},2);g.seedOpening();g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.pattern[0]=id;g.realm.castNature=id;g.realm.castAbility=g.powers[2].id;assert.equal(realmDamage(g,g.realm.boss,1000,'direct'),0);g.realm.castAbility=FIFTH_POWERS[id];assert.equal(realmDamage(g,g.realm.boss,1000,'direct'),1000);}
+ for(const id of Object.keys(MONSTERS)){const g=new Game(1,{monsterId:id},2);g.seedOpening();g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.pattern[0]=id;g.realm.castNature=id;g.realm.castAbility=g.powers[2].id;assert.equal(realmDamage(g,g.realm.boss,1000,'direct'),0);const r=g.realm.relics.find(r=>r.nature===id);r.ability=FIFTH_POWERS[id];r.shrine=null;assert.equal(realmDamage(g,g.realm.boss,1000,'relic:'+id+':'+r.ability),1000);}
 });
 test('known relics can only be equipped at their home altar and retain their decoration',()=>{
  const g=new Game(7,{monsterId:'titan'},2),r=g.realm.relics[0],other=g.realm.relics[1];for(const shrine of g.realm.shrines)shrine.cleared=true;r.known=other.known=true;
@@ -61,5 +61,5 @@ test('stage-specific persistent records never earn in the wrong scenario and pri
  const p=normalizeProfile(null),g=new Game(7,{monsterId:'titan'},2);assert.deepEqual(updateRecords(p,{realmClear:1,...g.score.metrics()},g.identity,undefined,0),[]);assert.ok(updateRecords(p,{realmClear:1,...g.score.metrics()},g.identity,undefined,2).includes('realmClear'));assert.ok(normalizeProfile(JSON.parse(JSON.stringify(p))).records.realmClear.unlockedAt);
 });
 test('shipped v34 relic result codes remain valid after fifth-power rules change',async()=>{
- const g=new Game(1,{monsterId:'sovereign'},2);g.seedOpening();g.update(1/60,idle);const run={version:4,rules:'2026.10-v34-titan-test',phase:2,name:g.identity.name,title:g.identity.title,monsterId:'sovereign',colors:g.identity.colors,seed:g.seed,duration:0,score:0,kills:0,wave:1,elites:0,titans:0,multi:0,peak:1,feats:{},ended:'2026-10-08T12:00:00Z',reason:'retired',release:4,build:'1234567890abcdef',testing:true,realm:realmSummary(g)};assert.equal((await decodeRun(await encodeRun(run))).rules,run.rules);
+ const g=new Game(1,{monsterId:'sovereign'},2);g.seedOpening();g.update(1/60,idle);const run={version:4,rules:'2026.10-v34-titan-test',phase:2,name:g.identity.name,title:g.identity.title,monsterId:'sovereign',colors:g.identity.colors,seed:g.seed,duration:0,score:0,kills:0,wave:1,elites:0,titans:0,multi:0,peak:1,feats:{},ended:'2026-10-08T12:00:00Z',reason:'retired',release:4,build:'1234567890abcdef',testing:true,realm:realmSummary(g)};delete run.realm.precision;assert.equal((await decodeRun(await encodeRun(run))).rules,run.rules);
 });
