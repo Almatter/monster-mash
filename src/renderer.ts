@@ -19,7 +19,7 @@ import {AssetLibrary} from './assets.ts';
 export class Renderer {
  targeting:{x:number;y:number;radius:number;valid:boolean;kind?:'meteor'|'vortex'|'reaper-blink'|'reaper-volley'|'lycanthrope-parkour'}|null=null;canvas:HTMLCanvasElement;ctx:CanvasRenderingContext2D;width=0;height=0;viewWidth=0;viewHeight=0;scale=1;dpr=1;low=false;shake=true;autoLow=false;fxLevel=0;slowTime=0;fastTime=0;
  adapt(milliseconds:number,dt:number,load=0){const target=milliseconds>34?3:milliseconds>27?2:milliseconds>22||load>650?1:0;if(target>this.fxLevel){this.slowTime+=dt;this.fastTime=0;if(this.slowTime>1.5){this.fxLevel++;this.slowTime=0;}}else if(target<this.fxLevel){this.fastTime+=dt;this.slowTime=0;if(this.fastTime>5){this.fxLevel--;this.fastTime=0;}}else{this.slowTime=0;this.fastTime=0;}this.autoLow=this.fxLevel>0;}
- realmArt=new TitanRealmArt();realmTerrain=new CourtTerrain(REALM_CHUNKS,'assets/stage3/map-v37');
+ realmArt=new TitanRealmArt();realmTerrain=new CourtTerrain(REALM_CHUNKS,'assets/stage3/map-v38');
  assets=new AssetLibrary();previewIdentity:Identity=createIdentity();
  sprites=new Map<string,CanvasImageSource>();vfx=new Map<string,HTMLImageElement>();requestedVfx=new Set<string>(); background:HTMLCanvasElement;adaptationBackground:HTMLCanvasElement;groundPattern:CanvasPattern|null=null;adaptationPattern:CanvasPattern|null=null;brazier:HTMLImageElement|null=null;
  constructor(canvas:HTMLCanvasElement){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false})!;this.background=this.makeGround();this.adaptationBackground=this.makeGround();this.loadFloor('assets/arena/floor.webp',this.background,0);const brazier=new Image();brazier.onload=()=>this.brazier=brazier;brazier.src='assets/arena/brazier.webp';this.loadVfx('hostile-bolt');this.loadVfx('hostile-elite');this.loadVfx('hostile-titan');this.loadVfx('hostile-elite-warning');this.loadVfx('hostile-titan-warning');this.loadVfx('enemy-hit');this.resize();for(const [kind,def] of Object.entries(ENEMIES)){this.sprites.set(kind,this.makeMonster(def.color,def.radius,kind));this.loadEnemy(kind);}}
@@ -91,7 +91,7 @@ export class Renderer {
   const cx=g?g.player.x:0,cy=g?g.player.y:0;
   c.save();if(g){c.beginPath();c.rect((w-this.viewWidth)/2,(h-this.viewHeight)/2,this.viewWidth,this.viewHeight);c.clip();}c.translate(g?w/2:w*.77,g?h/2:h*.45);c.scale(this.scale,this.scale);c.translate(-cx,-cy);
   if(g&&this.shake&&g.shake>0)c.translate(Math.sin(time*61)*g.shake,Math.cos(time*47)*g.shake*.6);
-  const stageTwo=g?.phase===1,extent=Math.max(this.viewWidth,this.viewHeight)/this.scale;if(stageTwo)this.loadCourtArt();c.fillStyle=stageTwo?(this.adaptationPattern??=c.createPattern(this.adaptationBackground,'repeat')!):(this.groundPattern??=c.createPattern(this.background,'repeat')!);c.fillRect(cx-extent,cy-extent,extent*2,extent*2);
+  const stageTwo=g?.phase===1,extent=Math.max(this.viewWidth,this.viewHeight)/this.scale;if(stageTwo)this.loadCourtArt();if(g?.realm)this.realmArt.drawBackdrop(c,cx,cy,extent);else{c.fillStyle=stageTwo?(this.adaptationPattern??=c.createPattern(this.adaptationBackground,'repeat')!):(this.groundPattern??=c.createPattern(this.background,'repeat')!);c.fillRect(cx-extent,cy-extent,extent*2,extent*2);}
   if(g?.realm){this.realmTerrain.draw(c,cx,cy,this.viewWidth/this.scale/2,this.viewHeight/this.scale/2);this.realmArt.drawEnvironment(c,g,time);}else if(!stageTwo){
   // Permanent ritual masonry: concentric rings, cardinal gates, inscriptions and braziers.
   c.strokeStyle=stageTwo?'#68b6a05c':'#8060473d';c.lineWidth=3;

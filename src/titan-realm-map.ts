@@ -2,12 +2,15 @@ export type RealmPoint={x:number;y:number};
 export const REALM_CHUNKS={size:512,cols:10,rows:10,left:-2560,top:-2560,cacheLimit:32};
 export const REALM_RING=410;
 export const REALM_START={x:0,y:1030};
+// The outer bridges end at the mana curtain. Capsule caps must stay inside it.
+export const REALM_EDGE=2160;
+export const REALM_BRIDGE_RADIUS=62;
 export const REALM_GROTTOS=[{id:0,x:0,y:-1536,name:'Hollow'},{id:1,x:1536,y:-1536,name:'Veil'},{id:2,x:1536,y:0,name:'Root'},{id:3,x:1536,y:1536,name:'Cleft'},{id:4,x:-1536,y:1536,name:'Deep'},{id:5,x:-1536,y:0,name:'Spire'},{id:6,x:-1536,y:-1536,name:'Silence'}];
 // Each generated sector shares this authored floor footprint. All visible bridge
 // entrances are usable; chasms and ruin walls lie outside these connected floors.
 export const REALM_LANES:{a:RealmPoint;b:RealmPoint;radius:number;yScale?:number}[]=[
  ...[-1536,0,1536].flatMap(y=>[-1536,0,1536].map(x=>({a:{x,y:y-38},b:{x,y:y-38},radius:460,yScale:.89}))),
- ...[-1536,0,1536].flatMap(v=>[{a:{x:-2200,y:v},b:{x:2200,y:v},radius:62},{a:{x:v,y:-2200},b:{x:v,y:2200},radius:62}])
+ ...[-1536,0,1536].flatMap(v=>[{a:{x:-REALM_EDGE+REALM_BRIDGE_RADIUS,y:v-38},b:{x:REALM_EDGE-REALM_BRIDGE_RADIUS,y:v-38},radius:REALM_BRIDGE_RADIUS},{a:{x:v,y:-REALM_EDGE+REALM_BRIDGE_RADIUS},b:{x:v,y:REALM_EDGE-REALM_BRIDGE_RADIUS},radius:REALM_BRIDGE_RADIUS}])
 ];
 const closest=(p:RealmPoint,a:RealmPoint,b:RealmPoint)=>{const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));return {x:a.x+dx*t,y:a.y+dy*t};};
 const buckets=new Map<string,typeof REALM_LANES>();
