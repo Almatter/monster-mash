@@ -14,3 +14,16 @@ test('walking cannot enter the opaque cliff beside the old south approach',()=>{
  for(const [x,y] of [[90,875],[120,800],[180,840],[200,900]])assert.equal(insideRealm(x,y),false,'cliff '+x+','+y);
  for(const route of REALM_PATHS){const from=route.curve[Math.floor(route.curve.length/2)],p={x:from.x+900,y:from.y-900};moveRealm(p,from,23);assert.ok(insideRealm(p.x,p.y,23));}
 });
+
+// Source-floor anchors taken from the two reported screenshots, away from parapets.
+// Check actual swept traversal, not just the existence of a nearby navigation lane.
+test('both reported winding passages allow walking along the visible floor in either direction',()=>{
+ const passages=[
+  {id:0,pixels:[[300,170],[300,128],[320,103],[355,85],[390,71],[430,54],[470,40],[515,26],[560,18],[600,20]]},
+  {id:3,pixels:[[370,390],[400,420],[398,450],[382,480],[350,507],[310,520],[270,527],[232,535],[200,551],[180,571],[160,588],[133,600]]}
+ ];
+ for(const {id,pixels} of passages){const s=REALM_GROTTOS[id],anchors=pixels.map(([x,y])=>({x:s.x+(x-300)*2,y:s.y+(y-300)*2}));for(const route of [anchors,[...anchors].reverse()]){let p={...route[0]};assert.ok(insideRealm(p.x,p.y,27),s.nature+' start');for(const target of route.slice(1)){const from={...p},n=Math.ceil(Math.hypot(target.x-p.x,target.y-p.y)/5);for(let k=1;k<=n;k++){const wanted={x:from.x+(target.x-from.x)*k/n,y:from.y+(target.y-from.y)*k/n},previous={...p};Object.assign(p,wanted);moveRealm(p,previous,27);assert.ok(Math.hypot(p.x-wanted.x,p.y-wanted.y)<.01,s.nature+' blocked floor '+JSON.stringify(wanted));}}}}
+});
+test('the winding decks retain solid parapets and do not permit walking down their cliff faces',()=>{
+ for(const [id,x,y] of [[0,400,125],[0,450,108],[3,270,580],[3,320,570],[3,330,453]]){const s=REALM_GROTTOS[id];assert.equal(insideRealm(s.x+(x-300)*2,s.y+(y-300)*2),false,s.nature+' cliff '+x+','+y);}
+});
