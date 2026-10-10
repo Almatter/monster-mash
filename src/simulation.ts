@@ -121,7 +121,7 @@ export class Game {
   while(this.spawnBank>=1){this.spawnBank--;let roll=this.random()*100,index=0;while(index<4&&roll>=weights[index]){roll-=weights[index];index++;}if(this.alive<this.pressure.cap*(this.court?COURT.crowdCap:1))this.spawn(this.time>=INTRODUCTIONS[kinds[index]]?kinds[index]:'thrall');}
   if(this.court)updateCourt(this,dt);if(this.realm)updateTitanRealm(this,dt);
   const threat=this.court?1+this.court.stats.captains*.04:1+Math.max(0,this.wave-12)*.10+Math.max(0,this.time-540)*.004+Math.max(0,this.time-660)*.025;
-  for(const e of this.enemies){if(!e.active||e.grabbed)continue;const def=ENEMIES[e.kind];let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;e.timer-=dt;e.flash=Math.max(0,e.flash-dt);if((e.fearedUntil||0)>this.time){const from={x:e.x,y:e.y};e.x-=dx/d*125*dt;e.y-=dy/d*125*dt;e.windup=0;if(this.realm)moveRealm(e,from,24);else this.slideArena(e,def.radius);continue;}if(e.realm){realmEnemyMotion(this,e,dt);continue;}
+  for(const e of this.enemies){if(!e.active||e.grabbed)continue;const def=ENEMIES[e.kind];let dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1;e.timer-=dt;e.flash=Math.max(0,e.flash-dt);if((e.fearedUntil||0)>this.time){const from={x:e.x,y:e.y};e.x-=dx/d*125*dt;e.y-=dy/d*125*dt;e.windup=0;if(this.realm)moveRealm(e,from,24,e.realm?.role==='guardian'?e.realm.shrine:undefined);else this.slideArena(e,def.radius);continue;}if(e.realm){realmEnemyMotion(this,e,dt);continue;}
    // Escaped ordinary foes leave without kill credit. Bosses persist in place;
    // never teleport a pursuer closer and undo the player's earned separation.
    if(d>1150&&e.kind!=='elite'&&e.kind!=='titan'&&!e.court){e.active=false;this.alive--;continue;}

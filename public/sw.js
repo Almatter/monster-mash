@@ -8,6 +8,10 @@ const SCOPE=new URL(self.registration.scope);
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method!=='GET'||url.origin!==SCOPE.origin||!url.pathname.startsWith(SCOPE.pathname))return;event.respondWith((async()=>{
  let cache,hit;try{cache=await caches.open(CACHE);hit=await cache.match(event.request)??await cache.match(url.pathname,{ignoreSearch:true});}catch{}
  // A running build keeps its modules together until the menu safely activates an update.
- const path=url.pathname.slice(SCOPE.pathname.length);if(hit&&!url.search&&ASSETS.includes(path)&&path.startsWith('src/'))return hit;
+ const path=url.pathname.slice(SCOPE.pathname.length);
+ // Reuse immutable artwork for this build instead of revalidating and rewriting
+ // every terrain tile when its decoded image leaves the small in-memory cache.
+ if(hit&&url.searchParams.get('v')===CACHE.slice('monster-mash-static-'.length)&&path.startsWith('assets/'))return hit;
+ if(hit&&!url.search&&ASSETS.includes(path)&&path.startsWith('src/'))return hit;
  try{const response=await fetch(event.request,{cache:'no-cache'});if(response.ok){if(cache)try{await cache.put(event.request,response.clone());}catch{}return response;}if(hit)return hit;return response;}catch(error){if(hit)return hit;throw error;}
 })());});

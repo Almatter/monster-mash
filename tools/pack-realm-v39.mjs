@@ -2,12 +2,12 @@ import {createRequire} from 'node:module';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {REALM_GROTTOS,REALM_PATHS,REALM_REGION_SIZE,REALM_ARENA_ART} from '../src/realm-layout.ts';
 const sharp=createRequire(import.meta.url)('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp');
-const source='art-source/stage3/v39/',output='public/assets/stage3/map-v39/';
-await mkdir(output,{recursive:true});
+const source='art-source/stage3/v39/',output='public/assets/stage3/map-v40/';
+await mkdir(output,{recursive:true});await mkdir('art-source/stage3/v40',{recursive:true});
 const quarter=await sharp('art-source/stage3/ether-fog-v39.png').resize(512,512).removeAlpha().png().toBuffer();const fog=await sharp({create:{width:1024,height:1024,channels:3,background:'#192859'}}).composite([{input:quarter,left:0,top:0},{input:await sharp(quarter).flop().png().toBuffer(),left:512,top:0},{input:await sharp(quarter).flip().png().toBuffer(),left:0,top:512},{input:await sharp(quarter).flip().flop().png().toBuffer(),left:512,top:512}]).png().toBuffer();await sharp(fog).webp({quality:93}).toFile('public/assets/stage3/ether-fog.webp');
 const background=[];for(let y=0;y<5;y++)for(let x=0;x<5;x++)background.push({input:fog,left:x*1024,top:y*1024});
 const backdrop=await sharp({create:{width:5120,height:5120,channels:3,background:'#192859'}}).composite(background).png().toBuffer();
-const textures={};for(const id of ['bridge','stairs'])textures[id]=await sharp(source+id+'.png').ensureAlpha().raw().toBuffer({resolveWithObject:true});
+const textures={};for(const id of ['bridge','stairs'])textures[id]=await sharp(source+id+'.png').extract(id==='bridge'?{left:240,top:0,width:550,height:1536}:{left:312,top:0,width:400,height:1536}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
 // Offline texture bending: the runtime draws only bounded 512px terrain chunks.
 // The very same sampled centerline defines the navigation floor and illustrated deck.
 const roads=[];
@@ -36,6 +36,6 @@ for(const region of [...REALM_GROTTOS,{nature:'arena',x:0,y:0}]){
 }
 const map=await sharp(deck).composite(regions).png().toBuffer();
 for(let y=0;y<10;y++)for(let x=0;x<10;x++)await writeFile(output+x+'-'+y+'.webp',await sharp(map).extract({left:x*512,top:y*512,width:512,height:512}).webp({quality:90}).toBuffer());
-await sharp(map).resize(1536,1536).png().toFile(source+'overview.png');
+await sharp(map).resize(1536,1536).png().toFile('art-source/stage3/v40/overview.png');
 await sharp(map).png().toFile(source+'assembled.png');
 console.log('Packed seven distinct grottos, raised arena and eleven winding routes into 100 terrain chunks.');
