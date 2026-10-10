@@ -9,7 +9,7 @@ await mkdir('dist/src', { recursive: true });
 for (const name of await readdir('src')) {
   if (!name.endsWith('.ts')||['art-lab.ts','music-lab.ts'].includes(name)) continue;
   const source = await readFile(`src/${name}`, 'utf8');
-  const js = stripTypeScriptTypes(source, { mode: 'strip' }).replaceAll(/from '(\.\/[^']+)\.ts'/g, "from '$1.js'");
+  const js = stripTypeScriptTypes(source, { mode: 'strip' }).replaceAll(/from '(\.\/[^']+)\.ts'/g, "from '$1.js'").replaceAll(/import\('(\.\/[^']+)\.ts'\)/g, "import('$1.js')");
   await writeFile(`dist/src/${name.replace('.ts', '.js')}`, js);
 }
 const {cp}=await import('node:fs/promises');await cp('public','dist',{recursive:true});

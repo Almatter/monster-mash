@@ -26,7 +26,7 @@ try{for(const viewport of [{width:1920,height:1080},{width:844,height:390},{widt
    const body={x:spot.x,y:spot.y},from={...body};body.x+=1500;body.y+=1500;map.moveRealm(body,from,23);
    return {pixels,confined:map.insideRealm(body.x,body.y,23),peak:r.realmTerrain.peak,capacity:r.realmTerrain.capacity,root:r.realmTerrain.assetRoot,pixelCount:r.canvas.width*r.canvas.height};
   },spot);
-  assert.equal(result.root,'assets/stage3/map-v42');assert.ok(result.peak<=result.capacity);assert.ok(result.pixelCount<=2105000);
+  assert.equal(result.root,'assets/stage3/map-v43');assert.ok(result.peak<=result.capacity);assert.ok(result.pixelCount<=2105000);
   if(spot.name!=='outer-fog')assert.ok(result.confined,spot.name+' sweep escaped floor');
   for(const pixel of result.pixels){if(Math.max(...pixel.slice(0,3))<=20){console.log(spot,result);await page.screenshot({path:'test-results/v42-dark-probe.png'});}assert.ok(Math.max(...pixel.slice(0,3))>20,'Black gap at '+spot.name);coloredProbes++;}
   if(['arena','devourer','overlord','lycanthrope','south-ascent','outer-fog'].includes(spot.name))await page.screenshot({path:`test-results/v40-map-${viewport.width}-${spot.name}.png`});

@@ -1,6 +1,6 @@
 import {MAP_CHUNKS} from './court-layout.ts';
 import {BUILD_VERSION} from './config.ts';
-type ChunkLayout={size:number;cols:number;rows:number;left:number;top:number;cacheLimit:number};
+type ChunkLayout={gutter?:number;size:number;cols:number;rows:number;left:number;top:number;cacheLimit:number};
 type TerrainImage=ImageBitmap|HTMLImageElement;
 type Tile={image:TerrainImage;used:number};
 function release(image:TerrainImage){if('close' in image)image.close();else image.src='';}
@@ -27,5 +27,5 @@ export class CourtTerrain {
   return true;
  }
  async prepare(cx=0,cy=0,halfW=600,halfH=380){const {size,cols,rows,left,top}=this.layout;this.requestView(cx,cy,halfW,halfH);const visible=[];for(let y=Math.max(0,Math.floor((cy-halfH-top)/size));y<=Math.min(rows-1,Math.floor((cy+halfH-top)/size));y++)for(let x=Math.max(0,Math.floor((cx-halfW-left)/size));x<=Math.min(cols-1,Math.floor((cx+halfW-left)/size));x++)visible.push(this.key(x,y));let rounds=0;while(visible.some(k=>!this.tiles.has(k))&&rounds++<30){const tasks=[...this.pending.values()];if(!tasks.length)break;await Promise.all(tasks);}if(visible.some(k=>!this.tiles.has(k)))throw Error('The map could not load. Please try again.');}
- draw(c:CanvasRenderingContext2D,cx:number,cy:number,halfW:number,halfH:number){const {size,cols,rows,left,top}=this.layout;this.requestView(cx,cy,halfW,halfH);for(const [key,tile] of this.tiles){const [x,y]=key.split('-').map(Number),px=left+x*size,py=top+y*size;if(px>cx+halfW+2||px+size<cx-halfW-2||py>cy+halfH+2||py+size<cy-halfH-2)continue;c.drawImage(tile.image,px-2,py-2,size+4,size+4);tile.used=++this.clock;}}
+ draw(c:CanvasRenderingContext2D,cx:number,cy:number,halfW:number,halfH:number){const {size,cols,rows,left,top}=this.layout;this.requestView(cx,cy,halfW,halfH);for(const [key,tile] of this.tiles){const [x,y]=key.split('-').map(Number),px=left+x*size,py=top+y*size;if(px>cx+halfW+2||px+size<cx-halfW-2||py>cy+halfH+2||py+size<cy-halfH-2)continue;const gutter=this.layout.gutter;if(gutter)c.drawImage(tile.image,px-gutter,py-gutter,size+gutter*2,size+gutter*2);else c.drawImage(tile.image,px-2,py-2,size+4,size+4);tile.used=++this.clock;}}
 }

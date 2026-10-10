@@ -1,22 +1,22 @@
+import {REALM_GUARDIAN_ZONES,TITAN_SEAL} from './realm-zones.ts';
 import {REALM_STRUCTURES,realmStructureBlocks} from './realm-structures.ts';
 import {REALM_FLOOR_CLEARANCE,REALM_FLOOR_GRID,REALM_FLOOR_COLS} from './realm-floor-data.ts';
 import {REALM_GROTTOS,REALM_PATHS,REALM_DECKS,REALM_START} from './realm-layout.ts';
 export {REALM_GROTTOS,REALM_PATHS,REALM_START,REALM_CLUES,realmAltar,realmPortal} from './realm-layout.ts';
 export type {RealmPoint} from './realm-layout.ts';
 import type {RealmPoint} from './realm-layout.ts';
-export const REALM_CHUNKS={size:512,cols:20,rows:20,left:-5120,top:-5120,cacheLimit:24};
+export const REALM_CHUNKS={gutter:1,size:512,cols:20,rows:20,left:-5120,top:-5120,cacheLimit:24};
 export const REALM_RING=805,REALM_ARENA_YSCALE=.80,REALM_EDGE=5000,REALM_BRIDGE_RADIUS=100;
 type Lane={a:RealmPoint;b:RealmPoint;radius:number;yScale?:number};
 export const REALM_LANES:Lane[]=[{a:{x:0,y:-38},b:{x:0,y:-38},radius:1065,yScale:747/1065},...REALM_PATHS.flatMap(p=>p.curve.slice(1).map((b,i)=>({a:p.curve[i],b,radius:p.radius})))];
 const roomFloors=REALM_GROTTOS.map(s=>({...s,points:s.floor.map(([x,y])=>({x:x+s.x,y:y+s.y})),block:REALM_STRUCTURES[s.id].base}));
 const floorAreas=[...roomFloors,...REALM_DECKS];
 const areas=new Map<string,typeof floorAreas>();
-const CELL=200,lanes=new Map<string,Lane[]>(),rooms=new Map<string,typeof roomFloors>();
+const CELL=200,lanes=new Map<string,Lane[]>();
 const key=(x:number,y:number)=>Math.floor(x/CELL)+':'+Math.floor(y/CELL);
 function register<T>(map:Map<string,T[]>,item:T,x0:number,y0:number,x1:number,y1:number){for(let x=Math.floor(x0/CELL);x<=Math.floor(x1/CELL);x++)for(let y=Math.floor(y0/CELL);y<=Math.floor(y1/CELL);y++){const k=x+':'+y;if(!map.has(k))map.set(k,[]);map.get(k)!.push(item);}}
 for(const l of REALM_LANES)register(lanes,l,Math.min(l.a.x,l.b.x)-l.radius,Math.min(l.a.y,l.b.y)-l.radius,Math.max(l.a.x,l.b.x)+l.radius,Math.max(l.a.y,l.b.y)+l.radius);
 for(const r of floorAreas)register(areas,r,Math.min(...r.points.map(p=>p.x)),Math.min(...r.points.map(p=>p.y)),Math.max(...r.points.map(p=>p.x)),Math.max(...r.points.map(p=>p.y)));
-for(const r of roomFloors)register(rooms,r,Math.min(...r.points.map(p=>p.x)),Math.min(...r.points.map(p=>p.y)),Math.max(...r.points.map(p=>p.x)),Math.max(...r.points.map(p=>p.y)));
 function segmentDistance(x:number,y:number,a:RealmPoint,b:RealmPoint){const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1))),qx=x-a.x-dx*t,qy=y-a.y-dy*t;return qx*qx+qy*qy;}
 function insideRoom(x:number,y:number,r:{points:RealmPoint[]},radius:number){let inside=false;for(let i=0,j=r.points.length-1;i<r.points.length;j=i++){const a=r.points[i],b=r.points[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;if(radius>0&&segmentDistance(x,y,a,b)<radius*radius-.001)return false;}return inside;}
 export function insideRealm(x:number,y:number,radius=0){if(!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>REALM_EDGE-radius||Math.abs(y)>REALM_EDGE-radius)return false;const ix=Math.round((x+5120)/REALM_FLOOR_GRID),iy=Math.round((y+5120)/REALM_FLOOR_GRID),clearance=REALM_FLOOR_CLEARANCE[iy*REALM_FLOOR_COLS+ix];return radius===0?clearance>0:clearance>=radius+3;}
@@ -39,7 +39,7 @@ export function prepareRealmNavigation(){if(navigationReady)return;navigationRea
 function nearbyNodes(p:RealmPoint){const x=Math.round((p.x+5120)/GRID),y=Math.round((p.y+5120)/GRID),out:number[]=[];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const xx=x+dx,yy=y+dy,id=yy*COLS+xx;if(xx>=0&&xx<COLS&&yy>=0&&yy<COLS&&walkable[id])out.push(id);}return out;}
 export function realmWaypoint(x:number,y:number,tx:number,ty:number,avoidArena=false){prepareRealmNavigation();const from={x,y},goal={x:tx,y:ty};if(!insideRealm(x,y,25)){const local=nearbyNodes(from).sort((a,b)=>Math.hypot(center(a).x-x,center(a).y-y)-Math.hypot(center(b).x-x,center(b).y-y));if(local.length)return center(local[0]);slideRealm(from,29);return from;}slideRealm(goal,30);if(clear(from,goal)&&(!avoidArena||!crossesArena(from,goal)))return goal;const goals=nearbyNodes(goal).filter(id=>clear(goal,center(id))).sort((a,b)=>Math.hypot(center(a).x-goal.x,center(a).y-goal.y)-Math.hypot(center(b).x-goal.x,center(b).y-goal.y)),end=goals[0];if(end===undefined)return from;const flowKey=end+':'+avoidArena;let flow=flows.get(flowKey);if(!flow){flow=new Int16Array(walkable.length).fill(-1);flow[end]=0;let tail=1;queue[0]=end;for(let i=0;i<tail;i++){const id=queue[i],mask=neighbors[id];for(let bit=0;bit<4;bit++){const next=id+(bit===0?-1:bit===1?1:bit===2?-COLS:COLS);if((mask&(1<<bit))&&flow[next]<0&&(!avoidArena||!inTitanArena(center(next).x,center(next).y))){flow[next]=flow[id]+1;queue[tail++]=next;}}}if(flows.size>=8)flows.delete(flows.keys().next().value!);flows.set(flowKey,flow);}let chosen=-1,best=Infinity;for(const id of nearbyNodes(from)){if(flow[id]<0)continue;const p=center(id),d=Math.hypot(p.x-x,p.y-y),cost=flow[id]*GRID*8+d;if((cost<best-.1||Math.abs(cost-best)<.1&&chosen>=0&&flow[id]<flow[chosen])&&clear(from,p)&&(!avoidArena||!crossesArena(from,p))){chosen=id;best=cost;}}return chosen<0?from:center(chosen);}
 export function realmSteer(x:number,y:number,tx:number,ty:number){const p=realmWaypoint(x,y,tx,ty),dx=p.x-x,dy=p.y-y,d=Math.hypot(dx,dy)||1;return {x:dx/d,y:dy/d};}
-export const inTitanArena=(x:number,y:number)=>Math.hypot(x,(y+38)/REALM_ARENA_YSCALE)<REALM_RING-14;
+export const inTitanArena=(x:number,y:number)=>((x-TITAN_SEAL.x)/TITAN_SEAL.rx)**2+((y-TITAN_SEAL.y)/TITAN_SEAL.ry)**2<1;
 
 // Swept movement prevents knockback and dashes from snapping onto a different floor.
 // Vault deliberately bypasses this sweep and validates only its landing.
@@ -58,7 +58,7 @@ const steeringCache=new WeakMap<RealmPoint,{x:number;y:number;until:number;tx:nu
 export function realmCachedSteer(body:RealmPoint,tx:number,ty:number,time:number){let route=steeringCache.get(body);if(!route||Math.hypot(body.x-route.fromX,body.y-route.fromY)>180||time>=route.until||Math.hypot(route.tx-tx,route.ty-ty)>120||Math.hypot(route.x-body.x,route.y-body.y)<8){const q=realmWaypoint(body.x,body.y,tx,ty);route={...q,until:time+.18,tx,ty,fromX:body.x,fromY:body.y};steeringCache.set(body,route);}const dx=route.x-body.x,dy=route.y-body.y,d=Math.hypot(dx,dy)||1;return {x:dx/d,y:dy/d};}
 
 // Guardians own the court floor, not its approach bridges or neighboring grottos.
-export function insideRealmGrotto(id:number,x:number,y:number,radius=24){const r=roomFloors[id];return !!r&&insideRoom(x,y,r,radius)&&insideRealm(x,y,radius);}
+export function insideRealmGrotto(id:number,x:number,y:number,radius=24){const r=roomFloors[id];return !!r&&insideRoom(x,y,REALM_GUARDIAN_ZONES[id],radius)&&insideRealm(x,y,radius);}
 export function slideRealmGrotto(body:RealmPoint,id:number,radius=24){const r=roomFloors[id];if(!r||insideRealmGrotto(id,body.x,body.y,radius))return;let best=Infinity,q={x:r.x,y:r.y};const consider=(p:RealmPoint)=>{const d=(p.x-body.x)**2+(p.y-body.y)**2;if(d<best&&insideRealmGrotto(id,p.x,p.y,radius)){best=d;q=p;}};
  consider(q);const dx=body.x-r.block.x,dy=body.y-r.block.y,dist=Math.hypot(dx/(r.block.rx+radius+8),dy/(r.block.ry+radius+8));consider(dist?{x:r.block.x+dx/dist,y:r.block.y+dy/dist}:{x:r.block.x,y:r.block.y+r.block.ry+radius+8});
  for(let i=0;i<r.points.length;i++){const a=r.points[i],b=r.points[(i+1)%r.points.length],vx=b.x-a.x,vy=b.y-a.y,len=Math.hypot(vx,vy)||1,t=Math.max(0,Math.min(1,((body.x-a.x)*vx+(body.y-a.y)*vy)/(len*len)));consider({x:a.x+vx*t-vy/len*(radius+8),y:a.y+vy*t+vx/len*(radius+8)});}body.x=q.x;body.y=q.y;

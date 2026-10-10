@@ -40,6 +40,7 @@ const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(
 const localTest=localStageTest(location);
 const renderer=new Renderer($<HTMLCanvasElement>('arena')),audio=new AudioEngine();
 let game:Game|null=null,paused=false,accumulator=0,uiClock=0,frameAverage=16,run:RunRecord|null=null,code='',resultGeneration=0;let reloadForUpdate=false,terrainLoading=false,activateSafeUpdate=()=>{},preparingRun=false;
+if(localTest&&new URLSearchParams(location.search).get('mapdebug')==='1')void import('./realm-debug.ts').then(m=>m.mountRealmDebug(renderer,()=>game));
 const input:Input={x:0,y:0,aimX:0,aimY:0,aiming:false},keys=new Set<string>();let joyX=0,joyY=0,joyId:number|null=null;
 const safeRead=(key:string,fallback:string)=>{try{return localStorage.getItem(key)??fallback;}catch{return fallback;}};
 const safeWrite=(key:string,value:string)=>{if(localTest)return;try{localStorage.setItem(key,value);}catch{}};
