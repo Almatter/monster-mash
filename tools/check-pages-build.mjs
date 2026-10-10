@@ -14,3 +14,5 @@ assert.ok(!files.some(file=>file.startsWith('.github/')||file.startsWith('art-so
 console.log(`GitHub Pages artifact: ${files.length} production files; relative routes and PWA scope verified.`);
 
 for(const entry of ['index.html','stage2-test/index.html']){const html=await readFile('dist/'+entry,'utf8');assert.match(html,/boot\.js\?v=[0-9a-f]{16}/);assert.doesNotMatch(html,/__BUILD_HASH__/);}
+
+const boot=await readFile('dist/boot.js','utf8');assert.doesNotMatch(boot,/__MODULES__/);assert.match(boot,/map.type='importmap'/);for(const entry of ['index.html','test/index.html','stage2-test/index.html','stage3-test/index.html'])assert.match(await readFile('dist/'+entry,'utf8'),/data-build="[0-9a-f]{16}"/);

@@ -2,7 +2,11 @@
 // Otherwise an older worker can pin old renderer modules while a player starts
 // a new match, making the safe in-match update deferral last that entire run.
 (async()=>{
- const entry=document.currentScript.dataset.main;
+ const boot=document.currentScript,entry=boot.dataset.main,build=boot.dataset.build;
+ const modules=/*__MODULES__*/[];
+ // Keep every import, including deferred imports, on this page's build even
+ // when an older worker is still installing its replacement.
+ if(build&&modules.length){const imports={};for(const path of modules){const url=new URL(path,document.baseURI);imports[url.href]=url.href+'?v='+build;}const map=document.createElement('script');map.type='importmap';map.textContent=JSON.stringify({imports});document.head.append(map);}
  let timer;
  try{
   await Promise.race([(async()=>{if('serviceWorker' in navigator){
@@ -14,5 +18,5 @@
   }})(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Update check timed out')),12000);})]);
  }catch{/* Offline/storage-restricted browsers can still load the cached game. */}
  clearTimeout(timer);
- const script=document.createElement('script');script.type='module';script.src=entry;document.body.append(script);
+ const script=document.createElement('script');script.type='module';script.src=entry+(build?'?v='+build:'');document.body.append(script);
 })();
