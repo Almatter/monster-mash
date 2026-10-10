@@ -4,7 +4,7 @@ import {Game} from '../src/simulation.ts';
 import {MONSTERS,ABILITIES} from '../src/content-monsters.ts';
 import {FIFTH_POWERS} from '../src/relic-powers.ts';
 import {parkourLanding} from '../src/lycanthrope.ts';
-import {REALM_GROTTOS,insideRealm} from '../src/titan-realm-map.ts';
+import {realmAltar,REALM_GROTTOS,insideRealm} from '../src/titan-realm-map.ts';
 import {realmDamage,claimRelic,equipRelic,restoreNativePower,realmProgress,realmSummary,updateTitanRealm,realmEnemyMotion,TITAN_REALM} from '../src/stage-three.ts';
 import {normalizeProfile,recordProgress,updateRecords} from '../src/profile.ts';
 import {gateForStage,masteryProgress,gateChallengeComplete,stageAccess,MASTERY_RELICS} from '../src/stage-access.ts';
@@ -17,7 +17,7 @@ test('new guardians reserve seats in a full crowd and titan warnings remain stri
  g.player.x=0;g.player.y=200;g.realm.engaged=true;g.realm.boss.timer=0;g.realm.attackIndex=2;g.realm.zones=Array.from({length:11},()=>({x:0,y:0,radius:100,warning:100,life:1,damage:1,hit:false}));realmEnemyMotion(g,g.realm.boss,1/60);realmEnemyMotion(g,g.realm.boss,1);assert.equal(g.realm.zones.length,12);
 });
 test('restoring Titan native powers keeps the stage Fissure kit',()=>{
- const g=new Game(3,{monsterId:'titan'},2);g.seedOpening();const s=REALM_GROTTOS[0];g.player.x=s.x;g.player.y=s.y-150;g.realm.shrines[0].cleared=true;g.realm.relics.find(r=>r.shrine===0).shrine=null;g.powers[2]=ABILITIES.soulwrit;g.relicOwners[2]='overlord';assert.ok(restoreNativePower(g,2));assert.equal(g.powers[2].id,'faultline');
+ const g=new Game(3,{monsterId:'titan'},2);g.seedOpening();const s=REALM_GROTTOS[0];Object.assign(g.player,realmAltar(s.id));g.realm.shrines[0].cleared=true;g.realm.relics.find(r=>r.shrine===0).shrine=null;g.powers[2]=ABILITIES.soulwrit;g.relicOwners[2]='overlord';assert.ok(restoreNativePower(g,2));assert.equal(g.powers[2].id,'faultline');
 });
 test('Bloodmoon Reign visits different visible enemies and cannot chain beyond its original view',()=>{
  const g=new Game(3,{monsterId:'lycanthrope'},1);g.seedOpening();g.court.initialized=true;g.court.camps=[];g.enemies.forEach(e=>e.active=false);g.alive=0;g.player.x=g.player.y=0;g.targetView={x:500,y:300};
@@ -35,8 +35,8 @@ test('native attacks cannot open titan layers even when they belong to the requi
 });
 test('known relics can only be equipped at their home altar and retain their decoration',()=>{
  const g=new Game(7,{monsterId:'titan'},2),r=g.realm.relics[0],other=g.realm.relics[1];for(const shrine of g.realm.shrines)shrine.cleared=true;r.known=other.known=true;
- const at=REALM_GROTTOS[other.shrine];g.player.x=at.x;g.player.y=at.y-150;assert.equal(equipRelic(g,r.id,0),false);
- const home=REALM_GROTTOS[r.shrine];g.player.x=home.x;g.player.y=home.y-150;const altar=r.shrine;assert.ok(claimRelic(g,altar));assert.ok(equipRelic(g,r.id,0));assert.equal(r.shrine,null);assert.equal(g.realm.shrines[altar].decor,'dormant');
+ const at=REALM_GROTTOS[other.shrine];Object.assign(g.player,realmAltar(at.id));assert.equal(equipRelic(g,r.id,0),false);
+ const home=REALM_GROTTOS[r.shrine];Object.assign(g.player,realmAltar(home.id));const altar=r.shrine;assert.ok(claimRelic(g,altar));assert.ok(equipRelic(g,r.id,0));assert.equal(r.shrine,null);assert.equal(g.realm.shrines[altar].decor,'dormant');
 });
 test('Moonstrider Vault crosses a gap but cannot land in a chasm or outside the map',()=>{
  const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=530;g.player.y=50;const destination={x:380,y:130};assert.equal(insideRealm(480,100,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:600,y:600}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);

@@ -5,3 +5,9 @@ test-results/
 # Reproducible source-art instruction references; never shipped as game scenery.
 art-source/stage2/regions/layout-guide.png
 art-source/stage2/regions/details/*-reference.png
+
+# Rebuildable Stage 3 packing and visual inspection outputs.
+art-source/stage3/v39/assembled.png
+art-source/stage3/v39/routes-preview.png
+art-source/stage3/v39/clean-overview.png
+art-source/stage3/v39/contact.png
