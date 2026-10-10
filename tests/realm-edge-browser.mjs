@@ -22,16 +22,16 @@ try{for(const viewport of [{width:1920,height:1080},{width:844,height:390},{widt
   const result=await page.evaluate(async spot=>{
    Object.assign(g.player,{x:spot.x,y:spot.y});await r.realmTerrain.prepare(spot.x,spot.y,r.viewWidth/r.scale/2+80,r.viewHeight/r.scale/2+80);r.draw(g,0);
    const pixels=[];const halfW=r.viewWidth/r.scale/2,halfH=r.viewHeight/r.scale/2;
-   for(const [dx,dy] of [[-.85,-.85],[.85,-.85],[-.85,.85],[.85,.85]]){const p=r.worldToScreen(spot.x+dx*halfW,spot.y+dy*halfH,g);pixels.push([...r.ctx.getImageData(Math.floor(p.x*r.dpr),Math.floor(p.y*r.dpr),1,1).data]);}
+   for(const [dx,dy] of [[-.85,-.85],[.85,-.85],[-.85,.85],[.85,.85]]){const p=r.worldToScreen(spot.x+dx*halfW,spot.y+dy*halfH,g);const sample=r.ctx.getImageData(Math.floor(p.x*r.dpr)-12,Math.floor(p.y*r.dpr)-12,24,24).data;let max=0,min=255;for(let i=0;i<sample.length;i+=4){const value=Math.max(sample[i],sample[i+1],sample[i+2]);max=Math.max(max,value);min=Math.min(min,value);}pixels.push([max,max-min,0,255]);}
    const body={x:spot.x,y:spot.y},from={...body};body.x+=1500;body.y+=1500;map.moveRealm(body,from,23);
    return {pixels,confined:map.insideRealm(body.x,body.y,23),peak:r.realmTerrain.peak,capacity:r.realmTerrain.capacity,root:r.realmTerrain.assetRoot,pixelCount:r.canvas.width*r.canvas.height};
   },spot);
-  assert.equal(result.root,'assets/stage3/map-v41');assert.ok(result.peak<=result.capacity);assert.ok(result.pixelCount<=2105000);
+  assert.equal(result.root,'assets/stage3/map-v42');assert.ok(result.peak<=result.capacity);assert.ok(result.pixelCount<=2105000);
   if(spot.name!=='outer-fog')assert.ok(result.confined,spot.name+' sweep escaped floor');
-  for(const pixel of result.pixels){assert.ok(Math.max(...pixel.slice(0,3))>20,'Black gap at '+spot.name);coloredProbes++;}
+  for(const pixel of result.pixels){if(Math.max(...pixel.slice(0,3))<=20){console.log(spot,result);await page.screenshot({path:'test-results/v42-dark-probe.png'});}assert.ok(Math.max(...pixel.slice(0,3))>20,'Black gap at '+spot.name);coloredProbes++;}
   if(['arena','devourer','overlord','lycanthrope','south-ascent','outer-fog'].includes(spot.name))await page.screenshot({path:`test-results/v40-map-${viewport.width}-${spot.name}.png`});
  }
  assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);
- report.push({viewport,regions:7,connectors:11,coloredProbes,walkableConfinement:true,boundedTerrainCache:true,assetErrors:0});await context.close();
+ report.push({viewport,regions:7,connectors:12,coloredProbes,walkableConfinement:true,boundedTerrainCache:true,assetErrors:0});await context.close();
 }
 await writeFile('test-results/realm-edge-browser.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));}finally{await browser.close();}

@@ -1,56 +1,121 @@
 {
+  "revision": 42,
   "chunks": {
     "size": 512,
-    "cols": 10,
-    "rows": 10,
-    "left": -2560,
-    "top": -2560,
-    "cacheLimit": 32
+    "cols": 20,
+    "rows": 20,
+    "left": -5120,
+    "top": -5120,
+    "cacheLimit": 24
   },
   "grottos": [
     {
       "id": 0,
-      "x": 0,
-      "y": -1536,
-      "name": "Hollow"
+      "nature": "overlord",
+      "name": "Buried Court",
+      "x": -3026.6000000000004,
+      "y": -1917.6000000000001
     },
     {
       "id": 1,
-      "x": 1536,
-      "y": -1536,
-      "name": "Veil"
+      "nature": "calamity",
+      "name": "Starless Archive",
+      "x": 392.20000000000005,
+      "y": -2546.6
     },
     {
       "id": 2,
-      "x": 1536,
-      "y": 0,
-      "name": "Root"
+      "nature": "devourer",
+      "name": "Fang Den",
+      "x": 3330,
+      "y": -1074
     },
     {
       "id": 3,
-      "x": 1536,
-      "y": 1536,
-      "name": "Cleft"
+      "nature": "titan",
+      "name": "Shattered Foundry",
+      "x": 3130.2000000000003,
+      "y": 1730.6000000000001
     },
     {
       "id": 4,
-      "x": -1536,
-      "y": 1536,
-      "name": "Deep"
+      "nature": "sovereign",
+      "name": "Fallen Throne",
+      "x": 1502.2,
+      "y": 3721.2000000000003
     },
     {
       "id": 5,
-      "x": -1536,
-      "y": 0,
-      "name": "Spire"
+      "nature": "reaper",
+      "name": "Moon Crypt",
+      "x": -2057.2000000000003,
+      "y": 3447.4
     },
     {
       "id": 6,
-      "x": -1536,
-      "y": -1536,
-      "name": "Silence"
+      "nature": "lycanthrope",
+      "name": "Moonfang Ravine",
+      "x": -3278.2000000000003,
+      "y": 916.6
     }
   ],
-  "source": "Nine generated connected ruin sectors, streamed in nearby 512px chunks",
-  "revision": 35
+  "source": "One elevated-arena master, nine overlapping generated detail sectors registered to its geometry, streamed in nearby 512px WebP chunks",
+  "scale": 7.4,
+  "arena": {
+    "elevated": true,
+    "x": 0,
+    "y": -38,
+    "engagementRadius": 791,
+    "yScale": 0.8
+  },
+  "routes": [
+    {
+      "id": "barrow-archive",
+      "stairs": false
+    },
+    {
+      "id": "archive-fangs",
+      "stairs": false
+    },
+    {
+      "id": "fangs-foundry",
+      "stairs": false
+    },
+    {
+      "id": "foundry-throne",
+      "stairs": false
+    },
+    {
+      "id": "throne-crypt",
+      "stairs": false
+    },
+    {
+      "id": "crypt-ravine",
+      "stairs": false
+    },
+    {
+      "id": "north-ascent",
+      "stairs": true
+    },
+    {
+      "id": "east-ascent",
+      "stairs": true
+    },
+    {
+      "id": "south-ascent",
+      "stairs": true
+    },
+    {
+      "id": "buried-ascent",
+      "stairs": true
+    },
+    {
+      "id": "foundry-ascent",
+      "stairs": true
+    },
+    {
+      "id": "west-ascent",
+      "stairs": true
+    }
+  ]
 }

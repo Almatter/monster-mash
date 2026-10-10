@@ -1,0 +1,13 @@
+MODE: Built-in image generation.
+
+MASTER DESIGN BRIEF
+High-angle fantasy game terrain in an underground mana abyss. One coherent map composition, with a prominent elevated central Titan arena and seven distinct shrine courts below it. Broad readable walkable stone decks, six generous stair approaches to the raised central arena, wide occasionally winding roads between the outer courts. Paths must remain navigable by large heroes and visibly distinct from their parapets and cliff faces. Endless blue/violet magical fog surrounds every edge. Preserve the underground ruin architecture, mana-lit crystals, gold trims and fantastical depth of the existing map. Large smooth stone surfaces, sharp edges and controlled detail; no pockmarked noise texture. No characters, labels, text, clue symbols or UI.
+
+COURTS
+Overlord: burial court with coffins, mausoleum columns and ivy. Calamity: starless archive with astral instruments, fuchsia energy and dark scholarly architecture. Devourer: den of fangs, huge teeth around the perimeter, claw cuts on broad cream stone. Titan: shattered foundry, anvils, burning fissures and molten stone. Sovereign: fallen throne, royal statues, broad stair terraces and blue/gold banners. Reaper: blue moon crypt, crescents and cold grave architecture. Lycanthrope: overgrown moonfang ravine with woodland ruin columns and pale moonlit masonry. Distinct color, arrangement, altar position and silhouette for each court.
+
+NINE SECTOR REFERENCE EDITS
+Use each saved overlapping master crop in slices/ as the layout reference for the corresponding full-resolution sector in sectors/. Keep the exact high-angle camera, perspective, road connections, elevation, floor edges and landmark positions of that crop. Redraw at full resolution with crisp, large stone planes and faithful court decoration. Keep broad roads and stairs clear; preserve the overlap edges for seamless assembly. Do not introduce additional doors, signs, symbols, characters or noisy texture.
+
+TRANSPARENT ENCOUNTER WALL
+A wide horizontal ribbon of ethereal blue/violet mana lightning, a luminous magical barrier between an elevated arena and the abyss. Detailed luminous filaments with a continuous readable lower edge, transparent background and clean alpha. No stone supports, opaque background, text or UI. Suitable for repeating as short segments along curved engagement boundaries.

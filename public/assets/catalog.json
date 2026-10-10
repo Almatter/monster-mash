@@ -76,11 +76,11 @@
       "base": "assets/monsters/devourer/selection-base.webp"
     },
     "portrait": {
-      "power": "assets/monsters/devourer/portrait-power.webp",
-      "accent": "assets/monsters/devourer/portrait-accent.webp",
-      "primary": "assets/monsters/devourer/portrait-primary.webp",
-      "secondary": "assets/monsters/devourer/portrait-secondary.webp",
-      "base": "assets/monsters/devourer/portrait-base.webp"
+      "base": "assets/monsters/devourer/portrait-v42-base.webp",
+      "primary": "assets/monsters/devourer/portrait-v42-primary.webp",
+      "secondary": "assets/monsters/devourer/portrait-v42-secondary.webp",
+      "accent": "assets/monsters/devourer/portrait-v42-accent.webp",
+      "power": "assets/monsters/devourer/portrait-v42-power.webp"
     },
     "gameplay": {
       "power": "assets/monsters/devourer/gameplay-power.webp",

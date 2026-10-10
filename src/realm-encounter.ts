@@ -1,7 +1,7 @@
 import type {Game,Enemy} from './simulation.ts';
-import {inTitanArena,REALM_RING} from './titan-realm-map.ts';
+import {inTitanArena,REALM_RING,REALM_ARENA_YSCALE} from './titan-realm-map.ts';
 export type TitanAction={kind:'rush'|'cleave'|'eruption';angle:number;warning:number;duration:number;elapsed:number;from:{x:number;y:number};to:{x:number;y:number};hit:boolean};
-const clamp=(x:number,y:number)=>{const d=Math.hypot(x,y+38),r=REALM_RING-100,k=Math.min(1,r/(d||1));return {x:x*k,y:(y+38)*k-38};};
+const clamp=(x:number,y:number)=>{const d=Math.hypot(x,(y+38)/REALM_ARENA_YSCALE),r=REALM_RING-100,k=Math.min(1,r/(d||1));return {x:x*k,y:(y+38)*k-38};};
 export function titanMotion(g:Game,e:Enemy,dt:number){const s=g.realm!,p=g.player;if(!s.engaged){const a=g.time*.12;e.x=Math.cos(a)*160;e.y=Math.sin(a)*115-38;return;}if(!inTitanArena(p.x,p.y))return;
  if(s.recovery>0){s.recovery=Math.max(0,s.recovery-dt);return;}
  const action=s.action;if(action){action.warning-=dt;if(action.warning>0)return;

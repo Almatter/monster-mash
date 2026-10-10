@@ -39,8 +39,8 @@ test('known relics can only be equipped at their home altar and retain their dec
  const home=REALM_GROTTOS[r.shrine];Object.assign(g.player,realmAltar(home.id));const altar=r.shrine;assert.ok(claimRelic(g,altar));assert.ok(equipRelic(g,r.id,0));assert.equal(r.shrine,null);assert.equal(g.realm.shrines[altar].decor,'dormant');
 });
 test('Moonstrider Vault crosses a gap but cannot land in a chasm or outside the map',()=>{
- const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=530;g.player.y=50;const destination={x:380,y:130};assert.equal(insideRealm(480,100,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:600,y:600}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
- g.player.x=1920;g.player.y=1536;assert.equal(parkourLanding(g,{x:2600,y:1536}),null);
+ const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=-1260;g.player.y=-220;const destination={x:-1020,y:20};assert.equal(insideRealm(-1140,-100,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:-1140,y:-100}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
+ g.player.x=4800;g.player.y=1536;assert.equal(parkourLanding(g,{x:5100,y:1536}),null);
 });
 test('Howl fears lesser enemies, preserves boss and guardian behavior, and ended games never regenerate',()=>{
  const g=new Game(1,{monsterId:'lycanthrope'},2);g.seedOpening();g.player.x=0;g.player.y=100;const lesser=g.spawn('hound'),guardian=g.spawn('brute');Object.assign(lesser,{x:0,y:150,hp:10000,maxHp:10000});Object.assign(guardian,{x:0,y:140,realm:{role:'guardian',shrine:0,homeX:0,homeY:140,variant:0}});g.rebuildGrid();g.cast(1);assert.ok(lesser.fearedUntil>g.time);assert.equal(guardian.fearedUntil,undefined);assert.equal(g.realm.boss.fearedUntil,undefined);g.ended=true;g.player.hp=100;g.update(1,idle);assert.equal(g.player.hp,100);
