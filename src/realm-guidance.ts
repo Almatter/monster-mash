@@ -44,3 +44,7 @@ export function realmInscription(relics:ReadonlyArray<{nature:string;ability:str
  const relic=relics.find(r=>r.nature===nature);
  return relic?REALM_INSCRIPTIONS[relic.ability]??'Time has worn these words beyond recognition.':'Time has worn these words beyond recognition.';
 }
+
+export const INSCRIPTION_INVITATION='Other inscriptions wait upon the bridges. Seek them before you face the Titan.';
+export const INSCRIPTION_COMPLETION='You have heard all four inscriptions. Seek the shrines of which they speak.';
+export function realmInscriptionMessage(relics:Parameters<typeof realmInscription>[0],pattern:string[],index:number,clues:number,lastInscription:number){const lines=[realmInscription(relics,pattern[index])];if(index===0&&clues!==15)lines.push(INSCRIPTION_INVITATION);if(clues===15&&index===lastInscription)lines.push(INSCRIPTION_COMPLETION);return lines.join('\n\n');}

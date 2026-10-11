@@ -2,7 +2,7 @@ import {RealmZoneArt} from './realm-zone-art.ts';
 import {REALM_TITAN_ZONE,REALM_GUARDIAN_ZONES} from './realm-zones.ts';
 import {BUILD_VERSION} from './config.ts';
 import {tintLayer} from './assets.ts';
-import {REALM_GROTTOS,REALM_CLUES,REALM_CHUNKS} from './titan-realm-map.ts';
+import {REALM_GROTTOS,REALM_CHUNKS} from './titan-realm-map.ts';
 import type {Game,Enemy} from './simulation.ts';
 const IDS=['ether-fog','portal','cleave','warning','landing','titan-body','titan-head-0','titan-head-1','titan-head-2','titan-mantle-0','titan-mantle-1','guardian','acolyte','shardhound','guardian-sentinel','guardian-seer','guardian-beast','servant-thrall','servant-wing','encounter-wall-v42','slam','bolt','breach',...['unknown','overlord','calamity','devourer','titan','sovereign','reaper','lycanthrope','dormant'].map(n=>'relic-'+n)];
 export class TitanRealmArt{
@@ -27,7 +27,7 @@ export class TitanRealmArt{
  drawEncounterWalls(c:CanvasRenderingContext2D,g:Game,halfW:number,halfH:number){const s=g.realm!,texture=this.images.get('encounter-wall-v42');if(!texture)return;this.zoneArt.draw(c,REALM_TITAN_ZONE,texture,g.time,g.player.x,g.player.y,halfW,halfH,s.engaged?.9:.72);for(const shrine of s.shrines)if(shrine.spawned&&!shrine.cleared)this.zoneArt.draw(c,REALM_GUARDIAN_ZONES[shrine.id],texture,g.time,g.player.x,g.player.y,halfW,halfH,.76);}
 
  drawInscriptions(c:CanvasRenderingContext2D,g:Game,halfW:number,halfH:number){
-  for(const [i,q] of REALM_CLUES.entries()){if(Math.abs(q.x-g.player.x)>halfW+100||Math.abs(q.y-g.player.y)>halfH+100)continue;c.save();c.font='bold 13px Georgia';c.fillStyle='#eee8ff';c.textAlign='center';c.strokeStyle='#100b19';c.lineWidth=4;const label=['I','II','III','IV'][i]+' · INSCRIPTION';c.strokeText(label,q.x+55,q.y+12);c.fillText(label,q.x+55,q.y+12);c.restore();}
+  for(const [i,q] of g.realm!.inscriptions.entries()){if(Math.abs(q.x-g.player.x)>halfW+100||Math.abs(q.y-g.player.y)>halfH+100)continue;c.save();c.font='bold 13px Georgia';c.fillStyle='#eee8ff';c.textAlign='center';c.strokeStyle='#100b19';c.lineWidth=4;const label=['I','II','III','IV'][i]+' · INSCRIPTION';c.strokeText(label,q.x+55,q.y+12);c.fillText(label,q.x+55,q.y+12);c.restore();}
  }
 
  drawDefense(c:CanvasRenderingContext2D,g:Game,halfW=640,halfH=400){const s=g.realm!,boss=s.boss;if(!boss?.active||s.open||Math.abs(boss.x-g.player.x)>halfW+280||Math.abs(boss.y-g.player.y)>halfH+380)return;c.save();this.image(c,'relic-'+s.pattern[s.layer],boss.x+170,boss.y-175,80,0,1);c.font='bold 10px Arial';c.textAlign='center';c.fillStyle='#f5e8ff';c.strokeStyle='#0b0612';c.lineWidth=4;const label=s.recovery>0?'RECOVERING':'DEFENDED';c.strokeText(label,boss.x+170,boss.y-122);c.fillText(label,boss.x+170,boss.y-122);c.restore();}
