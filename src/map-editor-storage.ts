@@ -1,0 +1,4 @@
+// Browser-only project storage. Separate from every player profile and run record.
+const database=new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('monster-mash-map-workshop',1);r.onupgradeneeded=()=>r.result.createObjectStore('projects');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+export async function loadMapDraft(){const db=await database;return new Promise<any>((resolve,reject)=>{const r=db.transaction('projects').objectStore('projects').get('draft');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function saveMapDraft(value:unknown){const db=await database;return new Promise<void>((resolve,reject)=>{const tx=db.transaction('projects','readwrite');tx.objectStore('projects').put(value,'draft');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}

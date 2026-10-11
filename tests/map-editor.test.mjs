@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {REALM_MAP_DATA} from '../src/realm-map-data.ts';
+import {validateMapDocument,documentFloor,documentWalkable} from '../src/realm-map-document.ts';
+import {realmFloorContains} from '../src/titan-realm-map.ts';
+const fresh=()=>validateMapDocument(REALM_MAP_DATA);
+test('editor defaults agree with game floor geometry across the map',()=>{const d=fresh();for(let y=60.321;y<1180;y+=7)for(let x=70.123;x<1210;x+=7)assert.equal(documentFloor(d,x,y),realmFloorContains((x-632)*7.4,(y-524)*7.4-38),`floor ${x},${y}`);});
+test('paint order changes walkability while solid bases take precedence',()=>{const d=fresh(),x=500,y=200,points=[[490,190],[510,190],[510,210],[490,210]];d.patches.push({add:true,points});assert.ok(documentWalkable(d,x,y));d.patches.push({add:false,points});assert.equal(documentFloor(d,x,y),false);d.patches.push({add:true,points});assert.equal(documentFloor(d,x,y),true);d.structures.push(['test-solid',[500,200,5,5],points]);assert.equal(documentFloor(d,x,y),false);});
+test('rejects malformed, unsafe and mismatched project geometry',()=>{for(const change of [d=>d.rooms.reverse(),d=>d.structures[0][1][2]=-1,d=>d.decks[0][3]=[[1,2]],d=>d.arena[0]=NaN,d=>d.structures.push(d.structures[0]),d=>d.patches=[{add:'yes',points:[[1,2],[3,4],[5,6]]}]]){const d=fresh();change(d);assert.throws(()=>validateMapDocument(d));}});
+test('custom map projects retain artwork, scale, markers and arbitrary floors',()=>{const d=validateMapDocument({version:1,map:'future-map',rooms:[],decks:[['garden',false,[[20,50],[80,50]],[[10,10],[90,10],[90,90],[10,90]]]],structures:[],arena:[0,0,0,0],patches:[],markers:[{id:'spawn',name:'Player start',point:[50,50]}],unitsPerPixel:2,background:{dataUrl:'data:image/png;base64,AA==',width:100,height:100}});assert.ok(documentWalkable(d,50,50));assert.equal(documentWalkable(d,12,50),false);assert.deepEqual(validateMapDocument(JSON.parse(JSON.stringify(d))),d);assert.throws(()=>validateMapDocument({...d,background:{...d.background,dataUrl:'javascript:alert(1)'}}));});

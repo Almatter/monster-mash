@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs').href);
+const browser=await chromium.launch({executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
+const context=await browser.newContext({viewport:{width:1440,height:960}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+const base=process.env.BASE_URL||'http://127.0.0.1:4173';
+const draft=()=>page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('monster-mash-map-workshop',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});return new Promise((resolve,reject)=>{const r=db.transaction('projects').objectStore('projects').get('draft');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});});
+const saved=()=>page.waitForFunction(()=>document.querySelector('#saved').textContent==='Draft saved on this device');
+try{
+ await page.goto(base+'/map-editor.html');await page.waitForFunction(()=>document.querySelector('#shapes').options.length===20);
+ assert.equal(await page.locator('#champion option').count(),7);assert.match(await page.locator('#champion option:checked').textContent(),/Devourer/i);
+ await page.selectOption('#jump','4');const rect=await page.locator('canvas').boundingBox(),z=Math.min(rect.width/280,rect.height/280);
+ const loc=(x,y)=>({x:rect.x+rect.width/2+(x-835)*z,y:rect.y+rect.height/2+(y-1032)*z});
+ const a=loc(731,965);await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(a.x+25,a.y+10,{steps:5});await page.mouse.up();await saved();let d=await draft();assert.notEqual(d.rooms[4][7][0][0],731);
+ await page.click('#undo');await saved();assert.equal((await draft()).rooms[4][7][0][0],731);await page.click('#redo');await saved();assert.notEqual((await draft()).rooms[4][7][0][0],731);
+ await page.selectOption('#tool','remove');const p=loc(835,1095);await page.mouse.move(p.x,p.y);await page.mouse.down();await page.mouse.move(p.x+40,p.y,{steps:8});await page.mouse.up();await saved();d=await draft();assert.ok(d.patches.length>0);assert.equal(d.patches[0].add,false);
+ await page.selectOption('#tool','edit');await page.selectOption('#layer','foreground');await page.selectOption('#shapes','royal-stair-banner');const depth=page.locator('#properties label').filter({hasText:'Hide behind feet Y'}).locator('input');await depth.fill('1009');await depth.dispatchEvent('change');await saved();assert.equal((await draft()).structures.find(s=>s[0]==='royal-stair-banner')[3],1009);
+ await page.selectOption('#layer','base');await page.selectOption('#shapes','royal-west-statue');const radius=page.locator('#properties label').filter({hasText:'Width radius'}).locator('input');await radius.fill('12');await radius.dispatchEvent('change');await saved();assert.equal((await draft()).structures.find(s=>s[0]==='royal-west-statue')[1][2],12);
+ const download=page.waitForEvent('download');await page.click('#save');await(await download).saveAs('test-results/editor-export.json');assert.equal(JSON.parse(await fs.readFile('test-results/editor-export.json','utf8')).structures.find(s=>s[0]==='royal-west-statue')[1][2],12);
+ await page.reload();await page.waitForFunction(()=>document.querySelector('#shapes').options.length>20);assert.equal((await draft()).structures.find(s=>s[0]==='royal-west-statue')[1][2],12);
+ await page.selectOption('#jump','4');await page.selectOption('#tool','walk');await page.waitForTimeout(1000);await page.locator('canvas').focus();await page.keyboard.down('ArrowRight');await page.waitForTimeout(300);await page.keyboard.up('ArrowRight');await page.screenshot({path:'test-results/map-editor-preview.png'});
+ await page.setInputFiles('#background-file','public/assets/stage3/map-editor-overview.webp');await page.waitForFunction(()=>document.querySelector('header small').textContent==='Custom map');await saved();assert.equal((await draft()).rooms.length,0);
+ await page.click('#new-area');await saved();assert.equal((await draft()).decks.length,1);await page.fill('#scale','2');await page.locator('#scale').dispatchEvent('change');await saved();assert.equal((await draft()).unitsPerPixel,2);
+ await page.click('#new-object');await saved();assert.equal((await draft()).structures.length,1);
+ page.once('dialog',d=>d.accept('Player spawn'));await page.click('#new-marker');await saved();assert.equal((await draft()).markers[0].name,'Player spawn');
+ const custom=page.waitForEvent('download');await page.click('#save');await(await custom).saveAs('test-results/editor-custom.json');await page.reload();await page.waitForFunction(()=>document.querySelector('header small').textContent==='Custom map');assert.equal((await draft()).markers[0].name,'Player spawn');
+ await page.setInputFiles('#file','test-results/editor-export.json');await page.waitForFunction(()=>document.querySelector('header small').textContent==='Mana Abyss');await saved();assert.equal((await draft()).structures.find(s=>s[0]==='royal-west-statue')[1][2],12);
+ await page.setViewportSize({width:844,height:390});await page.selectOption('#jump','4');await page.screenshot({path:'test-results/map-editor-mobile.png'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ assert.deepEqual(errors,[]);console.log('Map editor browser checks passed: drag, undo/redo, paint, bases, foreground depth, export/import, draft reload, custom maps, scale, markers, responsive layout.');
+}finally{await browser.close();}

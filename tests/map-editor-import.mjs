@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {REALM_MAP_DATA} from '../src/realm-map-data.ts';
+const root=path.resolve('test-results/map-import-fixture');await fs.mkdir(path.join(root,'src'),{recursive:true});await fs.mkdir(path.join(root,'tools'),{recursive:true});
+for(const file of ['realm-layout.ts','realm-structures.ts','realm-zones.ts','realm-floor-data.ts','titan-realm-map.ts','realm-map-data.ts','realm-map-document.ts'])await fs.copyFile('src/'+file,path.join(root,'src',file));
+for(const file of ['apply-realm-map.mjs','pack-realm-collision.mjs'])await fs.copyFile('tools/'+file,path.join(root,'tools',file));
+const d=structuredClone(REALM_MAP_DATA);d.patches=[{add:true,points:[[480,180],[520,180],[520,220],[480,220]]}];d.structures[7][3]=1008;d.rooms[0][5]=[222,223];await fs.writeFile(path.join(root,'map.json'),JSON.stringify(d));
+let result=spawnSync(process.execPath,['tools/apply-realm-map.mjs','map.json'],{cwd:root,encoding:'utf8'});assert.equal(result.status,0,result.stderr);console.log(result.stdout.trim());
+const probe="import{insideRealm}from'./src/titan-realm-map.ts';import{REALM_STRUCTURES}from'./src/realm-structures.ts';import{REALM_GROTTOS}from'./src/realm-layout.ts';if(!insideRealm((500-632)*7.4,(200-524)*7.4-38,30))throw Error('Painted floor missing');if(Math.abs(REALM_STRUCTURES[7].depthY-((1008-524)*7.4-38))>.001)throw Error('Depth missing');if(Math.abs(REALM_GROTTOS[0].relic.y-(223-270)*7.4)>.001)throw Error('Marker missing');console.log('Exported floor, foreground depth, and relic point applied to game runtime.');";
+result=spawnSync(process.execPath,['--input-type=module','-e',probe],{cwd:root,encoding:'utf8'});assert.equal(result.status,0,result.stderr);console.log(result.stdout.trim());

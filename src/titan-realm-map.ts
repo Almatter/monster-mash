@@ -1,3 +1,5 @@
+import {REALM_MAP_DATA} from './realm-map-data.ts';
+import {polygonContains} from './realm-map-document.ts';
 import {REALM_GUARDIAN_ZONES,TITAN_SEAL} from './realm-zones.ts';
 import {REALM_STRUCTURES,realmStructureBlocks} from './realm-structures.ts';
 import {REALM_FLOOR_CLEARANCE,REALM_FLOOR_GRID,REALM_FLOOR_COLS} from './realm-floor-data.ts';
@@ -8,7 +10,7 @@ import type {RealmPoint} from './realm-layout.ts';
 export const REALM_CHUNKS={gutter:1,size:512,cols:20,rows:20,left:-5120,top:-5120,cacheLimit:24};
 export const REALM_RING=805,REALM_ARENA_YSCALE=.80,REALM_EDGE=5000,REALM_BRIDGE_RADIUS=100;
 type Lane={a:RealmPoint;b:RealmPoint;radius:number;yScale?:number};
-export const REALM_LANES:Lane[]=[{a:{x:0,y:-38},b:{x:0,y:-38},radius:1065,yScale:747/1065},...REALM_PATHS.flatMap(p=>p.curve.slice(1).map((b,i)=>({a:p.curve[i],b,radius:p.radius})))];
+export const REALM_LANES:Lane[]=[{a:{x:(REALM_MAP_DATA.arena[0]-632)*7.4,y:(REALM_MAP_DATA.arena[1]-524)*7.4-38},b:{x:0,y:-38},radius:REALM_MAP_DATA.arena[2]*7.4,yScale:REALM_MAP_DATA.arena[3]/REALM_MAP_DATA.arena[2]},...REALM_PATHS.flatMap(p=>p.curve.slice(1).map((b,i)=>({a:p.curve[i],b,radius:p.radius})))];
 const roomFloors=REALM_GROTTOS.map(s=>({...s,points:s.floor.map(([x,y])=>({x:x+s.x,y:y+s.y})),block:REALM_STRUCTURES[s.id].base}));
 const floorAreas=[...roomFloors,...REALM_DECKS];
 const areas=new Map<string,typeof floorAreas>();
@@ -17,12 +19,14 @@ const key=(x:number,y:number)=>Math.floor(x/CELL)+':'+Math.floor(y/CELL);
 function register<T>(map:Map<string,T[]>,item:T,x0:number,y0:number,x1:number,y1:number){for(let x=Math.floor(x0/CELL);x<=Math.floor(x1/CELL);x++)for(let y=Math.floor(y0/CELL);y<=Math.floor(y1/CELL);y++){const k=x+':'+y;if(!map.has(k))map.set(k,[]);map.get(k)!.push(item);}}
 for(const l of REALM_LANES)register(lanes,l,Math.min(l.a.x,l.b.x)-l.radius,Math.min(l.a.y,l.b.y)-l.radius,Math.max(l.a.x,l.b.x)+l.radius,Math.max(l.a.y,l.b.y)+l.radius);
 for(const r of floorAreas)register(areas,r,Math.min(...r.points.map(p=>p.x)),Math.min(...r.points.map(p=>p.y)),Math.max(...r.points.map(p=>p.x)),Math.max(...r.points.map(p=>p.y)));
+const floorPatches=new Map<string,{add:boolean;points:number[][]}[]>();
+for(const p of REALM_MAP_DATA.patches as {add:boolean;points:number[][]}[])register(floorPatches,p,(Math.min(...p.points.map(v=>v[0]))-632)*7.4,(Math.min(...p.points.map(v=>v[1]))-524)*7.4-38,(Math.max(...p.points.map(v=>v[0]))-632)*7.4,(Math.max(...p.points.map(v=>v[1]))-524)*7.4-38);
 function segmentDistance(x:number,y:number,a:RealmPoint,b:RealmPoint){const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1))),qx=x-a.x-dx*t,qy=y-a.y-dy*t;return qx*qx+qy*qy;}
 function insideRoom(x:number,y:number,r:{points:RealmPoint[]},radius:number){let inside=false;for(let i=0,j=r.points.length-1;i<r.points.length;j=i++){const a=r.points[i],b=r.points[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;if(radius>0&&segmentDistance(x,y,a,b)<radius*radius-.001)return false;}return inside;}
 export function insideRealm(x:number,y:number,radius=0){if(!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>REALM_EDGE-radius||Math.abs(y)>REALM_EDGE-radius)return false;const ix=Math.round((x+5120)/REALM_FLOOR_GRID),iy=Math.round((y+5120)/REALM_FLOOR_GRID),clearance=REALM_FLOOR_CLEARANCE[iy*REALM_FLOOR_COLS+ix];return radius===0?clearance>0:clearance>=radius+3;}
 // The packing tool samples the complete floor union before computing distance
 // to void. Collision is one constant-time lookup, without internal shape seams.
-export function realmFloorContains(x:number,y:number){if(Math.abs(x)>REALM_EDGE||Math.abs(y)>REALM_EDGE)return false;if(realmStructureBlocks(x,y))return false;return rawFloor(x,y);}
+export function realmFloorContains(x:number,y:number){if(Math.abs(x)>REALM_EDGE||Math.abs(y)>REALM_EDGE)return false;if(realmStructureBlocks(x,y))return false;let floor=rawFloor(x,y);for(const patch of floorPatches.get(key(x,y))||[])if(polygonContains(patch.points,x/7.4+632,(y+38)/7.4+524))floor=patch.add;return floor;}
 // The authored room/deck union supplies the offline packing mask.
 function rawFloor(x:number,y:number){const k=key(x,y);for(const r of areas.get(k)||[])if(insideRoom(x,y,r,0))return true;for(const l of lanes.get(k)||[]){if(l.yScale){if(((x-l.a.x)**2+((y-l.a.y)/l.yScale)**2)<=l.radius*l.radius)return true;}}return false;}
 export function slideRealm(body:RealmPoint,radius:number){if(insideRealm(body.x,body.y,radius))return;let cost=Infinity,chosen={...REALM_START};const consider=(q:RealmPoint)=>{const c=(q.x-body.x)**2+(q.y-body.y)**2;if(c<cost&&insideRealm(q.x,q.y,radius)){cost=c;chosen=q;}};
