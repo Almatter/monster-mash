@@ -20,7 +20,10 @@ export function validateMapDocument(value:unknown):MapDocument{
  if(!Array.isArray(d.decks)||(titan?d.decks.length!==12:d.decks.length>100)||d.decks.some((r,i)=>!Array.isArray(r)||(titan?r[0]!==routes[i]:typeof r[0]!=='string')||typeof r[1]!=='boolean'||!Array.isArray(r[2])||r[2].length<2||r[2].length>1000||!r[2].every(point)||!polygon(r[3])))fail('path data.');
  const bases=['barrow-altar','archive-altar','fang-altar','foundry-altar','throne-altar','crypt-altar','ravine-altar'];
  if(!Array.isArray(d.structures)||(titan&&d.structures.length<7)||d.structures.length>100||new Set(d.structures.map(s=>s?.[0])).size!==d.structures.length||d.structures.some((s,i)=>!Array.isArray(s)||typeof s[0]!=='string'||!/^[a-z0-9-]{1,60}$/.test(s[0])||(titan&&i<7&&s[0]!==bases[i])||!ellipse(s[1])||!polygon(s[2])||(s[3]!==undefined&&!number(s[3]))))fail('solid bases or foreground shapes.');
- if(!ellipse(d.arena)||!Array.isArray(d.patches)||d.patches.length>2000||d.patches.some(p=>!p||typeof p.add!=='boolean'||!polygon(p.points)))fail('arena or painted floor.');
+ if(!ellipse(d.arena))fail('Titan arena center or radii are invalid. Check the arena floor values.');
+ if(!Array.isArray(d.patches))fail('painted floor must be a list of areas.');
+ if(d.patches.length>100000)fail('painted floor exceeds 100,000 sections. Download a draft backup for recovery.');
+ for(let i=0;i<d.patches.length;i++){const p=d.patches[i];if(!p||typeof p.add!=='boolean'||!polygon(p.points))fail('painted floor section '+(i+1)+' has invalid points. Download a draft backup for recovery.');}
  if(d.markers!==undefined&&(!Array.isArray(d.markers)||d.markers.length>500||d.markers.some(m=>!m||typeof m.id!=='string'||typeof m.name!=='string'||m.name.length>100||!point(m.point))))fail('map markers.');
  return JSON.parse(JSON.stringify(d));
 }

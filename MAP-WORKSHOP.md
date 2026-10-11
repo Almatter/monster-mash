@@ -45,3 +45,7 @@ node tests/map-editor-browser.mjs
 ```
 
 Browser checks require Playwright and Edge/Chromium, using `PLAYWRIGHT_PATH`, `BROWSER_PATH` and optionally `BASE_URL`. The import check uses a separate fixture under `test-results/` and does not replace the game's authored map.
+
+## Export recovery
+
+**Export draft backup** downloads the current draft without requiring validation. If normal export fails, it now downloads this backup automatically and identifies the invalid area. Send the backup for repair; do not reset the editor or clear browser storage. A saved draft that cannot be validated remains protected from autosave overwrites until a valid repaired project is imported. Painted drafts support up to 100,000 individual sections rather than the former 2,000-section limit.
