@@ -3,6 +3,8 @@ import {REALM_PATHS,REALM_GROTTOS,insideRealm,realmCachedSteer,moveRealm,inTitan
 import type {Identity} from './identity.ts';
 import {releasedPower} from './unbound.ts';
 
+export const MIMIC_BALANCE={damage:.25,health:.75,recovery:.75,maxPlayerHit:.25,transform:1.5};
+
 type Point={x:number;y:number};
 type Target={proxy:Enemy;body:Enemy|Game['player']|Game['servants'][number];serial:number;kind:'player'|'enemy'|'servant'};
 export type RealmMimic={route:number;mode:'passage'|'chase'|'roam';goal:Point;brain:Game|null;identity:Identity|null;copiedAt:number;lost:number;decision:number;bank:number;targets:Target[];slot:number;wanderAt:number};
@@ -24,17 +26,17 @@ export function queueRealmMimic(g:Game){const state=g.realm!.mimics;if(g.realm!.
 export function spawnRealmMimics(g:Game){const s=g.realm!.mimics;if(!s.pending)return;const sites=mimicSpawnSites(g.targetView.x,g.targetView.y),routes=sites.map((points,route)=>({route,points:points.filter(p=>outside(p,g.player,g.targetView.x+150,g.targetView.y+150))})).filter(r=>r.points.length&&!s.routes.includes(r.route));if(!routes.length)return;
  const choice=routes[Math.floor(g.random()*routes.length)],p=choice.points[Math.floor(g.random()*choice.points.length)],e=g.spawn('elite');if(!e)return;
  const mimic:RealmMimic={route:choice.route,mode:'passage',goal:{...p},brain:null,identity:null,copiedAt:-1,lost:0,decision:0,bank:0,targets:[],slot:0,wanderAt:0};
- Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp,maxHp:g.player.maxHp,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;b.hurt(amount);return Math.max(0,hp-b.player.hp);}});
+ Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp*MIMIC_BALANCE.health,maxHp:g.player.maxHp*MIMIC_BALANCE.health,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;b.hurt(amount);return Math.max(0,hp-b.player.hp);}});
  s.pending--;s.routes.push(choice.route);
 }
 export function mimicInView(g:Game,e:Enemy){return !outside(e,g.player,g.targetView.x-35,g.targetView.y-35);}
 export function awakenMimic(g:Game,e:Enemy){const m=e.mimic!;if(m.brain)return m.brain;
  // An independent combat instance has no enemy pool, world spawns, objectives or records.
  const b=new Game((g.seed^e.serial*2654435761)>>>0,{...g.identity,colors:{...g.identity.colors}},2,g.titanKit,true);
- b.powers=g.powers.map(p=>({...p}));b.relicOwners=[...g.relicOwners];b.player.maxHp=g.player.maxHp;b.player.hp=b.player.maxHp;e.maxHp=e.hp=b.player.maxHp;b.player.x=e.x;b.player.y=e.y;b.targetView={...g.targetView};b.lungeCharges=b.maxLungeCharges();b.score.carnage=g.score.carnage;b.time=g.time;
+ b.powers=g.powers.map(p=>({...p}));b.relicOwners=[...g.relicOwners];b.player.maxHp=g.player.maxHp*MIMIC_BALANCE.health;b.damageScale=MIMIC_BALANCE.damage;b.recoveryScale=MIMIC_BALANCE.recovery;b.attacksBlockedUntil=g.time+MIMIC_BALANCE.transform;b.player.hp=b.player.maxHp;e.maxHp=e.hp=b.player.maxHp;b.player.x=e.x;b.player.y=e.y;b.targetView={...g.targetView};b.lungeCharges=b.maxLungeCharges();b.score.carnage=g.score.carnage;b.time=g.time;
  b.armyProvider=()=>g.armyMembers();
  b.sound=kind=>{if(e.active&&mimicInView(g,e)&&!['heal','shield','carnage','hurt','lowHealth','defeat'].includes(kind))g.sound(kind);};
- m.brain=b;m.identity=b.identity;m.mode='chase';m.copiedAt=g.time;m.lost=0;g.effect(e.x,e.y,'realm-breach',110,.8);g.sound('corruption');g.announce('MIMIC · YOUR REFLECTION HAS FOUND YOU');return b;
+ m.brain=b;m.identity=b.identity;m.mode='chase';m.copiedAt=g.time;m.lost=0;g.effect(e.x,e.y,'realm-breach',110,MIMIC_BALANCE.transform);g.sound('corruption');g.announce('MIMIC · YOUR REFLECTION HAS FOUND YOU');return b;
 }
 const roamingGoals=[...REALM_PATHS.flatMap(p=>[p.curve[0],p.curve.at(-1)!]),...REALM_GROTTOS.map(s=>realmAltar(s.id)),{x:0,y:0},{x:300,y:100},{x:-300,y:-100}].filter(p=>insideRealm(p.x,p.y,30));
 function onPassage(p:Point,route:number){const curve=peripheral[route].curve;for(let i=1;i<curve.length;i++){const a=curve[i-1],b=curve[i],dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));if(Math.hypot(p.x-a.x-dx*t,p.y-a.y-dy*t)<145)return true;}return false;}
@@ -47,7 +49,7 @@ function syncTargets(g:Game,e:Enemy){const m=e.mimic!,b=m.brain!;
  // Keep proxy identity stable for piercing hits, summons and held enemies.
  const next:Target[]=[];
  for(const held of m.targets)if(held.proxy.grabbed&&!bodies.some(t=>t.body===held.body))bodies.push({body:held.body,serial:held.serial,kind:held.kind});
- for(const item of bodies){let t=m.targets.find(t=>t.body===item.body&&t.serial===item.serial);if(!t){const p:Enemy={active:true,kind:item.kind==='enemy'?(item.body as Enemy).kind:item.kind==='servant'?'thrall':'elite',x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:item.serial};t={...item,proxy:p};if(item.kind==='servant')p.servantTarget=item.body as Game['servants'][number];p.receiveDamage=amount=>{const body=t!.body,old=body.hp;if(t!.kind==='player')g.hurt(amount);else if(t!.kind==='enemy'){const prey=body as Enemy;if(!prey.active||prey.serial!==t!.serial)return 0;prey.hp=Math.max(0,prey.hp-amount);prey.flash=.1;if(prey.hp<=0){prey.active=false;g.alive--;}}else{const servant=body as Game['servants'][number];if(!servant.active)return 0;servant.hp=Math.max(0,servant.hp-amount);if(servant.hp<=0)servant.active=false;}return Math.max(0,old-body.hp);};}
+ for(const item of bodies){let t=m.targets.find(t=>t.body===item.body&&t.serial===item.serial);if(!t){const p:Enemy={active:true,kind:item.kind==='enemy'?(item.body as Enemy).kind:item.kind==='servant'?'thrall':'elite',x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:item.serial};t={...item,proxy:p};if(item.kind==='servant')p.servantTarget=item.body as Game['servants'][number];p.receiveDamage=amount=>{const body=t!.body,old=body.hp;if(t!.kind==='player')g.hurt(amount,g.player.maxHp*MIMIC_BALANCE.maxPlayerHit);else if(t!.kind==='enemy'){const prey=body as Enemy;if(!prey.active||prey.serial!==t!.serial)return 0;prey.hp=Math.max(0,prey.hp-amount);prey.flash=.1;if(prey.hp<=0){prey.active=false;g.alive--;}}else{const servant=body as Game['servants'][number];if(!servant.active)return 0;servant.hp=Math.max(0,servant.hp-amount);if(servant.hp<=0)servant.active=false;}return Math.max(0,old-body.hp);};}
  const p=t.proxy,body=t.body;p.active=t.kind==='player'?!g.ended:(body as Enemy).active;p.x=body.x;p.y=body.y;p.hp=body.hp;p.maxHp=t.kind==='player'?g.player.maxHp:t.kind==='enemy'?(body as Enemy).maxHp:220;
  if(t.kind==='enemy')p.corruptUntil=(body as Enemy).corruptUntil;next.push(t);
  }
@@ -78,11 +80,13 @@ export function updateRealmMimic(g:Game,e:Enemy,dt:number){const m=e.mimic!,visi
  m.bank+=dt;const interval=visible||m.mode==='chase'?.05:.2;if(m.bank<interval)return;const elapsed=Math.min(m.bank,.25);m.bank=0;
  const from={x:e.x,y:e.y},goal=m.mode==='chase'?g.player:m.goal,v=realmCachedSteer(e,goal.x,goal.y,g.time);
  if(!m.brain){e.x+=v.x*65*elapsed;e.y+=v.y*65*elapsed;moveRealm(e,from,24);if(!onPassage(e,m.route)){e.x=from.x;e.y=from.y;m.wanderAt=0;}return;}
- const b=m.brain;b.time=g.time-elapsed;b.player.x=e.x;b.player.y=e.y;b.player.hp=e.hp;b.targetView={...g.targetView};syncTargets(g,e);m.decision-=elapsed;
- const afraid=(e.fearedUntil||0)>g.time;if(m.mode==='chase'&&!afraid&&g.time-m.copiedAt>=.8)decideCast(g,e,g.player,distance);
+ const b=m.brain;b.time=g.time-elapsed;b.player.x=e.x;b.player.y=e.y;b.player.hp=e.hp;b.targetView={...g.targetView};m.decision-=elapsed;
+ if(g.time-m.copiedAt<MIMIC_BALANCE.transform){b.time=g.time;b.player.invuln=Math.max(0,b.player.invuln-elapsed);e.x+=e.vx*elapsed;e.y+=e.vy*elapsed;moveRealm(e,from,23);e.vx*=Math.exp(-elapsed*4);e.vy*=Math.exp(-elapsed*4);return;}
+ syncTargets(g,e);
+ const afraid=(e.fearedUntil||0)>g.time;if(m.mode==='chase'&&!afraid)decideCast(g,e,g.player,distance);
  let x=v.x,y=v.y;const preferred=b.monster.basic.ranged?Math.min(340,b.monster.basic.radius*b.releaseStats.radius*.7):65;
  if(m.mode==='chase'&&distance<preferred){x=0;y=0;}if((e.snaredUntil||0)>g.time){x*=.18;y*=.18;}
- if(afraid){const d=distance||1;x=(e.x-g.player.x)/d;y=(e.y-g.player.y)/d;}if(g.time-m.copiedAt<.8)x=y=0;
+ if(afraid){const d=distance||1;x=(e.x-g.player.x)/d;y=(e.y-g.player.y)/d;}
  // Real player update uses exact cooldowns, attack collision, passive recovery and power effects.
  let remaining=elapsed;while(remaining>0&&!b.ended){const step=Math.min(.05,remaining);b.update(step,{x,y,aimX:goal.x,aimY:goal.y,aiming:m.mode==='chase'});commitControls(g,e,step);remaining-=step;}
  e.x=b.player.x+e.vx*elapsed;e.y=b.player.y+e.vy*elapsed;if(!b.vault)moveRealm(e,from,23);e.vx*=Math.exp(-elapsed*4);e.vy*=Math.exp(-elapsed*4);e.hp=b.player.hp;syncReflections(g,e);
