@@ -1,0 +1,15 @@
+# Stage 3 mimics
+
+Each shrine's first relic activation from the second through the seventh queues one mimic. Four shrines release three; seven release six. Swapping relics, revisiting and recapture do not release extra copies. Dead mimics do not respawn.
+
+Initial steel-gray slimes patrol randomly assigned peripheral passages. Spawn sites use the authored walkable floor and stay outside the player's view and both passage entrance views. Sites beyond all shrine floor views are preferred. A queued release waits if no suitable unseen route is available.
+
+A visible encounter, or an attack before sight, snapshots the champion's appearance, body statistics, four equipped powers and their traits. The copy uses the same champion animations and combat routines. Borrowed powers retain their donor mechanics. Its saved kit does not follow later player swaps. A copy has its own health, cooldowns, recovery reserves and combat effects.
+
+Chase breaks after 2.5 seconds outside view and beyond 1,250 world units. The transformed mimic then selects independent random routes across the entire map, including the Titan arena and shrines. Sight starts another chase without changing its snapshot. Portals help avoid initial passage patrols. Roaming destinations do not track the player's location.
+
+All Stage 3 armies share the Final Release limit of 28 active servants. Raise uses remaining capacity. Command and Dominion can transfer opposing servants; the player can reclaim a mimic's servants. Transfers do not inflate the shared total. Hostile servants remain damageable and disappear when their owner dies. Mimic kills of attendants do not award player score or shrine progress.
+
+Combat copies allocate target proxies, not another world enemy pool. Nearby combat runs at 20 Hz with the usual swept movement and damage routines; distant roaming updates at 5 Hz. Spawn-site preparation is cached per viewport class. Champion and power rendering is shared with the player; the slime is generated artwork packed as a transparent 384-pixel WebP.
+
+Validation: `node --test tests/realm-mimic.test.mjs`, the complete unit suite, `node tests/realm-mimic-browser.mjs`, `node tests/realm-interactions-browser.mjs` and `node tools/check-pages-build.mjs`. Browser checks cover desktop and touch viewports, all seven bodies, real power damage, immutable copies, six-copy combat and the shared army limit. Emulated touch is not a physical-phone performance guarantee.

@@ -6,8 +6,16 @@ import {courtContactScale} from './stage-two.ts';
 export type Servant={active:boolean;x:number;y:number;life:number;hp:number;hitTimer:number;source:'controlled'|'summoned';timer:number;search:number;target:Enemy|null;serial:number};
 export function createServants():Servant[]{return Array.from({length:32},()=>({active:false,x:0,y:0,life:0,hp:0,hitTimer:0,source:'summoned',timer:0,search:0,target:null,serial:0}));}
 export const servantCap=(release:number)=>24+release;
-export function addServant(g:Game,x:number,y:number,source:Servant['source'],life=28){const active=g.servants.filter(s=>s.active);let s=active.length<servantCap(g.release)?g.servants.find(s=>!s.active):undefined;if(!s&&source==='controlled')s=active.reduce<Servant|null>((best,item)=>!best||item.life+item.hp/100<best.life+best.hp/100?item:best,null)||undefined;if(!s)return false;Object.assign(s,{active:true,x,y,source,life,hp:220,hitTimer:0,timer:0,search:0,target:null,serial:0});return true;}
-export function dominate(g:Game,radius:number,count:number,life=28){let converted=0;g.nearby(g.player.x,g.player.y,radius,e=>{if(e.realm?.role==='guardian'||converted>=count||!['thrall','hound','wing'].includes(e.kind)||Math.hypot(e.x-g.player.x,e.y-g.player.y)>radius)return;if(addServant(g,e.x,e.y,'controlled',life)){e.active=false;g.alive--;converted++;}});return converted;}
+export function addServant(g:Game,x:number,y:number,source:Servant['source'],life=28,converted?:Enemy){
+ const active=g.servants.filter(s=>s.active),army=g.armyMembers().filter(s=>s.active),cap=servantCap(g.release),victim=converted?.reflection?.servant||converted?.servantTarget,transfer=!!victim?.active;
+ // Every side in the Depths shares one army budget. Control transfers a body;
+ // raising at the global cap cannot add another body or steal one at a distance.
+ let s=army.length-(transfer?1:0)<cap&&active.length<cap?g.servants.find(s=>!s.active):undefined;
+ if(!s&&source==='controlled')s=active.reduce<Servant|null>((best,item)=>!best||item.life+item.hp/100<best.life+best.hp/100?item:best,null)||undefined;
+ if(!s)return false;if(transfer)victim!.active=false;
+ Object.assign(s,{active:true,x,y,source,life,hp:220,hitTimer:0,timer:0,search:0,target:null,serial:0});return true;
+}
+export function dominate(g:Game,radius:number,count:number,life=28){let converted=0;g.nearby(g.player.x,g.player.y,radius,e=>{if(e.realm?.role==='guardian'||converted>=count||!['thrall','hound','wing'].includes(e.kind)||Math.hypot(e.x-g.player.x,e.y-g.player.y)>radius)return;if(addServant(g,e.x,e.y,'controlled',life,e)){e.active=false;g.alive--;converted++;}});return converted;}
 export function corrupt(g:Game,radius:number,duration=8){g.nearby(g.player.x,g.player.y,radius+65,e=>{if(Math.hypot(e.x-g.player.x,e.y-g.player.y)<radius)e.corruptUntil=g.time+duration;});}
 export function updateServants(g:Game,dt:number){
  let ownerThreat=false;if(g.servants.some(s=>s.active))g.nearby(g.player.x,g.player.y,260,e=>{if(Math.hypot(e.x-g.player.x,e.y-g.player.y)<260)ownerThreat=true;});
