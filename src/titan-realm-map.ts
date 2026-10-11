@@ -4,7 +4,7 @@ import {REALM_GUARDIAN_ZONES,TITAN_SEAL,titanZoneContains} from './realm-zones.t
 import {REALM_STRUCTURES,realmStructureBlocks} from './realm-structures.ts';
 import {REALM_FLOOR_CLEARANCE,REALM_FLOOR_GRID,REALM_FLOOR_COLS} from './realm-floor-data.ts';
 import {REALM_GROTTOS,REALM_PATHS,REALM_DECKS,REALM_START} from './realm-layout.ts';
-export {REALM_GROTTOS,REALM_PATHS,REALM_START,REALM_CLUES,realmAltar,realmPortal} from './realm-layout.ts';
+export {REALM_GROTTOS,REALM_PATHS,REALM_START,REALM_CLUES,realmAltar,realmPortal,realmPortalInteraction} from './realm-layout.ts';
 export type {RealmPoint} from './realm-layout.ts';
 import type {RealmPoint} from './realm-layout.ts';
 export const REALM_CHUNKS={gutter:1,size:512,cols:20,rows:20,left:-5120,top:-5120,cacheLimit:24};

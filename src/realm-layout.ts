@@ -11,6 +11,7 @@ export const REALM_ARENA_ART={left:-1065,top:-785,width:2130,height:1494};
 export const REALM_START=realmMasterPoint(644,744);
 export const REALM_CLUES=[[644,710],[827,505],[635,357],[437,457]].map(([x,y])=>realmMasterPoint(x,y));
 export const realmAltar=(id:number)=>{const s=REALM_GROTTOS[id];return {x:s.x+s.interact.x,y:s.y+s.interact.y};};
+export const realmPortalInteraction=(id:number)=>{const room=definitions[id],point=(REALM_MAP_DATA as unknown as {portalInteractions?:{shrine:string;point:number[]}[]}).portalInteractions?.find(p=>p.shrine===room[0])?.point||room[6];return realmMasterPoint(point[0],point[1]);};
 export const realmPortal=(id:number)=>{const s=REALM_GROTTOS[id];return {x:s.x+s.portal.x,y:s.y+s.portal.y};};
 const decks:[string,boolean,number[][],number[][]][]=REALM_MAP_DATA.decks as [string,boolean,number[][],number[][]][];
 export const REALM_ROUTES=decks.map(([id,stairs,path])=>({id,stairs,points:world(path).map(p=>[p.x,p.y])}));
