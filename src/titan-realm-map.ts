@@ -1,6 +1,6 @@
 import {REALM_MAP_DATA} from './realm-map-data.ts';
 import {polygonContains} from './realm-map-document.ts';
-import {REALM_GUARDIAN_ZONES,TITAN_SEAL} from './realm-zones.ts';
+import {REALM_GUARDIAN_ZONES,TITAN_SEAL,titanZoneContains} from './realm-zones.ts';
 import {REALM_STRUCTURES,realmStructureBlocks} from './realm-structures.ts';
 import {REALM_FLOOR_CLEARANCE,REALM_FLOOR_GRID,REALM_FLOOR_COLS} from './realm-floor-data.ts';
 import {REALM_GROTTOS,REALM_PATHS,REALM_DECKS,REALM_START} from './realm-layout.ts';
@@ -43,7 +43,7 @@ export function prepareRealmNavigation(){if(navigationReady)return;navigationRea
 function nearbyNodes(p:RealmPoint){const x=Math.round((p.x+5120)/GRID),y=Math.round((p.y+5120)/GRID),out:number[]=[];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const xx=x+dx,yy=y+dy,id=yy*COLS+xx;if(xx>=0&&xx<COLS&&yy>=0&&yy<COLS&&walkable[id])out.push(id);}return out;}
 export function realmWaypoint(x:number,y:number,tx:number,ty:number,avoidArena=false){prepareRealmNavigation();const from={x,y},goal={x:tx,y:ty};if(!insideRealm(x,y,25)){const local=nearbyNodes(from).sort((a,b)=>Math.hypot(center(a).x-x,center(a).y-y)-Math.hypot(center(b).x-x,center(b).y-y));if(local.length)return center(local[0]);slideRealm(from,29);return from;}slideRealm(goal,30);if(clear(from,goal)&&(!avoidArena||!crossesArena(from,goal)))return goal;const goals=nearbyNodes(goal).filter(id=>clear(goal,center(id))).sort((a,b)=>Math.hypot(center(a).x-goal.x,center(a).y-goal.y)-Math.hypot(center(b).x-goal.x,center(b).y-goal.y)),end=goals[0];if(end===undefined)return from;const flowKey=end+':'+avoidArena;let flow=flows.get(flowKey);if(!flow){flow=new Int16Array(walkable.length).fill(-1);flow[end]=0;let tail=1;queue[0]=end;for(let i=0;i<tail;i++){const id=queue[i],mask=neighbors[id];for(let bit=0;bit<4;bit++){const next=id+(bit===0?-1:bit===1?1:bit===2?-COLS:COLS);if((mask&(1<<bit))&&flow[next]<0&&(!avoidArena||!inTitanArena(center(next).x,center(next).y))){flow[next]=flow[id]+1;queue[tail++]=next;}}}if(flows.size>=8)flows.delete(flows.keys().next().value!);flows.set(flowKey,flow);}let chosen=-1,best=Infinity;for(const id of nearbyNodes(from)){if(flow[id]<0)continue;const p=center(id),d=Math.hypot(p.x-x,p.y-y),cost=flow[id]*GRID*8+d;if((cost<best-.1||Math.abs(cost-best)<.1&&chosen>=0&&flow[id]<flow[chosen])&&clear(from,p)&&(!avoidArena||!crossesArena(from,p))){chosen=id;best=cost;}}return chosen<0?from:center(chosen);}
 export function realmSteer(x:number,y:number,tx:number,ty:number){const p=realmWaypoint(x,y,tx,ty),dx=p.x-x,dy=p.y-y,d=Math.hypot(dx,dy)||1;return {x:dx/d,y:dy/d};}
-export const inTitanArena=(x:number,y:number)=>((x-TITAN_SEAL.x)/TITAN_SEAL.rx)**2+((y-TITAN_SEAL.y)/TITAN_SEAL.ry)**2<1;
+export const inTitanArena=titanZoneContains;
 
 // Swept movement prevents knockback and dashes from snapping onto a different floor.
 // Vault deliberately bypasses this sweep and validates only its landing.
