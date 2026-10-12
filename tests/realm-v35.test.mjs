@@ -39,7 +39,7 @@ test('known relics can only be equipped at their home altar and retain their dec
  const home=REALM_GROTTOS[r.shrine];Object.assign(g.player,realmAltar(home.id));const altar=r.shrine;assert.ok(claimRelic(g,altar));assert.ok(equipRelic(g,r.id,0));assert.equal(r.shrine,null);assert.equal(g.realm.shrines[altar].decor,'dormant');
 });
 test('Moonstrider Vault crosses a gap but cannot land in a chasm or outside the map',()=>{
- const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=-1260;g.player.y=-640;const destination={x:-1020,y:-400};assert.equal(insideRealm(-1140,-520,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));assert.equal(parkourLanding(g,{x:-1140,y:-520}),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
+ const g=new Game(1,{monsterId:'lycanthrope'},2);g.player.x=-1260;g.player.y=-640;const destination={x:-1020,y:-400};assert.equal(insideRealm(-1140,-520,23),false);assert.ok(insideRealm(destination.x,destination.y,23));assert.ok(parkourLanding(g,destination));const ether=Array.from({length:16},(_,i)=>({x:g.player.x+Math.cos(i*Math.PI/8)*250,y:g.player.y+Math.sin(i*Math.PI/8)*250})).find(p=>!insideRealm(p.x,p.y,0));assert.ok(ether);assert.equal(parkourLanding(g,ether),null);assert.equal(parkourLanding(g,{x:NaN,y:0}),null);assert.equal(parkourLanding(g,{x:g.player.x,y:g.player.y}),null);
  g.player.x=4800;g.player.y=1536;assert.equal(parkourLanding(g,{x:5100,y:1536}),null);
 });
 test('Howl fears lesser enemies, preserves boss and guardian behavior, and ended games never regenerate',()=>{
