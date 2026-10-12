@@ -131,7 +131,7 @@ export class Renderer {
   if(this.targeting){const t=this.targeting;this.drawTargetArea(c,t.kind||'meteor',t.x,t.y,t.radius,time,t.valid,true);}
   this.drawCombatEffects(c,g,time,detail,cx,cy,halfW,halfH);
   if(g.court)for(const z of g.court.colossus.zones){if(!courtArtVisible(z.x,z.y,z.radius*3,z.radius*3,0,cx,cy,halfW,halfH))continue;c.save();const warning=g.time<z.impactAt;this.drawVfx(c,warning?'colossus-warning':'colossus-eruption',z.x,z.y-(warning?0:18),z.radius*(warning?2.15:2.7),0,warning?.82:.65);c.strokeStyle='#1a1113';c.lineWidth=5;c.beginPath();c.arc(z.x,z.y,z.radius,0,Math.PI*2);c.stroke();c.strokeStyle=warning?'#ffbd7c':'#ff5c4c';c.lineWidth=2;c.stroke();if(warning){c.lineWidth=4;c.beginPath();c.arc(z.x,z.y,z.radius,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,Math.min(1,(g.time-z.placedAt)/(z.impactAt-z.placedAt))));c.stroke();}c.restore();}
-  if(g.realm){this.realmArt.drawDefense(c,g,halfW,halfH);this.realmArt.drawEncounterWalls(c,g,this.viewWidth/this.scale/2,this.viewHeight/this.scale/2);this.realmArt.drawInscriptions(c,g,halfW,halfH);}
+  if(g.realm){this.realmArt.drawGuardianWarnings(c,g,halfW,halfH);this.realmArt.drawDefense(c,g,halfW,halfH);this.realmArt.drawEncounterWalls(c,g,this.viewWidth/this.scale/2,this.viewHeight/this.scale/2);this.realmArt.drawInscriptions(c,g,halfW,halfH);}
   if(g.realm)this.environmentDebug?.(c,g);
   for(const e of this.courtHits)this.drawCourtHit(c,e);
   if(g.court&&courtHintTarget(g)){
