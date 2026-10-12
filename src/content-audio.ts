@@ -26,3 +26,5 @@ export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'r
 export type AudioCatalog={sfx?:Record<string,string[]>;music?:Partial<Record<MusicState,{file:string;loopStart?:number;loopEnd?:number}>>};
 
 CUES.colossusArrival={bus:'sfx',priority:10,gap:5};CUES.realmTeleport={bus:'sfx',priority:5,gap:.2};CUES.wolfLanding={bus:'sfx',priority:5,gap:.2};
+
+CUES['cyclone.launch']={bus:'sfx',priority:5,gap:.25};

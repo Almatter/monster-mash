@@ -37,8 +37,8 @@ export function guardianMotion(g:Game,e:Enemy,dt:number){const u=e.realm!,id=u.s
   if(action.warning<=0){if(action.kind==='lunge'){const from={x:e.x,y:e.y},step=Math.min(dt,action.remaining);const slow=((e.snaredUntil||0)>g.time?.18:1)*(g.fissures.length?fissureMotion(g,e):1);e.x+=Math.cos(action.angle)*GUARDIAN_TEAM.lungeSpeed*step*slow;e.y+=Math.sin(action.angle)*GUARDIAN_TEAM.lungeSpeed*step*slow;moveRealm(e,from,24,id);action.remaining-=step;
     if(!action.hit&&sweptHit(from,e,p,63)){const pushed=shove(g,action.angle);g.hurt(GUARDIAN_TEAM.lungeDamage);action.hit=true;g.effect(p.x,p.y,'realm-breach',90,.3);if(pushed)g.sound('collision');}if(action.remaining>0&&Math.hypot(e.x-from.x,e.y-from.y)>.5)return;
    }else if(action.kind==='bash'){g.effect(e.x,e.y,'realm-slam',125,.5);if(d<145)g.hurt(GUARDIAN_TEAM.bashDamage);}
-   else if(action.kind==='volley'){for(const offset of [-.13,0,.13])if(g.shots.length<64)g.shots.push({x:e.x,y:e.y,vx:Math.cos(action.angle+offset)*320,vy:Math.sin(action.angle+offset)*320,life:2.6,damage:GUARDIAN_TEAM.volleyDamage,guardianShrine:id});g.effect(e.x,e.y,'realm-cleave',85,.3,action.angle);}
-   else {for(const q of action.targets){g.effect(q.x,q.y,'realm-slam',q.radius,.6);if(Math.hypot(p.x-q.x,p.y-q.y)<q.radius+20)g.hurt(action.kind==='burst'?GUARDIAN_TEAM.burstDamage:GUARDIAN_TEAM.bombardDamage);}}
+   else if(action.kind==='volley'){for(const offset of [-.13,0,.13])if(g.shots.length<64)g.shots.push({x:e.x,y:e.y,vx:Math.cos(action.angle+offset)*320,vy:Math.sin(action.angle+offset)*320,life:2.6,damage:GUARDIAN_TEAM.volleyDamage,guardianShrine:id});g.effect(e.x,e.y,'realm-mana-burst',85,.3,action.angle);}
+   else {for(const q of action.targets){g.effect(q.x,q.y,'realm-mana-burst',q.radius,.6);if(Math.hypot(p.x-q.x,p.y-q.y)<q.radius+20)g.hurt(action.kind==='burst'?GUARDIAN_TEAM.burstDamage:GUARDIAN_TEAM.bombardDamage);}}
    a.action=null;e.windup=0;a.cooldown=u.variant===2?GUARDIAN_TEAM.lungeCycle:u.variant===0?2.8:1.8;g.sound(u.variant===1?'meteorImpact':'titanImpact');
   }else travel(g,e,{x:e.x,y:e.y},0,dt);return;
  }

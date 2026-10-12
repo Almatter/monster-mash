@@ -1,3 +1,4 @@
+import {castCyclone} from './lycanthrope-cyclone.ts';
 import {castFifthPower} from './relic-powers.ts';
 import {castParkour,castHowl,castRavage,castMoonfury} from './lycanthrope.ts';
 import {castFissure} from './titan-fissure.ts';
@@ -8,7 +9,7 @@ import type {Game} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
 import {addServant,dominate,corrupt} from './servants.ts';
 export const POWER_HANDLERS:Record<string,(game:Game,power:AbilityDef)=>void>={
- realmrelic:castFifthPower,parkour:castParkour,wolfhowl:castHowl,wolfravage:castRavage,wolffury:castMoonfury,
+ wolfcyclone:castCyclone,realmrelic:castFifthPower,parkour:castParkour,wolfhowl:castHowl,wolfravage:castRavage,wolffury:castMoonfury,
  fissure:castFissure,reapersweep:reaperSweep,reaperblink:reaperBlink,reapervolley:reaperVolley,
  reaperstorm(g,p){g.reaperStorm=p.duration||8;g.reaperPulse=0;g.reaperSweeps=0;},
  dominate(g,p){dominate(g,p.radius,12+g.release*3,28*(1+.2*upgradeRank(g,'duration')));},

@@ -1,7 +1,7 @@
 import {REALM_CLUES,REALM_PATHS} from './realm-layout.ts';
 import {insideRealm,inTitanArena} from './titan-realm-map.ts';
 import {TITAN_SEAL} from './realm-zones.ts';
-export type RealmInscription={x:number;y:number;bridge:string};
+export type RealmInscription={x:number;y:number;bridge:string;text?:string};
 export const INSCRIPTION_BRIDGES=['north-ascent','east-ascent','buried-ascent','foundry-ascent','west-ascent'];
 // The southern inscription stays by the opening approach. Other posts use clear
 // walking floor beyond the engagement wall, never inside the Titan's arena.

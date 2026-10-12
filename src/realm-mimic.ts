@@ -62,13 +62,13 @@ function commitControls(g:Game,e:Enemy,dt:number){const m=e.mimic!,b=m.brain!;
  }
 }
 function syncReflections(g:Game,e:Enemy){const b=e.mimic!.brain!;for(const servant of b.servants){let actor=g.enemies.find(a=>a.active&&a.reflection?.servant===servant);if(!servant.active)continue;if(!actor){actor=g.spawn('thrall');if(!actor)continue;Object.assign(actor,{x:servant.x,y:servant.y,hp:servant.hp,maxHp:220,reflection:{owner:e,servant},realm:{role:'reflection',homeX:servant.x,homeY:servant.y,variant:4},receiveDamage:(amount:number)=>{if(!servant.active)return 0;const old=servant.hp;servant.hp=Math.max(0,servant.hp-amount);if(servant.hp<=0)servant.active=false;return old-servant.hp;}});}actor.x=servant.x;actor.y=servant.y;actor.hp=servant.hp;}}
-function decideCast(g:Game,e:Enemy,target:Point,d:number){const m=e.mimic!,b=m.brain!;if(m.decision>0||b.vault||b.moonFury>0||b.beam>0)return;m.decision=.35+g.random()*.15;
+function decideCast(g:Game,e:Enemy,target:Point,d:number){const m=e.mimic!,b=m.brain!;if(m.decision>0||b.vault||b.moonFury>0||b.beam>0||b.cycloneSpin)return;m.decision=.35+g.random()*.15;
  b.setMovementDirection(target.x-e.x,target.y-e.y);b.player.angle=Math.atan2(target.y-e.y,target.x-e.x);
  for(let i=0;i<4;i++){const slot=(m.slot+i)%4,p=b.powers[slot],power=releasedPower(p,b.relicOwners[slot],4);if(b.cooldowns[slot]>0&&!(p.effect==='lunge'&&b.lungeCharges>0))continue;
- const ranged=['meteor','vortex','beam','reapervolley','reaperblink','parkour','charge','lunge'].includes(p.effect),buff=['summon','frenzy','reaperstorm','wolffury'].includes(p.effect);
+ const ranged=['meteor','vortex','beam','reapervolley','reaperblink','parkour','charge','lunge','wolfcyclone'].includes(p.effect),buff=['summon','frenzy','reaperstorm','wolffury'].includes(p.effect);
  if(!buff&&d>Math.max(power.radius+45,ranged?650:0)||buff&&d>650)continue;
  if(p.effect==='summon'&&b.servants.filter(s=>s.active).length>12)continue;
- const point=['meteor','vortex','parkour','reapervolley','reaperblink'].includes(p.effect)&&b.insideMap(target.x,target.y)?{...target}:undefined;
+ const point=['meteor','vortex','parkour','reapervolley','reaperblink','wolfcyclone'].includes(p.effect)&&b.insideMap(target.x,target.y)?{...target}:undefined;
  if(b.cast(slot,point)){commitControls(g,e,.05);m.slot=(slot+1)%4;return;}
  }
 }

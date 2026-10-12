@@ -6,7 +6,7 @@ import {BUILD_VERSION} from './config.ts';
 import {tintLayer} from './assets.ts';
 import {REALM_GROTTOS,REALM_CHUNKS} from './titan-realm-map.ts';
 import type {Game,Enemy} from './simulation.ts';
-const IDS=['guardian-shield','mimic-slime','ether-fog','portal','cleave','warning','landing','titan-body','titan-head-0','titan-head-1','titan-head-2','titan-mantle-0','titan-mantle-1','guardian','acolyte','shardhound','guardian-sentinel','guardian-seer','guardian-beast','servant-thrall','servant-wing','encounter-wall-v42','slam','bolt','breach',...['unknown','overlord','calamity','devourer','titan','sovereign','reaper','lycanthrope','dormant'].map(n=>'relic-'+n)];
+const IDS=['guardian-mana-burst','guardian-shield','mimic-slime','ether-fog','portal','cleave','warning','landing','titan-body','titan-head-0','titan-head-1','titan-head-2','titan-mantle-0','titan-mantle-1','guardian','acolyte','shardhound','guardian-sentinel','guardian-seer','guardian-beast','servant-thrall','servant-wing','encounter-wall-v42','slam','bolt','breach',...['unknown','overlord','calamity','devourer','titan','sovereign','reaper','lycanthrope','dormant'].map(n=>'relic-'+n)];
 export class TitanRealmArt{
  private zoneArt=new RealmZoneArt();
  private guardianWarningCanvas:HTMLCanvasElement|null=null;

@@ -36,7 +36,7 @@ export const REALM_INSCRIPTIONS:Record<string,string>={
  soulorbit:'A wandering soul-blade circles its bearer, drinking from those crossed along the way.',
  wolfbound:'A moonlit leap clears the broken road; its landing sends the waiting pack reeling.',
  moonhowl:'A lunar cry turns the lesser hunters into fleeing prey.',
- ravage:'One captive becomes a living club; its struggling weight lends reach and shelter.',
+ mooncyclone:'A spinning heel sends a cutting gale ahead; the light are scattered, the mighty weather its lingering blades.',
  moonfury:'Beneath a blood moon, tireless feet race from victim to victim, beyond the reach of harm.',
  moonrend:'Distant lunar claws leave a lingering wound and return its warmth to the hunter.'
 };
@@ -47,4 +47,4 @@ export function realmInscription(relics:ReadonlyArray<{nature:string;ability:str
 
 export const INSCRIPTION_INVITATION='Other inscriptions wait upon the bridges. Seek them before you face the Titan.';
 export const INSCRIPTION_COMPLETION='You have heard all four inscriptions. Seek the shrines of which they speak.';
-export function realmInscriptionMessage(relics:Parameters<typeof realmInscription>[0],pattern:string[],index:number,clues:number,lastInscription:number){const lines=[realmInscription(relics,pattern[index])];if(index===0&&clues!==15)lines.push(INSCRIPTION_INVITATION);if(clues===15&&index===lastInscription)lines.push(INSCRIPTION_COMPLETION);return lines.join('\n\n');}
+export function realmInscriptionMessage(relics:Parameters<typeof realmInscription>[0],pattern:string[],index:number,clues:number,lastInscription:number,postText?:string){const lines=[postText?.trim()||realmInscription(relics,pattern[index])];if(index===0&&clues!==15)lines.push(INSCRIPTION_INVITATION);if(clues===15&&index===lastInscription)lines.push(INSCRIPTION_COMPLETION);return lines.join('\n\n');}
