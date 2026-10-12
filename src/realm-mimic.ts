@@ -3,7 +3,7 @@ import {REALM_PATHS,REALM_GROTTOS,insideRealm,realmCachedSteer,moveRealm,inTitan
 import type {Identity} from './identity.ts';
 import {releasedPower} from './unbound.ts';
 
-export const MIMIC_BALANCE={damage:.25,health:.75,recovery:.75,maxPlayerHit:.25,transform:1.5};
+export const MIMIC_BALANCE={damage:.25,health:.75,recovery:.75,maxPlayerHit:.25,maxMimicHit:.25,transform:1.5};
 
 type Point={x:number;y:number};
 type Target={proxy:Enemy;body:Enemy|Game['player']|Game['servants'][number];serial:number;kind:'player'|'enemy'|'servant'};
@@ -26,7 +26,7 @@ export function queueRealmMimic(g:Game){const state=g.realm!.mimics;if(g.realm!.
 export function spawnRealmMimics(g:Game){const s=g.realm!.mimics;if(!s.pending)return;const sites=mimicSpawnSites(g.targetView.x,g.targetView.y),routes=sites.map((points,route)=>({route,points:points.filter(p=>outside(p,g.player,g.targetView.x+150,g.targetView.y+150))})).filter(r=>r.points.length&&!s.routes.includes(r.route));if(!routes.length)return;
  const choice=routes[Math.floor(g.random()*routes.length)],p=choice.points[Math.floor(g.random()*choice.points.length)],e=g.spawn('elite');if(!e)return;
  const mimic:RealmMimic={route:choice.route,mode:'passage',goal:{...p},brain:null,identity:null,copiedAt:-1,lost:0,decision:0,bank:0,targets:[],slot:0,wanderAt:0};
- Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp*MIMIC_BALANCE.health,maxHp:g.player.maxHp*MIMIC_BALANCE.health,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;b.hurt(amount);return Math.max(0,hp-b.player.hp);}});
+ Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp*MIMIC_BALANCE.health,maxHp:g.player.maxHp*MIMIC_BALANCE.health,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;b.hurt(amount,b.player.maxHp*MIMIC_BALANCE.maxMimicHit);return Math.max(0,hp-b.player.hp);}});
  s.pending--;s.routes.push(choice.route);
 }
 export function mimicInView(g:Game,e:Enemy){return !outside(e,g.player,g.targetView.x-35,g.targetView.y-35);}
