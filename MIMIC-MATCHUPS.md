@@ -43,3 +43,29 @@ The mimic copies the kit and maximum health but not current cooldowns, so an una
 A 45–50% human target needs encounter data that distinguishes death, victory and escape, records both starting health/cooldowns, equipped abilities, and whether other enemies or the Titan participated. The useful balancing target would be a reasonably prepared player with a viable kit; encounters with exhausted recovery and no ultimate should carry greater risk. Blanket resistance changes alone are unlikely to equalize all bodies and kits.
 
 Run again with `node tools/mimic-matchups.mjs`. Optional environment variables: DUEL_SAMPLES, DUEL_KITS (comma separated), DUEL_OUTPUT. Raw seeded results are in test-results/mimic-matchups.json and test-results/mimic-matchups-prey.json.
+
+## Priority-targeting follow-up (v47)
+
+Replayed 1,280 duels for Sovereign and Reaper: 64 identical seeds for each of five scenarios and two controllers. Champion pools, loadouts and controller logic were held fixed. No further balance changes were made. These remain automated measurements, not human win rates.
+
+| Champion / policy | Native ready | Ultimate delayed | Two powers swapped | Four powers swapped | Native + lesser mobs |
+|---|---:|---:|---:|---:|---:|
+| sovereign / spacing | 17% → 17% | 17% → 17% | 47% → 47% | 67% → 67% | 19% → 19% |
+| sovereign / pressure | 14% → 14% | 14% → 14% | 42% → 42% | 58% → 58% | 14% → 14% |
+| reaper / spacing | 0% → 0% | 0% → 0% | 6% → 6% | 38% → 38% | 0% → 0% |
+| reaper / pressure | 9% → 9% | 31% → 31% | 13% → 13% | 23% → 23% | 13% → 13% |
+
+Priority targeting produced no measurable improvement in aggregate wins in these scenarios. Isolated duels have only one meaningful enemy to target, so little change is expected. The eight-mob scenarios likewise did not change win counts. This does not invalidate the targeting fix: direct targeting tests prove focus now selects the mimic over nearer mobs and guardians. The matchup model uses isolated fights or short-lived lesser prey and never includes a competing guardian/Titan; it therefore does not fully measure the benefit during a crowded real run. Defense, recovery, damage caps and current cooldown asymmetry remain stronger determinants in these tested duels.
+
+### Additional automatic-aim comparison
+
+1,536 further duels replayed before/after targeting with the pre-change player targeting modules versus v47. Native kits, 64 identical seeds per champion/scenario/controller. Reaper Blink and Volley used automatic aim in this comparison. The competing-Titan scenario includes a defended Titan with attacks disabled: it is a targeting distraction, not a full boss fight. Other damage, healing and movement rules remain active. The harness reserves the inactive Titan’s actor slot during mimic spawning to keep distinct encounter references.
+
+| Champion / policy | Isolated | Eight lesser mobs | Competing defended Titan |
+|---|---:|---:|---:|
+| sovereign / spacing | 17% → 17% | 19% → 19% | 17% → 17% |
+| sovereign / pressure | 14% → 14% | 14% → 14% | 14% → 14% |
+| reaper / spacing | 0% → 0% | 0% → 0% | 0% → 0% |
+| reaper / pressure | 9% → 9% | 13% → 13% | 3% → 9% |
+
+Reaper’s direct-pressure controller won 2/64 before versus 6/64 after when the defended Titan competed for automatic targeting (3.1% → 9.4%). The spacing controller stayed at 0/64. Sovereign win counts were unchanged. Target selection is improved, but no broad matchup-rate improvement was measured, and neither native kit approached the desired 45–50% in these controllers. These are bot tests and do not estimate human success probabilities. No game balance was changed.
