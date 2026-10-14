@@ -16,7 +16,7 @@ import {REALM_GROTTOS,REALM_START,REALM_RING,inTitanArena,realmSteer,realmCached
 import type {Game,Enemy} from './simulation.ts';
 export const LYCANTHROPE_RULES='2026.10-v44-lycanthrope';
 export const SWARM_TEST_RULES='2026.10-v34-swarm-test';
-export const TITAN_REALM_RULES='2026.10-v46-titan-realm',TITAN_REALM_TEST_RULES='2026.10-v46-titan-test';
+export const TITAN_REALM_RULES='2026.10-v47-titan-realm',TITAN_REALM_TEST_RULES='2026.10-v47-titan-test';
 export const TITAN_REALM={hp:190000,combatPool:50000,guardianReward:0,precisionPool:8400000,unneededPenalty:900000,layerReward:1500000,clearReward:6000000,resetDelay:3,maxCrowd:64};
 export const LEGACY_RELIC_POOLS:Record<string,string[]>={overlord:['command','legion','throne','curse'],calamity:['oblivion','meteor','vortex','crimson'],devourer:['maw','execution','frenzy','rendlunge'],titan:['worldbreaker','stampede','faultline','heavenfall'],sovereign:['devour','beam','catastrophe','rupture'],reaper:['soulsweep','graveshift','reapingarc','moonstorm']};
 export const RELIC_POOLS=Object.fromEntries(Object.entries(FIFTH_POWERS).map(([nature,id])=>[nature,[...abilitiesForStage(nature,2).map(a=>a.id),id]]));

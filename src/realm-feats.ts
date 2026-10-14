@@ -15,4 +15,4 @@ export const V37_REALM_FEATS={
 const {council,...current}=V37_REALM_FEATS;
 export const REALM_FEATS={...current,resourceful:{name:'Resourceful Hand',bonus:500000,max:3,condition:'Clear a grotto after using a native power and a different borrowed power against its guardians.'}};
 export const realmFeatsForRules=(rules:string)=>rules.includes('-v34-')?{}:rules.includes('-v35-')?LEGACY_REALM_FEATS:/-v(36|37)-/.test(rules)?V37_REALM_FEATS:REALM_FEATS;
-export const realmFeatScore=(counts:Record<string,number>,rules='2026.10-v46-titan-realm')=>Object.entries(realmFeatsForRules(rules)).reduce((sum,[id,f])=>sum+f.bonus*(counts[id]||0),0);
+export const realmFeatScore=(counts:Record<string,number>,rules='2026.10-v47-titan-realm')=>Object.entries(realmFeatsForRules(rules)).reduce((sum,[id,f])=>sum+f.bonus*(counts[id]||0),0);

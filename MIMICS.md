@@ -13,3 +13,9 @@ All Stage 3 armies share the Final Release limit of 28 active servants. Raise us
 Combat copies allocate target proxies, not another world enemy pool. Nearby combat runs at 20 Hz with the usual swept movement and damage routines; distant roaming updates at 5 Hz. Spawn-site preparation is cached per viewport class. Champion and power rendering is shared with the player; the slime is generated artwork packed as a transparent 384-pixel WebP.
 
 Validation: `node --test tests/realm-mimic.test.mjs`, the complete unit suite, `node tests/realm-mimic-browser.mjs`, `node tests/realm-interactions-browser.mjs` and `node tools/check-pages-build.mjs`. Browser checks cover desktop and touch viewports, all seven bodies, real power damage, immutable copies, six-copy combat and the shared army limit. Emulated touch is not a physical-phone performance guarantee.
+
+## Automatic target priority (v47)
+
+An active, visible mimic within an attack’s normal reach outranks ordinary mobs, guardians and the engaged Titan for shared ranged targeting and Reaper focus. Reaper basics, automatic Blink, Volley suggestions and soul-storm waves use this priority; focus labels identify it as MIMIC. Explicit manual selections remain authoritative. Sovereign’s tracking beam uses the shared priority, while feeding, rupture and other centered area powers remain centered on the champion. Shared targeted relic powers and Devourer Execute also prefer visible mimics. No range is extended, and Reaper automatic focus cannot reveal an unseen mimic. Between eligible mimics, nearest wins on initial selection; Reaper preserves an existing mimic focus among equal threats.
+
+Verified with tests/mimic-target-priority.test.mjs, the 398-test unit suite and desktop/touch mimic browser checks.
