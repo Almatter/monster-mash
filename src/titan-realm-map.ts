@@ -63,9 +63,10 @@ export function moveRealm(body:RealmPoint,from:RealmPoint,radius:number,grotto?:
 
 function crossesArena(a:RealmPoint,b:RealmPoint){const dx=b.x-a.x,dy=(b.y-a.y)/REALM_ARENA_YSCALE,t=Math.max(0,Math.min(1,(-a.x*dx+(-38-a.y)/REALM_ARENA_YSCALE*dy)/(dx*dx+dy*dy||1)));return inTitanArena(a.x+dx*t,a.y+dy*t);}
 
-const steeringCache=new WeakMap<RealmPoint,{x:number;y:number;until:number;tx:number;ty:number;fromX:number;fromY:number}>();
+const steeringCache=new WeakMap<RealmPoint,{x:number;y:number;until:number;tx:number;ty:number;fromX:number;fromY:number;target:number}>();
 // Replan distant foot soldiers at about 6 Hz; movement and swept collision still run every step.
-export function realmCachedSteer(body:RealmPoint,tx:number,ty:number,time:number){let route=steeringCache.get(body);if(!route||Math.hypot(body.x-route.fromX,body.y-route.fromY)>180||time>=route.until||Math.hypot(route.tx-tx,route.ty-ty)>120||Math.hypot(route.x-body.x,route.y-body.y)<8){const q=realmWaypoint(body.x,body.y,tx,ty);route={...q,until:time+.18,tx,ty,fromX:body.x,fromY:body.y};steeringCache.set(body,route);}const dx=route.x-body.x,dy=route.y-body.y,d=Math.hypot(dx,dy)||1;return {x:dx/d,y:dy/d};}
+export function realmCachedWaypoint(body:RealmPoint,tx:number,ty:number,time:number,target=0){let route=steeringCache.get(body);if(!route||route.target!==target||Math.hypot(body.x-route.fromX,body.y-route.fromY)>180||time>=route.until||Math.hypot(route.tx-tx,route.ty-ty)>120||Math.hypot(route.x-body.x,route.y-body.y)<8){const q=realmWaypoint(body.x,body.y,tx,ty);route={...q,until:time+.18,tx,ty,target,fromX:body.x,fromY:body.y};steeringCache.set(body,route);}return route;}
+export function realmCachedSteer(body:RealmPoint,tx:number,ty:number,time:number){const route=realmCachedWaypoint(body,tx,ty,time),dx=route.x-body.x,dy=route.y-body.y,d=Math.hypot(dx,dy)||1;return {x:dx/d,y:dy/d};}
 
 // Guardians own the court floor, not its approach bridges or neighboring grottos.
 export function insideRealmGrotto(id:number,x:number,y:number,radius=24){const r=roomFloors[id];return !!r&&insideRoom(x,y,REALM_GUARDIAN_ZONES[id],radius)&&insideRealm(x,y,radius);}

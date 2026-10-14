@@ -1,6 +1,6 @@
 import type {Game,Enemy} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
-import {realmWaypoint,moveRealm} from './titan-realm-map.ts';
+import {realmCachedWaypoint,moveRealm} from './titan-realm-map.ts';
 import {upgradeRank} from './stage-two.ts';
 
 export function parkourLanding(g:Game,point?:{x:number;y:number}){
@@ -59,7 +59,7 @@ export function updateLycanthrope(g:Game,dt:number){
  let e=g.moonFuryTarget;
  if(!e?.active||g.moonFuryPulse<=0){e=furyTarget(g);if(!e&&g.moonFuryVisited.size){g.moonFuryVisited.clear();e=furyTarget(g);}g.moonFuryTarget=e;g.moonFuryHits.clear();g.moonFuryPulse=.65;if(e)g.moonFuryVisited.add(e.serial);}
  if(!e){g.moonFuryFree=true;return;}g.moonFuryFree=false;
- const before={x:g.player.x,y:g.player.y},goal=g.realm?realmWaypoint(before.x,before.y,e.x,e.y+45):{x:e.x,y:e.y+45},dx=goal.x-before.x,dy=goal.y-before.y,d=Math.hypot(dx,dy),step=Math.min(d,800*remaining);
+ const before={x:g.player.x,y:g.player.y},goal=g.realm?realmCachedWaypoint(g.player,e.x,e.y+45,g.time,e.serial):{x:e.x,y:e.y+45},dx=goal.x-before.x,dy=goal.y-before.y,d=Math.hypot(dx,dy),step=Math.min(d,800*remaining);
  if(d>1){g.player.x+=dx/d*step;g.player.y+=dy/d*step;g.setMovementDirection(dx,dy);g.moving=true;if(g.realm)moveRealm(g.player,before,23);else g.slideArena(g.player,23);}
  const source=g.realm?'relic:lycanthrope:moonfury':'moonfury';let kills=0;
  // Every pass can cut a body once, including bodies crossed between fixed steps.
