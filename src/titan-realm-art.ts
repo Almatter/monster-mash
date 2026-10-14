@@ -22,8 +22,11 @@ export class TitanRealmArt{
  image(c:CanvasRenderingContext2D,id:string,x:number,y:number,size:number,angle=0,alpha=1){const image=this.images.get(id);if(!image)return;c.save();c.globalAlpha*=alpha;c.translate(x,y);c.rotate(angle);c.drawImage(image,-size/2,-size/2,size,size);c.restore();}
  private lightRelic(c:CanvasRenderingContext2D,x:number,y:number,time:number){if(!this.relicLight){const a=document.createElement('canvas');a.width=a.height=128;const p=a.getContext('2d')!,light=p.createRadialGradient(64,64,0,64,64,64);light.addColorStop(0,'#e7edff70');light.addColorStop(.4,'#a4bcff28');light.addColorStop(1,'#a4bcff00');p.fillStyle=light;p.fillRect(0,0,128,128);this.relicLight=a;}c.save();c.globalAlpha=.6+Math.sin(time*1.6)*.06;c.drawImage(this.relicLight,x-105,y+45,210,55);c.restore();}
  drawEnvironment(c:CanvasRenderingContext2D,g:Game,time:number,halfW=640,halfH=400){const s=g.realm!;this.compose(g);
-  for(const shrine of s.shrines){const p=REALM_GROTTOS[shrine.id];if(Math.abs(p.x-g.player.x)>halfW+600||Math.abs(p.y-g.player.y)>halfH+600)continue;const rx=p.x+p.relic.x,ry=p.y+p.relic.y,px=p.x+p.portal.x,py=p.y+p.portal.y;this.lightRelic(c,rx,ry,time);this.image(c,'relic-'+shrine.decor,rx,ry+Math.sin(time*2+shrine.id)*3,shrine.decor==='unknown'?220:260,0,shrine.cleared?1:.88);if(shrine.claimed){this.image(c,'portal',px,py,145,0,shrine.occupied?.28:.9);if(shrine.occupied){c.save();c.font='bold 13px Arial';c.textAlign='center';c.fillStyle='#ffd4c1';c.strokeStyle='#100b19';c.lineWidth=4;c.strokeText('OCCUPIED',px,py-90);c.fillText('OCCUPIED',px,py-90);c.restore();}}}
-
+  // Cull each rendered object at its own authored position, never the room center.
+  for(const shrine of s.shrines){const p=REALM_GROTTOS[shrine.id],rx=p.x+p.relic.x,ry=p.y+p.relic.y,px=p.x+p.portal.x,py=p.y+p.portal.y;
+   if(Math.abs(rx-g.player.x)<=halfW+140&&Math.abs(ry-g.player.y)<=halfH+140){this.lightRelic(c,rx,ry,time);this.image(c,'relic-'+shrine.decor,rx,ry+Math.sin(time*2+shrine.id)*3,shrine.decor==='unknown'?220:260,0,shrine.cleared?1:.88);}
+   if(shrine.claimed&&Math.abs(px-g.player.x)<=halfW+80&&Math.abs(py-g.player.y)<=halfH+110){this.image(c,'portal',px,py,145,0,shrine.occupied?.28:.9);if(shrine.occupied){c.save();c.font='bold 13px Arial';c.textAlign='center';c.fillStyle='#ffd4c1';c.strokeStyle='#100b19';c.lineWidth=4;c.strokeText('OCCUPIED',px,py-90);c.fillText('OCCUPIED',px,py-90);c.restore();}}
+  }
 
  }
 
