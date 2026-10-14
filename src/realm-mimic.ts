@@ -3,11 +3,12 @@ import {REALM_PATHS,REALM_GROTTOS,insideRealm,realmCachedSteer,moveRealm,inTitan
 import type {Identity} from './identity.ts';
 import {releasedPower} from './unbound.ts';
 
-export const MIMIC_BALANCE={damage:.25,health:.75,recovery:.75,maxPlayerHit:.25,maxMimicHit:.25,transform:1.5};
+// Resistance applies only to damage against this copy. Both burst budgets include all hit sources.
+export const MIMIC_BALANCE={damage:.25,health:.75,recovery:.75,incoming:.25,maxPlayerHit:.25,maxMimicHit:.08,burstHealth:.24,playerBurstHealth:.4,burstSeconds:2,transform:1.5};
 
 type Point={x:number;y:number};
 type Target={proxy:Enemy;body:Enemy|Game['player']|Game['servants'][number];serial:number;kind:'player'|'enemy'|'servant'};
-export type RealmMimic={route:number;mode:'passage'|'chase'|'roam';goal:Point;brain:Game|null;identity:Identity|null;copiedAt:number;lost:number;decision:number;bank:number;targets:Target[];slot:number;wanderAt:number};
+export type RealmMimic={route:number;mode:'passage'|'chase'|'roam';goal:Point;brain:Game|null;identity:Identity|null;copiedAt:number;lost:number;decision:number;bank:number;targets:Target[];slot:number;wanderAt:number;resistance?:{until:number;remaining:number};pressure?:{until:number;remaining:number}};
 const peripheral=REALM_PATHS.slice(0,6);
 const shrineBounds=REALM_GROTTOS.map(s=>({left:s.x+Math.min(...s.floor.map(p=>p[0])),right:s.x+Math.max(...s.floor.map(p=>p[0])),top:s.y+Math.min(...s.floor.map(p=>p[1])),bottom:s.y+Math.max(...s.floor.map(p=>p[1]))}));
 const outside=(p:Point,q:Point,w:number,h:number)=>Math.abs(p.x-q.x)>w||Math.abs(p.y-q.y)>h;
@@ -26,7 +27,7 @@ export function queueRealmMimic(g:Game){const state=g.realm!.mimics;if(g.realm!.
 export function spawnRealmMimics(g:Game){const s=g.realm!.mimics;if(!s.pending)return;const sites=mimicSpawnSites(g.targetView.x,g.targetView.y),routes=sites.map((points,route)=>({route,points:points.filter(p=>outside(p,g.player,g.targetView.x+150,g.targetView.y+150))})).filter(r=>r.points.length&&!s.routes.includes(r.route));if(!routes.length)return;
  const choice=routes[Math.floor(g.random()*routes.length)],p=choice.points[Math.floor(g.random()*choice.points.length)],e=g.spawn('elite');if(!e)return;
  const mimic:RealmMimic={route:choice.route,mode:'passage',goal:{...p},brain:null,identity:null,copiedAt:-1,lost:0,decision:0,bank:0,targets:[],slot:0,wanderAt:0};
- Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp*MIMIC_BALANCE.health,maxHp:g.player.maxHp*MIMIC_BALANCE.health,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;b.hurt(amount,b.player.maxHp*MIMIC_BALANCE.maxMimicHit);return Math.max(0,hp-b.player.hp);}});
+ Object.assign(e,{x:p.x,y:p.y,hp:g.player.maxHp*MIMIC_BALANCE.health,maxHp:g.player.maxHp*MIMIC_BALANCE.health,mimic,realm:{role:'mimic',homeX:p.x,homeY:p.y,variant:0},receiveDamage:(amount:number)=>{const b=awakenMimic(g,e);b.player.hp=e.hp;const hp=b.player.hp;const m=e.mimic!;if(!m.resistance||g.time>=m.resistance.until)m.resistance={until:g.time+MIMIC_BALANCE.burstSeconds,remaining:b.player.maxHp*MIMIC_BALANCE.burstHealth};if(m.resistance.remaining<=0)return 0;b.hurt(amount*MIMIC_BALANCE.incoming,Math.min(m.resistance.remaining,b.player.maxHp*MIMIC_BALANCE.maxMimicHit));const lost=Math.max(0,hp-b.player.hp);m.resistance.remaining=Math.max(0,m.resistance.remaining-lost);return lost;}});
  s.pending--;s.routes.push(choice.route);
 }
 export function mimicInView(g:Game,e:Enemy){return !outside(e,g.player,g.targetView.x-35,g.targetView.y-35);}
@@ -49,7 +50,7 @@ function syncTargets(g:Game,e:Enemy){const m=e.mimic!,b=m.brain!;
  // Keep proxy identity stable for piercing hits, summons and held enemies.
  const next:Target[]=[];
  for(const held of m.targets)if(held.proxy.grabbed&&!bodies.some(t=>t.body===held.body))bodies.push({body:held.body,serial:held.serial,kind:held.kind});
- for(const item of bodies){let t=m.targets.find(t=>t.body===item.body&&t.serial===item.serial);if(!t){const p:Enemy={active:true,kind:item.kind==='enemy'?(item.body as Enemy).kind:item.kind==='servant'?'thrall':'elite',x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:item.serial};t={...item,proxy:p};if(item.kind==='servant')p.servantTarget=item.body as Game['servants'][number];p.receiveDamage=amount=>{const body=t!.body,old=body.hp;if(t!.kind==='player')g.hurt(amount,g.player.maxHp*MIMIC_BALANCE.maxPlayerHit);else if(t!.kind==='enemy'){const prey=body as Enemy;if(!prey.active||prey.serial!==t!.serial)return 0;prey.hp=Math.max(0,prey.hp-amount);prey.flash=.1;if(prey.hp<=0){prey.active=false;g.alive--;}}else{const servant=body as Game['servants'][number];if(!servant.active)return 0;servant.hp=Math.max(0,servant.hp-amount);if(servant.hp<=0)servant.active=false;}return Math.max(0,old-body.hp);};}
+ for(const item of bodies){let t=m.targets.find(t=>t.body===item.body&&t.serial===item.serial);if(!t){const p:Enemy={active:true,kind:item.kind==='enemy'?(item.body as Enemy).kind:item.kind==='servant'?'thrall':'elite',x:0,y:0,hp:0,maxHp:0,vx:0,vy:0,timer:0,windup:0,flash:0,serial:item.serial};t={...item,proxy:p};if(item.kind==='servant')p.servantTarget=item.body as Game['servants'][number];p.receiveDamage=amount=>{const body=t!.body,old=body.hp;if(t!.kind==='player'){if(!m.pressure||g.time>=m.pressure.until)m.pressure={until:g.time+MIMIC_BALANCE.burstSeconds,remaining:g.player.maxHp*MIMIC_BALANCE.playerBurstHealth};if(m.pressure.remaining<=0)return 0;g.hurt(amount,Math.min(m.pressure.remaining,g.player.maxHp*MIMIC_BALANCE.maxPlayerHit));m.pressure.remaining=Math.max(0,m.pressure.remaining-Math.max(0,old-body.hp));}else if(t!.kind==='enemy'){const prey=body as Enemy;if(!prey.active||prey.serial!==t!.serial)return 0;prey.hp=Math.max(0,prey.hp-amount);prey.flash=.1;if(prey.hp<=0){prey.active=false;g.alive--;}}else{const servant=body as Game['servants'][number];if(!servant.active)return 0;servant.hp=Math.max(0,servant.hp-amount);if(servant.hp<=0)servant.active=false;}return Math.max(0,old-body.hp);};}
  const p=t.proxy,body=t.body;p.active=t.kind==='player'?!g.ended:(body as Enemy).active;p.x=body.x;p.y=body.y;p.hp=body.hp;p.maxHp=t.kind==='player'?g.player.maxHp:t.kind==='enemy'?(body as Enemy).maxHp:220;
  if(t.kind==='enemy')p.corruptUntil=(body as Enemy).corruptUntil;next.push(t);
  }
