@@ -27,7 +27,7 @@ test('qualifying Stage 1 runs count from public launch, including manual endings
  assert.equal(trialDays(p.progress.trials,gate),1);
  assert.match(trialFeedback(gate,p.progress.trials,{monsterId:'titan',phase:0,reason:'retired',seconds:700,kills:20000},launchDay,true),/today already counted/);
  assert.equal(eventDay(launchDay),'2026-09-28');assert.equal(stageAccess(1,p.progress,Date.parse(gate.opensAt)+1),'title');
- assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)+1),'future');
+ assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)+1),'title');
 });
 
 test('earned gate persists but malformed dates or a title without seven days cannot grant access',()=>{

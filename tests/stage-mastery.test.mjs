@@ -1,3 +1,4 @@
+import {championAvailable} from '../src/champion-access.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game} from '../src/simulation.ts';
@@ -63,8 +64,9 @@ test('the next title is hidden before Stage 2 access, and becomes visible when S
  assert.equal(titleVisible(title,access(Date.parse(STAGE_GATES[0].opensAt)-1)),false);assert.equal(titleVisible(title,access(Date.parse(STAGE_GATES[0].opensAt))),true);assert.equal(titleVisible(title,defaultContentAccess()),false);assert.equal(titleVisible(title,defaultContentAccess(true)),true);
 });
 
-test('Stage 3 opens October 15 with title and prior access, but cannot select a map that is still unbuilt',()=>{
- assert.equal(Date.parse(gate.opensAt)-Date.parse(STAGE_GATES[0].opensAt),7*24*60*60*1000);const p=normalizeProfile(null);qualify(p);for(let n=0;n<12;n++)hunt(p,'open'+n,'devourer',{boons:n===0?['recharge']:['haste','power','reach']});
- assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)+1),'future');const ready=gate.ready;
- try{gate.ready=true;assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)-1),'date');assert.equal(stageAccess(2,p.progress,null),'clock');assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)),'open');delete p.progress.titles.gatebreaker;assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)),'title');}finally{gate.ready=ready;}
+test('Stage 3 is released at midnight Eastern October 15 with earned mastery and prior access',()=>{
+ assert.equal(gate.ready,true);assert.equal(Date.parse(gate.opensAt)-Date.parse(STAGE_GATES[0].opensAt),7*24*60*60*1000);const p=normalizeProfile(null);qualify(p,'titan');for(let n=0;n<12;n++)hunt(p,'open'+n,'titan',{boons:n===0?['recharge']:['haste','power','reach']});
+ assert.ok(p.progress.titles.ashenGatebreaker);assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)-1),'date');assert.equal(stageAccess(2,p.progress,null),'clock');assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)),'open');assert.equal(stageAccess(3,p.progress,Date.parse(gate.opensAt)),'future');
+ delete p.progress.titles.gatebreaker;assert.equal(stageAccess(2,p.progress,Date.parse(gate.opensAt)),'title');
 });
+test('the reported Titan mastery unlocks Lycanthrope account-wide after the date',()=>{const p=normalizeProfile(null);qualify(p,'titan');for(let n=0;n<12;n++)hunt(p,'lycan'+n,'titan',{boons:n===0?['recharge']:['haste','power','reach']});assert.equal(championAvailable('lycanthrope',p.progress,Date.parse(gate.opensAt)-1),false);assert.equal(championAvailable('lycanthrope',p.progress,Date.parse(gate.opensAt)),true);const restored=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(stageAccess(2,restored.progress,Date.parse(gate.opensAt)),'open');assert.equal(championAvailable('lycanthrope',restored.progress,Date.parse(gate.opensAt)),true);delete restored.progress.titles.ashenGatebreaker;assert.equal(championAvailable('lycanthrope',restored.progress,Date.parse(gate.opensAt)),false);});
