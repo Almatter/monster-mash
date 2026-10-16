@@ -1,7 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../src/simulation.ts';import {WarGame} from '../src/stage-four.ts';
 import {MONSTERS,ABILITIES} from '../src/content-monsters.ts';import {releasedPower} from '../src/unbound.ts';
-import {HAG,hagState,hagAnimation,hagUnmasked,hagGlamour,updateHag,castHexes,castMiasma,castUnmasked} from '../src/hag.ts';
+import {HAG,hagBlast,hagState,hagBombWalkable,hagResolveBomb,hagHexPlacement,hagAnimation,hagUnmasked,hagGlamour,updateHag,castHexes,castMiasma,castUnmasked} from '../src/hag.ts';
 import {damageKind} from '../src/combat-damage.ts';
 const make=()=>new Game(77,{monsterId:'hag'},0);
 function prey(g,x,y,hp=10000){const e=g.spawn('brute');Object.assign(e,{x,y,hp,maxHp:hp});g.rebuildGrid();return e;}
@@ -21,10 +21,10 @@ test('flying leaves armed caustic bombs on valid ground',()=>{
 });
 test('Hexes use the same evenly spaced six positions across seeds and do not stack on previous mines',()=>{
  const a=make(),b=new Game(123,{monsterId:'hag'},0);a.player.angle=b.player.angle=0;castHexes(a,ABILITIES.thornhex);castHexes(b,ABILITIES.thornhex);
- const points=g=>hagState(g).traps.map(t=>[t.x,t.y]);assert.deepEqual(points(a),points(b));assert.equal(points(a).length,6);assert.deepEqual([...new Set(points(a).map(p=>p[0]))],[170,280]);assert.deepEqual([...new Set(points(a).map(p=>p[1]))],[-110,0,110]);castHexes(a,ABILITIES.thornhex);assert.equal(points(a).length,6);
+ const points=g=>hagState(g).traps.map(t=>[t.x,t.y]);assert.deepEqual(points(a),points(b));assert.equal(points(a).length,6);assert.deepEqual([...new Set(points(a).map(p=>p[0]))],[170,280]);assert.deepEqual([...new Set(points(a).map(p=>p[1]))],[-110,0,110]);const original=points(a);castHexes(a,ABILITIES.thornhex);assert.equal(points(a).length,12);assert.deepEqual(points(a).slice(0,6),original);for(let i=0;i<12;i++)for(let j=0;j<i;j++)assert.ok(Math.hypot(points(a)[i][0]-points(a)[j][0],points(a)[i][1]-points(a)[j][1])>=HAG.trapSpacing-.01);
 });
 test('one mine hits prey beyond its trigger footprint and throws and poisons survivors',()=>{
- const g=make();castHexes(g,ABILITIES.thornhex);const s=hagState(g),mine=s.traps[0];s.traps=[mine];const trigger=prey(g,mine.x,mine.y,22),survivor=prey(g,mine.x+110,mine.y);tick(g,.4);
+ const g=make();castHexes(g,ABILITIES.thornhex);const s=hagState(g),mine=s.traps[0];s.traps=[mine];const trigger=prey(g,mine.x,mine.y,22),survivor=prey(g,mine.x+110,mine.y);survivor.kind='thrall';tick(g,.4);
  assert.equal(trigger.active,false);assert.ok(survivor.hp<10000);assert.ok(Math.hypot(survivor.vx,survivor.vy)>500);assert.ok(survivor.snaredUntil>g.time);assert.ok(s.venom.some(v=>v.enemy===survivor));assert.equal(s.traps.length,0);
 });
 test('a hostile projectile crossing an armed mine detonates it',()=>{
@@ -59,4 +59,37 @@ test('ignition beats the complete gas and poison total, and late ignition combin
 });
 test('visible bombs persist indefinitely; only offscreen time consumes their cleanup lifetime',()=>{
  const g=make();castHexes(g,ABILITIES.thornhex);const s=hagState(g);tick(g,90);assert.equal(s.traps.length,6);g.player.x=-1200;tick(g,7);assert.equal(s.traps.length,6);g.player.x=0;tick(g,90);assert.equal(s.traps.length,6);g.player.x=-1200;tick(g,8);assert.equal(s.traps.length,0);
+});
+test('placement searches for nearby walkable floor in all four scenarios, including solid bases',()=>{
+ for(const stage of [0,1,2,3]){
+  const g=stage===3?new WarGame(77,{monsterId:'hag'}):new Game(77,{monsterId:'hag'},stage),start={...g.player};let bad;
+  for(let r=24;r<2100&&!bad;r+=24)for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const q={x:start.x+Math.cos(a)*r,y:start.y+Math.sin(a)*r};if(!hagBombWalkable(g,q.x,q.y)){bad=q;break;}}
+  assert.ok(bad,'missing boundary '+stage);const resolved=hagResolveBomb(g,bad.x,bad.y);assert.ok(resolved,'no floor near boundary '+stage);assert.ok(hagBombWalkable(g,resolved.x,resolved.y));assert.ok(Math.hypot(resolved.x-bad.x,resolved.y-bad.y)<=HAG.placementSearch+.01);
+ }
+});
+test('edge-target previews and actual casts use identical snapped bomb positions',()=>{
+ const g=make();g.player.x=1400;const point={x:1500,y:0},p=releasedPower(g.powers[0],'hag',0),preview=hagHexPlacement(g,p,point);assert.ok(preview.points.length>0);assert.ok(preview.points.some((q,i)=>q.x!==preview.desired[i].x||q.y!==preview.desired[i].y));assert.equal(g.cast(0,point),true);assert.deepEqual(hagState(g).traps.map(({x,y})=>({x,y})),preview.points);assert.ok(hagState(g).traps.every(t=>hagBombWalkable(g,t.x,t.y)));
+});
+test('no nearby playable floor rejects a cast without spending cooldown or changing existing bombs',()=>{
+ const g=make();castHexes(g,ABILITIES.thornhex);const original=hagState(g).traps.map(t=>({...t}));g.insideMap=()=>false;assert.equal(g.cast(0),false);assert.equal(g.cooldowns[0],0);assert.deepEqual(hagState(g).traps,original);assert.equal(hagResolveBomb(g,10000,10000),null);
+});
+test('flight over a gap relocates bombs onto nearby safe floor without replacing an existing field',()=>{
+ const g=make();g.insideMap=(x,y)=>Math.abs(x)<1000&&Math.abs(y)<55;g.slideArena=()=>{};g.cast(2);const s=hagState(g);s.traps=[{x:0,y:0,radius:150,trigger:35,remaining:12,damage:220,armed:0}];const original=s.traps[0];for(let i=1;i<=5;i++){g.player.x=i*110;g.player.y=180;tick(g,.1);}assert.ok(s.traps.length>1);assert.equal(s.traps[0],original);assert.ok(s.traps.every(t=>hagBombWalkable(g,t.x,t.y)));for(let i=0;i<s.traps.length;i++)for(let j=0;j<i;j++)assert.ok(Math.hypot(s.traps[i].x-s.traps[j].x,s.traps[i].y-s.traps[j].y)>=HAG.trapSpacing-.01);
+});
+test('flight warns when no safe floor is within the bounded relocation distance',()=>{
+ const g=make();g.cast(2);g.insideMap=()=>false;g.player.x=500;tick(g,.1);assert.equal(hagState(g).traps.length,0);assert.match(g.notice,/NO WALKABLE SPACE/);
+});
+
+ test('Hag blasts ground giants, stagger briefly with immunity, and gate medium pushes behind Release III',()=>{
+ for(const kind of ['brute','elite','titan'])for(const release of [0,2,3,4]){
+  const g=make();g.release=release;const e=prey(g,100,0);e.kind=kind;hagBlast(g,0,0,200,1,'haghex',950);
+  if(kind==='titan'){assert.equal(e.vx,0);assert.equal(e.staggerUntil,HAG.giantStun);const until=e.staggerUntil;g.time=.1;hagBlast(g,0,0,200,1,'haghex',950);assert.equal(e.staggerUntil,until);assert.ok(e.snaredUntil>g.time);assert.equal(hagState(g).venom.length,1);}
+  else assert.equal(e.vx>0,release>=3);
+ }
+ const g=make(),e=prey(g,100,0);e.kind='titan';hagBlast(g,0,0,200,1,'haghex',950);g.attack=99;g.spawnBank=-999;const x=e.x;g.update(.1,{x:0,y:0,aimX:0,aimY:0,aiming:false});assert.equal(e.x,x);
+ });
+
+test('third-Unbinding ignition deals its full computed damage to a scaled Hollow King and Colossus',()=>{
+ for(const phase of [0,1]){const g=new Game(77,{monsterId:'hag'},phase);g.time=420;g.wave=15;g.release=3;const e=g.spawn('titan');Object.assign(e,{x:100,y:0});if(phase===1)Object.assign(e,{hp:180000,maxHp:180000,colossus:{expiresAt:999}});g.rebuildGrid();const hp=e.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-e.hp,1859.375);assert.equal(e.vx,0);assert.equal(e.staggerUntil,420.35);}
+ const g=new Game(77,{monsterId:'hag'},2);g.seedOpening();g.release=3;g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.open=true;g.realm.boss.x=100;g.realm.boss.y=0;g.rebuildGrid();const hp=g.realm.boss.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-g.realm.boss.hp,1859.375);
 });

@@ -93,3 +93,14 @@ Native player kits, legal perk choices, normal NPC inheritance. Means can be str
 | 4 | 1217 | 0:20 | death | 0 |
 
 Reproduce: set `SCENARIO_LABEL=hag-rework`, then run `node tools/champion-scenarios.mjs <stage> 77,123,444,835,1217 hag`. For the full War roster omit the final `hag`. Set `SCENARIO_HZ=60` and use seeds `77,123,444` for higher-rate checks. Detailed JSON is retained locally at `test-results/hag-rework-comparison.json`.
+
+
+## Placement, timer, and heavy-target follow-up
+
+Miasma's Ignite button now shows remaining cloud seconds and a lifetime bar. Hexes preview the actual resolved bomb positions; Hexes, flight bombs, and Unmask search deterministically within 240 world units for the nearest sampled legal floor, with 88-unit bomb spacing and actor-width clearance from floor edges/solid bases. Existing bombs are preserved. A completely invalid Hexes cast costs no cooldown; flight reports blocked placement.
+
+Hag's hex and ignition blasts no longer launch giant targets (including Hollow Kings, Colossus, realm Titan, Titan mimics/champions, and fixed War sentries). They stagger for 0.35 seconds at most once every 3 seconds; poison/slow continue. Existing projectiles and ground hazards persist during the stagger. Medium targets (brutes, elites, captains, guardians) resist launch until Unbound III, then receive 20% force, increasing to 35% at Final Release. Small targets retain full force. The realm Titan now respects its poison movement slow between attack actions.
+
+Damage tracing at Unbound III with no bonuses: ignition is 875 base x 2.125 = 1,859.375 direct damage, with continuing poison afterward. A Stage 1 Hollow King spawned at 7:00 has 28,405 HP (6.55% direct damage); the Ashen Colossus has 180,000 HP (1.03%). An exposed realm Titan takes the same direct damage, subject to its defense-layer floor and existing recovery bonus. No missing ignition multiplier was found; no damage buff was applied in this follow-up.
+
+Validation: full simulation suite plus targeted placement/heavy-target/damage regression checks; local desktop and touch browser tests passed, including previews, timer expiry/ignition, flight, and public Hag gating.
