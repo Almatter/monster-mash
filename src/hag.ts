@@ -5,7 +5,7 @@ import {ENEMIES} from './data.ts';
 export const HAG={maxTraps:48,maxVenom:720,poisonSeconds:4,poisonTick:.5,poisonDamage:14,trapSpacing:88,triggerRadius:35,blastScale:1.65,throwSpeed:950,webPulse:.45,flightSpacing:100,igniteScale:1.25};
 type Venom={enemy:Enemy;serial:number;remaining:number;tick:number;damage:number};
 export type HexTrap={x:number;y:number;radius:number;remaining:number;armed:number;damage:number;trigger:number};
-type Cloud={x:number;y:number;radius:number;remaining:number;tick:number;damage:number;ticksLeft:number;igniteDamage:number};
+type Cloud={x:number;y:number;radius:number;remaining:number;total:number;tick:number;damage:number;ticksLeft:number;igniteDamage:number};
 export type HagState={flight:number;frenzy:number;pulse:number;unmasked:boolean;webRing:number;landing:{x:number;y:number};trail:{x:number;y:number};traps:HexTrap[];clouds:Cloud[];venom:Venom[];venomIndex:WeakMap<Enemy,Venom>;shieldBudget:number;shieldReset:number};
 const states=new WeakMap<Game,HagState>();
 export function hagState(g:Game){let s=states.get(g);if(!s){s={flight:0,frenzy:0,pulse:0,unmasked:false,webRing:0,landing:{x:g.player.x,y:g.player.y},trail:{x:g.player.x,y:g.player.y},traps:[],clouds:[],venom:[],venomIndex:new WeakMap(),shieldBudget:0,shieldReset:0};states.set(g,s);}return s;}
@@ -51,7 +51,7 @@ export function castMiasma(g:Game,p:AbilityDef){
  if(s.clouds.length){let kills=0;for(const cloud of s.clouds){kills+=g.area(cloud.x,cloud.y,cloud.radius,cloud.igniteDamage,'hagignite',250,false);g.effect(cloud.x,cloud.y,'hag-ignite',cloud.radius*1.3,.75);}s.clouds=[];g.completeAttack(kills,{},'hagignite');hagGlamour(g,10+kills*8);return;}
  const target=g.nearestEnemy(450),origin=g.targetPoint||target||g.player,duration=p.duration||6,ticks=Math.ceil(duration/HAG.poisonTick);
  const fullDamage=p.damage*ticks+HAG.poisonDamage*(ticks+Math.ceil(HAG.poisonSeconds/HAG.poisonTick));
- s.clouds.push({x:origin.x,y:origin.y,radius:p.radius,remaining:duration,tick:0,damage:p.damage,ticksLeft:ticks,igniteDamage:fullDamage*HAG.igniteScale});
+ s.clouds.push({x:origin.x,y:origin.y,radius:p.radius,remaining:duration,total:duration,tick:0,damage:p.damage,ticksLeft:ticks,igniteDamage:fullDamage*HAG.igniteScale});
 }
 export function castFlight(g:Game,p:AbilityDef){const s=hagState(g);s.flight=p.duration||5;s.landing={x:g.player.x,y:g.player.y};s.trail={x:g.player.x,y:g.player.y};g.hostilePush=null;g.effect(g.player.x,g.player.y,'hag-flight',180,.65);}
 function web(g:Game){
