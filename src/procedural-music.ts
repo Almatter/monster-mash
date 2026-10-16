@@ -1,8 +1,10 @@
 import type {MusicState} from './content-audio.ts';
-export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper'|'titan-realm'|'lycanthrope';
+export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper'|'titan-realm'|'lycanthrope'|'hag'|'throne-war';
 type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'|'dream'};
 const repeat=(bars:number[],count:number)=>Array.from({length:count},(_,i)=>bars[i%bars.length]);
 export const THEMES:Record<ThemeId,Theme>={
+ hag:{bpm:116,bars:16,mode:'C harmonic minor / thorn-waltz glamour',roots:repeat([36,32,43,35,36,39,32,35],16),third:repeat([3,4,3,4],16),motif:[0,7,1,12,8,7,3,1],drums:[0,1.5,3],bass:[0,2.5],texture:'bells'},
+ 'throne-war':{bpm:128,bars:16,mode:'D minor / eight-banner war march',roots:repeat([38,41,36,38,34,43,36,33],16),third:repeat([3,4,3,3],16),motif:[0,7,12,7,3,5,10,7],drums:[0,1,2.5,3],bass:[0,1.5,2,3],texture:'hammer'},
  'ashen-wilds':{bpm:112,bars:16,mode:'D Phrygian dominant / desert pursuit',roots:repeat([38,39,38,36,38,43,39,38],16),third:repeat([4,4,4,3,4,3,4,4],16),motif:[0,1,4,7,8,7,4,1],drums:[0,1.5,2,3.5],bass:[0,2.5],texture:'desert'},
  menu:{bpm:104,bars:16,mode:'D natural minor / festival modal',roots:repeat([38,34,43,36,38,41,36,33],16),third:repeat([3,4,3,4,3,4,4,4],16),motif:[0,7,3,12,7,3,5,0],drums:[0,2.5],bass:[0,2],texture:'dulcimer'},
  sovereign:{bpm:108,bars:16,mode:'D harmonic minor / royal cadence',roots:repeat([38,34,43,33,38,36,34,33],16),third:repeat([3,4,3,4,3,4,4,4],16),motif:[0,12,7,15,12,7,3,0],drums:[0,2,3],bass:[0,1.5,2.5],texture:'bells'},

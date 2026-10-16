@@ -5,6 +5,7 @@ export const MASTERY_RANKS=[{rank:'F',points:0},{rank:'E',points:1000},{rank:'D'
 // Repeated activities continue earning at their original rates in every stage.
 // Later objectives add rewards; rank requirements never depend on stage access.
 const PRACTICE:Record<string,{metric:string;target:number;label:string}[]>={
+ hag:[{metric:'hagpoison',target:30000,label:'Venom kills'},{metric:'haghex',target:30000,label:'Hex kills'},{metric:'hagignite',target:15000,label:'Alchemical fire kills'}],
  titan:[{metric:'collision',target:50000,label:'Collision kills'},{metric:'trample',target:10000,label:'Stampede kills'}],
  devourer:[{metric:'devour',target:50000,label:'Consumed prey'},{metric:'eliteDevoured',target:50,label:'Elites devoured'}],
  calamity:[{metric:'magic',target:250000,label:'Spell kills'},{metric:'masteryBestCalamityMulti',target:300,label:'Largest spell multikill'}],
@@ -15,10 +16,10 @@ const PRACTICE:Record<string,{metric:string;target:number;label:string}[]>={
 };
 export type MasteryRow={label:string;value:number;target:number;points:number;max:number;repeatable:boolean};
 const row=(label:string,value:number,target:number,max:number,repeatable=true):MasteryRow=>({label,value,target,points:Math.floor(max*(repeatable?Math.max(0,value)/target:Math.min(1,Math.max(0,value)/target))),max,repeatable});
-export function championMastery(profile:Profile,id:string,courtAvailable=false,realmAvailable=false){
+export function championMastery(profile:Profile,id:string,courtAvailable=false,realmAvailable=false,warAvailable=false){
  const p=profile.progress,kit=p.archetypes[id]||{},titles=TITLES.filter(t=>t.requirements.some(r=>r.scope===id));
- const baseTitles=titles.filter(t=>t.stage===undefined),courtTitles=titles.filter(t=>t.stage===1),realmTitles=titles.filter(t=>t.stage===2),practice=PRACTICE[id]||[];
- const bests=Object.entries(profile.personalBests).filter(([key])=>{const [,stage,champion]=key.split('|');return champion===id&&(stage==='0'||courtAvailable&&stage==='1'||realmAvailable&&stage==='2');}).map(([,b])=>b);
+ const baseTitles=titles.filter(t=>t.stage===undefined),courtTitles=titles.filter(t=>t.stage===1),realmTitles=titles.filter(t=>t.stage===2),warTitles=titles.filter(t=>t.stage===3),practice=PRACTICE[id]||[];
+ const bests=Object.entries(profile.personalBests).filter(([key])=>{const [,stage,champion]=key.split('|');return champion===id&&(stage==='0'||courtAvailable&&stage==='1'||realmAvailable&&stage==='2'||warAvailable&&stage==='3');}).map(([,b])=>b);
  const bestSeconds=Math.max(kit.masteryBestSeconds||0,kit.stageOneBestSeconds||0,...bests.map(b=>b.seconds)),bestKills=Math.max(kit.stageOneBestKills||0,...bests.map(b=>b.kills));
  const milestones=[bestKills>=500,bestSeconds>=480,(kit.stageOneTitans||0)>0,(kit.masteryBestMulti||0)>=100,(kit.masteryBestCarnage||0)>=60].filter(Boolean).length;
  const abilityGoals=practice.map(r=>({...r,value:kit[r.metric]||0}));
@@ -32,8 +33,10 @@ export function championMastery(profile:Profile,id:string,courtAvailable=false,r
   row('Different rank-3 boons in completed hunts',Object.entries(kit).filter(([key,n])=>/^courtBoon\w+Clear$/.test(key)&&n>0).length,7,4000,false)
  ]:[];
  const realmRows=realmAvailable?[row('Titan victories · 2,500 points each',kit.realmClears||0,20,50000),row('Victories without resetting · 1,500 points each',kit.realmCleanClears||0,20,30000),row('Grottos cleared · 100 points each',kit.realmShrines||0,100,10000),row('First insights · 250 points each',kit.realmInsights||0,100,25000),row('Champion depths titles · 3,000 points each',realmTitles.filter(t=>p.titles[t.id]).length,3,9000)]:[];
+ const warRows=warAvailable?[row('Throne War victories · 25,000 points each',kit.warClears||0,20,500000),row('Rival camps conquered · 1,000 points each',kit.warCamps||0,70,70000),row('Rival champions slain · 2,000 points each',kit.warChampions||0,70,140000),row('Chosen war perks · 250 points each',kit.warPerks||0,180,45000),row('War titles · 6,000 points each',warTitles.filter(t=>p.titles[t.id]).length,3,18000)]:[];
+ const war=warRows.reduce((n,r)=>n+r.points,0);
  const realm=realmRows.reduce((n,r)=>n+r.points,0);
- const foundations=foundationRows.reduce((n,r)=>n+r.points,0),court=courtRows.reduce((n,r)=>n+r.points,0),points=foundations+court+realm;
+ const foundations=foundationRows.reduce((n,r)=>n+r.points,0),court=courtRows.reduce((n,r)=>n+r.points,0),points=foundations+court+realm+war;
  const level=[...MASTERY_RANKS].reverse().find(r=>points>=r.points)!,next=MASTERY_RANKS.find(r=>r.points>points);
- return {rank:level.rank,points,next,foundations,court,realm,foundationRows,courtRows,realmRows,abilityGoals,titles:titles.filter(t=>t.stage===undefined||t.stage===1&&courtAvailable||t.stage===2&&realmAvailable)};
+ return {rank:level.rank,points,next,foundations,court,realm,war,warRows,foundationRows,courtRows,realmRows,abilityGoals,titles:titles.filter(t=>t.stage===undefined||t.stage===1&&courtAvailable||t.stage===2&&realmAvailable||t.stage===3&&warAvailable)};
 }

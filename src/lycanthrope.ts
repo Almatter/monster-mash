@@ -38,7 +38,7 @@ function updateGrip(g:Game,dt:number){const grip=g.grip;if(!grip)return;const e=
 }
 export function castMoonfury(g:Game,p:AbilityDef){g.moonFury=g.moonFuryTotal=p.duration||7;g.moonFuryTarget=null;g.moonFuryFree=false;g.moonFuryHits.clear();g.moonFuryPulse=0;g.moonFuryVisited.clear();g.moonFuryOrigin={x:g.player.x,y:g.player.y};g.moonFuryView={...g.targetView};g.moonFuryPower=p;}
 function furyTarget(g:Game):Enemy|null{
- let target:Enemy|null=null,best=Infinity;for(const e of g.enemies){if(!e.active||e.grabbed||g.moonFuryVisited.has(e.serial)||g.realm&&e.realm?.role==='boss'&&!g.realm.engaged)continue;
+ let target:Enemy|null=null,best=Infinity;for(const e of g.enemies){if(!e.active||!g.isHostile(e)||e.grabbed||g.moonFuryVisited.has(e.serial)||g.realm&&e.realm?.role==='boss'&&!g.realm.engaged)continue;
   const ox=e.x-g.moonFuryOrigin.x,oy=e.y-g.moonFuryOrigin.y;if(Math.abs(ox)>g.moonFuryView.x-30||Math.abs(oy)>g.moonFuryView.y-30)continue;const dx=e.x-g.player.x,dy=e.y-g.player.y;if(Math.abs(dx)>g.targetView.x-30||Math.abs(dy)>g.targetView.y-30)continue;
   const landing={x:e.x,y:e.y+55};if(!g.insideMap(landing.x,landing.y))continue;
   const rank=(e.realm?.role==='boss'||e.colossus?-3000:e.court?.role==='captain'?-2200:e.realm?.role==='guardian'?-1600:e.kind==='elite'?-1000:0)+Math.hypot(dx,dy);

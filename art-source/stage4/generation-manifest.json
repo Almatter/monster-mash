@@ -1,0 +1,140 @@
+{
+  "sectors": [
+    {
+      "id": "0-0",
+      "original": "exec-9f9b4ca3-8c4e-4929-ba4b-edf454cb8b47.png",
+      "source": "sectors/0-0.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "1-0",
+      "original": "exec-4215e0d7-0bb7-492f-8675-c0f382a89444.png",
+      "source": "sectors/1-0.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "2-0",
+      "original": "exec-5396fc7c-d0e0-4023-969f-0ef7355654c9.png",
+      "source": "sectors/2-0.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "3-0",
+      "original": "exec-1c16cdd5-260f-42fe-90c6-f5f83966632e.png",
+      "source": "sectors/3-0.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "0-1",
+      "original": "exec-79497dae-efbd-41dc-bb04-f77c009490ab.png",
+      "source": "sectors/0-1.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "1-1",
+      "original": "exec-9a274ba9-26db-40f2-9cb7-8ad6d38e7666.png",
+      "source": "sectors/1-1.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "2-1",
+      "original": "exec-a071f220-4fbf-4d56-ba7d-bb05bf4f00f6.png",
+      "source": "sectors/2-1.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "3-1",
+      "original": "exec-0caafeb7-a095-4882-8101-e962b01052f2.png",
+      "source": "sectors/3-1.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "0-2",
+      "original": "exec-0df9b4ab-72bf-4051-bb4b-fb17fe45c634.png",
+      "source": "sectors/0-2.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "1-2",
+      "original": "exec-a80f183f-4627-4b75-aed6-e071f1544945.png",
+      "source": "sectors/1-2.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "2-2",
+      "original": "exec-62d1dbf5-f357-4239-9743-5d91ce11de6a.png",
+      "source": "sectors/2-2.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "3-2",
+      "original": "exec-f7a8d112-7926-4d2e-9a24-7d8fb842acf1.png",
+      "source": "sectors/3-2.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "0-3",
+      "original": "exec-804b2b9e-19f8-4838-b8d3-e2f9192b5eb1.png",
+      "source": "sectors/0-3.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "1-3",
+      "original": "exec-4c99a128-170e-409d-a346-02531cdea37f.png",
+      "source": "sectors/1-3.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "2-3",
+      "original": "exec-4a9bb093-b0fc-42b9-8a42-b8dd0e4bf697.png",
+      "source": "sectors/2-3.webp",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "id": "3-3",
+      "original": "exec-f79692b0-bdc2-45c3-b568-c10f1dc2f0de.png",
+      "source": "sectors/3-3.webp",
+      "width": 1254,
+      "height": 1254
+    }
+  ],
+  "prompts": [
+    {
+      "name": "war-master",
+      "prompt": "Original production artwork for Monster Mash, detailed dark fantasy painted 2D game art, clean crisp silhouettes, solid material regions and preserved interior shading. No watermark, no lettering, no UI. Generate ONE square MASTER MAP seen directly overhead, orthographic top-down gameplay floor plan. Entire large continuous battlefield visible, no characters or creatures. Eight distinct broad open camps around a large open central ruined crossroads: NORTH necromancer graveyard, NORTHEAST violet arcane observatory ruins, EAST fang-carved predator den, SOUTHEAST giant's basalt quarry, SOUTH crimson marble royal court, SOUTHWEST dark blue spectral crypt, WEST silver moonlit woodland clearing, NORTHWEST wine-and-copper witch thorn garden. Each camp has a very broad unobstructed battle courtyard, connected by WIDE winding roads forming a complete ring and broad branching spokes across the center. Roads and camp floors should occupy most of the image; all narrow decorative obstacles confined to far camp borders. Room for dozens of moving troops abreast, no thin bridges, no steep isometric perspective, no huge foreground props across roads. Warm dusk battlefield transitioning between region palettes, continuous coherent stone-and-earth surface and natural transitions. Solid impassable boundary is a continuous low ruined fortification and dark thorn forest around the outermost margin only. Terrain and broad walking surfaces are immediately distinguishable. This is the exact master composition that will be sliced into 16 reference sectors and enlarged; prioritize coherent connections and large usable spaces."
+    },
+    {
+      "name": "hag-selection",
+      "prompt": "Original production artwork for Monster Mash, detailed dark fantasy painted 2D game art, clean crisp silhouettes, solid material regions and preserved interior shading. No watermark, no lettering, no UI. Reference is the APPROVED adult fae GLAMOUR Hag at LEFT with flared train. Isolate ONLY that full-body glamorous character, from hat to strapped heels, on truly TRANSPARENT background. Preserve pointed ears, short black pixie-bob hair, copper-ring tailored witch hat, bare arms/shoulders, high collar with round chest keyhole, elegant tight wine-black dress with vertical circular side cutouts, slightly flared lower skirt with modest train, strapped high heels, partial hand gloves and straight copper-ring staff with glowing toxic yellow-green vessel. Three-quarter view facing slightly toward viewer's left. No other Hag, no labels, no backdrop, no ground, no golden aura obscuring costume. Crisp contour lines and well-separated dark wine CLOTH, copper-gold METAL, near-black HAIR, warm fae SKIN, and luminous green MAGIC regions, clean edges suitable for accurately separated recoloring masks. Entire staff and train within frame. Fully clothed adult fantasy sorceress. Tall portrait composition."
+    },
+    {
+      "name": "hag-poses",
+      "prompt": "Original production artwork for Monster Mash, detailed dark fantasy painted 2D game art, clean crisp silhouettes, solid material regions and preserved interior shading. No watermark, no lettering, no UI. Using the attached approved Hag reference, create a transparent production POSE SHEET with exactly SIX separate full-body poses in a clean THREE COLUMNS by TWO ROWS grid, generous empty transparent gutters, no overlaps or text. Each cell same scale. First five poses use the glamorous fae witch with pointed ears, short black hair, copper-ring hat, bare arms/shoulders, circular-keyhole collar, wine-black side-circle-cutout fitted dress with subtly flared skirt/train, strapped heels, light partial gloves and straight ring-pattern staff. Upper left IDLE, upper center WALK with lifted hem, upper right CAST pointing staff forward, lower left HURT recoil, lower center FLY riding staff horizontally with train trailing, lower right UNBOUND monstrous true Hag based on center reference: gaunt mottled limbs, predatory snarling face, long black hair, matching ragged wine dress and hat, clawed hand casting. All shown elevated three-quarter GAMEPLAY view facing LEFT, NOT flat icons. Solid contiguous material regions: dark wine cloth, copper metal, dark hair, warm skin, green magical vessel. No auras/background/ground circles. Transparent alpha. Clean readable anatomy and same identity throughout. Grid and margins exact; entire figures contained inside their cells."
+    },
+    {
+      "name": "hag-effects",
+      "prompt": "Original production artwork for Monster Mash, detailed dark fantasy painted 2D game art, clean crisp silhouettes, solid material regions and preserved interior shading. No watermark, no lettering, no UI. Transparent VFX contact sheet for the Hag sorceress, EXACT 4 columns by 2 rows, eight equally sized isolated cells, empty transparent gutters, no text. Top row left to right: 1 horizontal poisonous yellow-green bolt with swirling liquid tail; 2 intricate copper thorn-and-ring cursed ground mine with luminescent venom pooled between engraved sigils, elevated ground perspective; 3 wispy poisonous gas cloud with dense edges and transparent center, toxic green; 4 the same gas erupting in a detailed amber-green alchemical flame explosion. Bottom row: 5 a flowing curved golden fae glamour shield veil, ornate and translucent; 6 a cluster of flying copper curse rings and thorn charms bursting outward in monstrous frenzy; 7 a feathered poison impact splash with bright droplets; 8 spiraling gold-and-green flying-staff wake. These must be actual evocative illustrated magic/objects, NOT placeholder discs, plain circles, flat gradients or generic UI shapes. Entire effects fully contained in each cell. Genuine transparent background."
+    },
+    {
+      "name": "war-objects",
+      "prompt": "Original production artwork for Monster Mash, detailed dark fantasy painted 2D game art, clean crisp silhouettes, solid material regions and preserved interior shading. No watermark, no lettering, no UI. Transparent production contact sheet EXACT 3 columns by 2 rows, six separate complete elevated top-down/three-quarter dark fantasy objects, empty gutters no overlap no labels: upper left an ornate formidable sentry turret with rotating enchanted crystal crossbow and dark stone base, copper/silver detailing and bright pale crystal, readable neutral materials for team tint; upper center a raised war-standard capture monument with weathered dark plinth and ivory banner; upper right a large monster barracks spawning gate with iron spikes and glowing green magical doorway; bottom left armored melee war-horde infantry creature carrying axe and shield; bottom center ranged monster arbalist carrying glowing crossbow; bottom right a huge armored siege beast with a war platform and ram-like horns. None resemble the playable champions. Detailed real painted assets not icons, transparent alpha, no ground or backgrounds, no writing. Uniform object scale within cells with padding."
+    }
+  ],
+  "mode": "built-in imagegen",
+  "sectorPrompt": "Production top-down game terrain tile, precise detail enhancement of the supplied MASTER MAP CROP, sector {x},{y} of a continuous 4 by 4 battlefield. Redraw the EXACT same crop at high resolution. Preserve every road entry and exit at the image borders, widths, positions, floor shapes, walls, ruins, terrain colors, lighting and camera angle exactly. Do not recompose, zoom, add structures, remove paths or add borders. Crisp high quality painted dark fantasy stone, vegetation, camp architecture. Prioritize smooth readable walking floors and clean contours, avoid pockmarked allover texture. No people, creatures, labels, UI or watermarks. Square full bleed tile. The crop is the entire target image, not a reference for a new design."
+}

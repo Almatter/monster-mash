@@ -232,5 +232,39 @@
       "power": "assets/monsters/lycanthrope/gameplay-power.webp",
       "skin": "assets/monsters/lycanthrope/gameplay-skin.webp"
     }
+  },
+  "hag": {
+    "selection": {
+      "base": "assets/monsters/hag/selection-base.webp",
+      "primary": "assets/monsters/hag/selection-primary.webp",
+      "secondary": "assets/monsters/hag/selection-secondary.webp",
+      "accent": "assets/monsters/hag/selection-accent.webp",
+      "power": "assets/monsters/hag/selection-power.webp",
+      "skin": "assets/monsters/hag/selection-skin.webp"
+    },
+    "portrait": {
+      "base": "assets/monsters/hag/portrait-base.webp",
+      "primary": "assets/monsters/hag/portrait-primary.webp",
+      "secondary": "assets/monsters/hag/portrait-secondary.webp",
+      "accent": "assets/monsters/hag/portrait-accent.webp",
+      "power": "assets/monsters/hag/portrait-power.webp",
+      "skin": "assets/monsters/hag/portrait-skin.webp"
+    },
+    "cutin": {
+      "base": "assets/monsters/hag/cutin-base.webp",
+      "primary": "assets/monsters/hag/cutin-primary.webp",
+      "secondary": "assets/monsters/hag/cutin-secondary.webp",
+      "accent": "assets/monsters/hag/cutin-accent.webp",
+      "power": "assets/monsters/hag/cutin-power.webp",
+      "skin": "assets/monsters/hag/cutin-skin.webp"
+    },
+    "gameplay": {
+      "base": "assets/monsters/hag/gameplay-base.webp",
+      "primary": "assets/monsters/hag/gameplay-primary.webp",
+      "secondary": "assets/monsters/hag/gameplay-secondary.webp",
+      "accent": "assets/monsters/hag/gameplay-accent.webp",
+      "power": "assets/monsters/hag/gameplay-power.webp",
+      "skin": "assets/monsters/hag/gameplay-skin.webp"
+    }
   }
 }

@@ -1,4 +1,5 @@
 export const CHAMPION_VFX:Record<string,{unbound:string;perks:string[]}>={
+ hag:{unbound:'hag-unbound',perks:['hag-bolt','hag-mine','hag-gas','hag-ignite','hag-glamour','hag-frenzy','hag-hit','hag-flight']},
  lycanthrope:{unbound:'lycanthrope-unbound',perks:['lycanthrope-cyclone','lycanthrope-spin','lycanthrope-claw','lycanthrope-grip','lycanthrope-denied','lycanthrope-landing','lycanthrope-parkour','lycanthrope-howl','lycanthrope-fury','lycanthrope-moonrend','lycanthrope-barrier','lycanthrope-hit']},
  reaper:{unbound:'reaper-unbound',perks:['reaper-wave','reaper-sweep','reaper-blink','reaper-volley','reaper-eclipse','reaper-siphon']},
  sovereign:{unbound:'sovereign-unbound-aura',perks:['sovereign-rage','sovereign-aegis']},
@@ -8,4 +9,4 @@ export const CHAMPION_VFX:Record<string,{unbound:string;perks:string[]}>={
  devourer:{unbound:'devourer-unbound-aura',perks:['devourer-claw-wave','devourer-claw','devourer-frenzy','devourer-guard','devourer-dodge']}
 };
 
-for(const [id,pack] of Object.entries(CHAMPION_VFX))pack.perks.push('relic-power-'+id);
+for(const [id,pack] of Object.entries(CHAMPION_VFX))if(id!=='hag')pack.perks.push('relic-power-'+id);

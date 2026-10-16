@@ -58,7 +58,7 @@ function syncTargets(g:Game,e:Enemy){const m=e.mimic!,b=m.brain!;
 }
 function commitControls(g:Game,e:Enemy,dt:number){const m=e.mimic!,b=m.brain!;
  for(const t of m.targets){const p=t.proxy,body=t.body;if(t.kind==='enemy'){const prey=body as Enemy;if(prey.serial!==t.serial)continue;if(!p.active&&prey.active){prey.active=false;g.alive--;}prey.grabbed=p.grabbed;prey.corruptUntil=p.corruptUntil;prey.fearedUntil=p.fearedUntil;prey.snaredUntil=p.snaredUntil;if(p.grabbed){prey.x=p.x;prey.y=p.y;}prey.vx+=p.vx;prey.vy+=p.vy;}
- else if(t.kind==='player'&&!g.ended){if(p.grabbed){const from={x:body.x,y:body.y};body.x=p.x;body.y=p.y;moveRealm(body,from,23);g.controlledUntil=g.time+.1;}else if(p.vx||p.vy){const from={x:body.x,y:body.y};body.x+=p.vx*dt;body.y+=p.vy*dt;moveRealm(body,from,23);}if((p.fearedUntil||0)>b.time){const from={x:body.x,y:body.y},d=Math.hypot(body.x-e.x,body.y-e.y)||1;body.x+=(body.x-e.x)/d*125*dt;body.y+=(body.y-e.y)/d*125*dt;moveRealm(body,from,23);g.controlledUntil=g.time+.1;}}
+ else if(t.kind==='player'&&!g.ended){if(b.powers.some(p=>p.effect.startsWith('hag'))&&(p.snaredUntil||0)>b.time)g.moveSlowUntil=Math.max(g.moveSlowUntil,g.time+Math.min(2,p.snaredUntil!-b.time));if(p.grabbed){const from={x:body.x,y:body.y};body.x=p.x;body.y=p.y;moveRealm(body,from,23);g.controlledUntil=g.time+.1;}else if(p.vx||p.vy){const from={x:body.x,y:body.y};body.x+=p.vx*dt;body.y+=p.vy*dt;moveRealm(body,from,23);}if((p.fearedUntil||0)>b.time){const from={x:body.x,y:body.y},d=Math.hypot(body.x-e.x,body.y-e.y)||1;body.x+=(body.x-e.x)/d*125*dt;body.y+=(body.y-e.y)/d*125*dt;moveRealm(body,from,23);g.controlledUntil=g.time+.1;}}
  p.vx=p.vy=0;
  }
 }

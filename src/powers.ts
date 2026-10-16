@@ -1,3 +1,4 @@
+import {castHexes,castMiasma,castFlight,castUnmasked} from './hag.ts';
 import {visiblePriorityMimic} from './target-priority.ts';
 import {castCyclone} from './lycanthrope-cyclone.ts';
 import {castFifthPower} from './relic-powers.ts';
@@ -10,6 +11,7 @@ import type {Game} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
 import {addServant,dominate,corrupt} from './servants.ts';
 export const POWER_HANDLERS:Record<string,(game:Game,power:AbilityDef)=>void>={
+ haghex:castHexes,haggas:castMiasma,hagflight:castFlight,hagfrenzy:castUnmasked,
  wolfcyclone:castCyclone,realmrelic:castFifthPower,parkour:castParkour,wolfhowl:castHowl,wolfravage:castRavage,wolffury:castMoonfury,
  fissure:castFissure,reapersweep:reaperSweep,reaperblink:reaperBlink,reapervolley:reaperVolley,
  reaperstorm(g,p){g.reaperStorm=p.duration||8;g.reaperPulse=0;g.reaperSweeps=0;},

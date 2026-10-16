@@ -31,7 +31,7 @@ test('native core powers expose guardians for all seven bodies; basic hits and f
  }
 });
 test('native attacks cannot open titan layers even when they belong to the required nature',()=>{
- for(const id of Object.keys(MONSTERS)){const g=new Game(1,{monsterId:id},2);g.seedOpening();g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.pattern[0]=id;g.realm.castNature=id;g.realm.castAbility=g.powers[2].id;assert.equal(realmDamage(g,g.realm.boss,1000,'direct'),0);const r=g.realm.relics.find(r=>r.nature===id);r.ability=FIFTH_POWERS[id];r.shrine=null;assert.equal(realmDamage(g,g.realm.boss,1000,'relic:'+id+':'+r.ability),1000);}
+ for(const id of Object.keys(MONSTERS).filter(id=>id!=='hag')){const g=new Game(1,{monsterId:id},2);g.seedOpening();g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.pattern[0]=id;g.realm.castNature=id;g.realm.castAbility=g.powers[2].id;assert.equal(realmDamage(g,g.realm.boss,1000,'direct'),0);const r=g.realm.relics.find(r=>r.nature===id);r.ability=FIFTH_POWERS[id];r.shrine=null;assert.equal(realmDamage(g,g.realm.boss,1000,'relic:'+id+':'+r.ability),1000);}
 });
 test('known relics can only be equipped at their home altar and retain their decoration',()=>{
  const g=new Game(7,{monsterId:'titan'},2),r=g.realm.relics[0],other=g.realm.relics[1];for(const shrine of g.realm.shrines)shrine.cleared=true;r.known=other.known=true;
@@ -49,7 +49,7 @@ test('Stage 3 records and seven-nature passage accumulate idempotently with one 
  const p=normalizeProfile(null),gate=gateForStage(3);for(let i=0;i<8;i++){
   const values={seconds:600,realmClears:1,realmCleanClears:1,...Object.fromEntries(MASTERY_RELICS.map(r=>[r.metric,1]))},run={id:'deep'+i,monsterId:'titan',phase:2,values,best:{}};
   recordProgress(p,run,false);recordProgress(p,run,true);recordProgress(p,run,true);
- }assert.deepEqual(masteryProgress(gate,p.progress,'titan').map(r=>r.value),[8,8,7]);assert.ok(gateChallengeComplete(gate,p.progress));assert.ok(p.progress.titles.deepGatebreaker);assert.equal(p.progress.archetypes.titan.realmClears,8);assert.equal(stageAccess(3,p.progress,Date.parse('2026-10-30')), 'future');
+ }assert.deepEqual(masteryProgress(gate,p.progress,'titan').map(r=>r.value),[8,8,7]);assert.ok(gateChallengeComplete(gate,p.progress));assert.ok(p.progress.titles.deepGatebreaker);assert.equal(p.progress.archetypes.titan.realmClears,8);assert.equal(stageAccess(3,p.progress,Date.parse('2026-10-30')), 'title');
  const saved=normalizeProfile(JSON.parse(JSON.stringify(p)));assert.equal(saved.progress.titles.deepGatebreaker,p.progress.titles.deepGatebreaker);
  const split=normalizeProfile(null);split.progress.archetypes.titan.realmClears=8;split.progress.archetypes.devourer.realmCleanClears=3;for(const r of MASTERY_RELICS)split.progress.archetypes.devourer[r.metric]=1;assert.equal(gateChallengeComplete(gate,split.progress),false);
 });

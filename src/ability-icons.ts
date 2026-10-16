@@ -26,4 +26,4 @@ const paths:Record<string,string>={
  beam:'M2 16h28 M8 10l6 6-6 6 M17 9l7 7-7 7 M26 11v10',
  catastrophe:'M16 2l4 9 9-5-5 9 6 8-10-2-4 9-4-9-10 2 6-8-5-9 9 5 4-9Z M16 13v6 M13 16h6'
 };
-export function abilityIcon(id:string){const path=paths[id]||paths.catastrophe;return `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="${path}"/></svg>`;}
+export function abilityIcon(id:string){const hag:Record<string,string>={thornhex:'mine',witchgas:'gas',staffride:'flight',witchrevel:'frenzy'};if(hag[id])return '<img src="assets/vfx/hag-'+hag[id]+'.webp" width="32" height="32" style="object-fit:contain;vertical-align:middle" alt="" aria-hidden="true">';const path=paths[id]||paths.catastrophe;return `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="${path}"/></svg>`;}

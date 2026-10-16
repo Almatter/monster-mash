@@ -7,6 +7,20 @@ const req=(scope:string,metric:string,target:number,label:string):Requirement=>(
 const title=(id:string,name:string,family:string,...requirements:Requirement[]):PrestigeTitle=>({id,name,family,requirements});
 const runs=(n:number)=>req('total','runs',n,'incarnations lasting at least 60 seconds');
 export const TITLES:PrestigeTitle[]=[
+ title('hagHexer','A Beautiful Poison','Hag mastery',req('hag','hagpoison',2000,'poison kills'),req('hag','runs',5,'incarnations ≥60s')),
+ title('hagTrapper','The Thorn Labyrinth','Hag mastery',req('hag','haghex',15000,'hex trap kills'),req('hag','runs',10,'incarnations ≥60s')),
+ title('hagRevel','Beauty Unbound','Hag mastery',req('hag','hagignite',10000,'ignited gas kills'),req('hag','runs',20,'incarnations ≥60s')),
+ ...['hag'].flatMap(id=>[
+ {...title('hagWildsHunter','Witch of the Wilds','Hag · Ashen Wilds',req(id,'courtClears',3,'completed hunts'),req(id,'courtGuards',120,'guards broken')),stage:1},
+ {...title('hagWildsArt','Thorns in the Ash','Hag · Ashen Wilds',req(id,'courtMagic',10000,'spell kills in Stage 2'),req(id,'courtClears',5,'completed hunts')),stage:1},
+ {...title('hagWildsBane','Colossus Bewitched','Hag · Ashen Wilds',req(id,'courtColossusClears',5,'completed hunts with the Colossus slain')),stage:1},
+ {...title('hagDeepSeeker','The Abyss Enchantress','Hag · Titan depths',req(id,'realmClears',3,'Stage 3 clears with the Titan slain'),req(id,'realmShrines',21,'grottos cleared')),stage:2},
+ {...title('hagDeepResolve','The Unbroken Glamour','Hag · Titan depths',req(id,'realmCleanClears',3,'titan victories without resetting')),stage:2},
+ {...title('hagDeepInsight','Wisdom behind the Veil','Hag · Titan depths',req(id,'realmInsights',20,'defenses opened without a wrong altar-power trial'),req(id,'realmClears',7,'Stage 3 clears with the Titan slain')),stage:2}]),
+ ...['overlord','calamity','devourer','titan','sovereign','reaper','lycanthrope','hag'].flatMap((id,i)=>[
+ {...title(id+'WarCrown',['Emperor of Eight Hosts','Starfall Hegemon','War-Fang Sovereign','The Walking Siege','High Crown of Carnage','The Last Eclipse','Bloodmoon Conqueror','The Thorn Empress'][i],'Throne War',req(id,'warClears',3,'Throne War victories')),stage:3},
+ {...title(id+'WarHost',['The Endless Muster','Armies of Starlight','The Feeding Front','March of Mountains','Court without Borders','The Silent Legions','Pack of Eight Banners','The Bewitched Host'][i],'Throne War',req(id,'warCamps',35,'rival camps conquered'),req(id,'warPerks',60,'chosen war perks')),stage:3},
+ {...title(id+'WarSwift',['The Unopposed Edict','Flash of Extinction','The Swift Devouring','Before Stone Settles','Crimson Blitz','The Sudden Eclipse','Bloodmoon before Dawn','The Cruelest Revel'][i],'Throne War',req(id,'warFast',3,'Throne War victories in 12 minutes or less')),stage:3}]),
  ...[25000,100000,500000,2000000].map((n,i)=>title('slaughter'+i,['The Butcher','Army Breaker','The World Eater','October Eternal'][i],'Slaughter',req('total','kills',n,'lifetime slain'),runs([2,5,15,50][i]))),
  ...[2500000,25000000,150000000].map((n,i)=>title('dominance'+i,['Dread Ascendant','Sovereign of Ruin','Beyond All Kings'][i],'Dominance',req('total','dominance',n,'lifetime Dominance'),runs([3,15,50][i]))),
  ...[60,180,360].map((n,i)=>title('carnage'+i,['Crimson Reign','Endless Reign','Unbroken Apocalypse'][i],'Carnage',req('best','carnage',n,'best consecutive seconds at ×5 Carnage'),runs([3,8,20][i]))),

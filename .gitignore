@@ -13,3 +13,8 @@ art-source/stage3/v39/clean-overview.png
 art-source/stage3/v39/contact.png
 
 art-source/stage3/v42/assembled.png
+
+# Rebuildable war-map assembly; lossless generated sector sources are tracked.
+art-source/stage4/assembled.png
+art-source/stage4/overview.webp
+art-source/stage4/sectors/*.png
