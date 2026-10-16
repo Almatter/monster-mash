@@ -15,7 +15,7 @@ async function split(name,guideName){
  const count={};for(let channel=0;channel<5;channel++){const pixels=layers[channels[channel+1]];count[channels[channel+1]]=0;for(let p=0;p<labels.length;p++){if(labels[p]!==channel+1)continue;const i=p*4,bright=Math.max(data[i],data[i+1],data[i+2]),shade=Math.min(255,Math.round(bright*.98));pixels[i]=pixels[i+1]=pixels[i+2]=channel===4?Math.min(255,Math.round(bright*1.04)):shade;pixels[i+3]=Math.round(data[i+3]*Math.max(0,Math.min(1,(bright-24)/24)));count[channels[channel+1]]++;}}
  console.log(name,{width,height,count});return {layers,width,height};
 }
-const master=await split('selection-master.png','selection-color-guide.png'),battle=await split('gameplay-master.png','gameplay-color-guide.png');
+const master=await split('selection-master.png','selection-color-guide.png'),battle=await split('gameplay-master.png','gameplay-color-guide.png'),flight=await split('unmasked-flight-master.png','unmasked-flight-color-guide.png');
 // A generated pose can overlap a neighbouring sheet cell. Retain its main
 // connected silhouette and nearby small details, never the neighbour's scraps.
 for(let pose=0;pose<6;pose++){
@@ -35,7 +35,12 @@ for(const channel of channels)await writeAsset(out+'/cutin-'+channel+'.webp',awa
 const cells=[];const cw=Math.floor(battle.width/3),ch=Math.floor(battle.height/2);
 for(let pose=0;pose<6;pose++){const x=pose%3*cw,y=Math.floor(pose/3)*ch;let left=cw,right=0,top=ch,bottom=0;for(let py=0;py<ch;py++)for(let px=0;px<cw;px++)if(battle.layers.base[((y+py)*battle.width+x+px)*4+3]>32){left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);}left=Math.max(0,left-2);top=Math.max(0,top-2);right=Math.min(cw-1,right+2);bottom=Math.min(ch-1,bottom+2);cells.push({left:x+left,top:y+top,width:right-left+1,height:bottom-top+1});}
 for(const channel of channels){const overlays=[];for(let row=0;row<5;row++)for(let frame=0;frame<[4,6,6,2,6][row];frame++){const count=[4,6,6,2,6][row],phase=frame/count*Math.PI*2,pose=row===2?2:row===4?(frame<3?5:4):row,angle=row===3?(frame?5:-5):row===2?Math.sin(phase)*4:row===1?Math.sin(phase)*2:0;
-  const {data,info}=await sharp(battle.layers[channel],{raw:{width:battle.width,height:battle.height,channels:4}}).extract(cells[pose]).flop(pose===2||pose===4).resize(222,222,{fit:'inside'}).rotate(angle,{background:{r:0,g:0,b:0,alpha:0}}).ensureAlpha().raw().toBuffer({resolveWithObject:true});const left=frame*256+Math.round((256-info.width)/2+(row===1?Math.sin(phase)*2:0)),top=row*256+Math.round(242-info.height+(row===0?Math.sin(phase)*1.5:row===4?-3:row===1?Math.abs(Math.sin(phase))*2:0));overlays.push({input:data,raw:{width:info.width,height:info.height,channels:4},left,top});}
+  const {data,info}=await sharp(battle.layers[channel],{raw:{width:battle.width,height:battle.height,channels:4}}).extract(cells[pose]).resize(222,222,{fit:'inside'}).rotate(angle,{background:{r:0,g:0,b:0,alpha:0}}).ensureAlpha().raw().toBuffer({resolveWithObject:true});const left=frame*256+Math.round((256-info.width)/2+(row===1?Math.sin(phase)*2:0)),top=row*256+Math.round(242-info.height+(row===0?Math.sin(phase)*1.5:row===4?-3:row===1?Math.abs(Math.sin(phase))*2:0));overlays.push({input:data,raw:{width:info.width,height:info.height,channels:4},left,top});}
+ // Four generated true-form flight frames use the unused end of the hurt row.
+ for(let frame=0;frame<4;frame++){
+  const width=Math.floor(flight.width/4),cell=await sharp(flight.layers[channel],{raw:{width:flight.width,height:flight.height,channels:4}}).extract({left:frame*width,top:0,width,height:flight.height}).resize(236,236,{fit:'contain',background:{r:0,g:0,b:0,alpha:0}}).png().toBuffer();
+  overlays.push({input:cell,left:(frame+2)*256+10,top:3*256+8});
+ }
  await writeAsset(out+'/gameplay-'+channel+'.webp',await sharp({create:{width:1536,height:1280,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).composite(overlays).webp({lossless:true,effort:5}).toBuffer());}
 // Resampling independent masks can overshoot alpha along a fine strand.
 // Clip the packed masks to the matching packed source after every transform.

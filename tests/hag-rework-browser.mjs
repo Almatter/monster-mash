@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PATH||'C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs').href);
+const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'}),origin=process.env.HUNT_ORIGIN||'http://127.0.0.1:4173';
+try{for(const mobile of [false,true]){
+ const context=await browser.newContext({viewport:mobile?{width:844,height:390}:{width:1440,height:900},hasTouch:mobile,isMobile:mobile,serviceWorkers:'block'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(origin+'/test/?stage=1');await page.evaluate(async()=>{const {Game}=await import('./src/simulation.js'),{Renderer}=await import('./src/renderer.js'),update=Game.prototype.update,draw=Renderer.prototype.draw;Game.prototype.update=function(...args){window.g=this;return update.apply(this,args);};Renderer.prototype.draw=function(...args){window.r=this;return draw.apply(this,args);};});
+ await page.locator('[data-monster=hag]').click();await page.locator('#startForm button[type=submit]').click();await page.waitForFunction(()=>window.g?.time>.2&&window.r?.assets.completed(g.identity,'gameplay'));await page.locator('#abilities button').first().dispatchEvent('pointerdown');
+ await page.waitForFunction(()=>window.r.targeting?.kind==='hag-hex');await page.screenshot({path:`test-results/hag-hex-preview-${mobile?'touch':'desktop'}.png`});await page.locator('#abilities button').first().dispatchEvent('pointerdown');await page.waitForFunction(()=>window.g.cooldowns[0]>0);
+ await page.locator('#pause').click();await page.evaluate(()=>{document.querySelector('#paused').style.visibility='hidden';g.enemies.forEach(e=>e.active=false);g.alive=0;g.shots=[];g.bolts=[];g.effects=[];g.player.x=g.player.y=0;g.cooldowns.fill(0);});
+ const result=await page.evaluate(async()=>{
+  const {hagState,hagAnimation,castUnmasked,updateHag}=await import('./src/hag.js'),s=hagState(g);s.traps=[];g.cast(2);g.player.x=330;g.time+=.1;updateHag(g,.1);const trail=s.traps.length;castUnmasked(g,g.powers[3]);const state=hagAnimation(g,0,'move').state;
+  const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=600;const c=canvas.getContext('2d');c.fillStyle='#37313e';c.fillRect(0,0,1200,600);c.fillStyle='#fff';c.font='18px Arial';
+  for(let row=0;row<2;row++)for(let i=0;i<4;i++){
+   s.flight=i===1||i===3?3:0;s.frenzy=i>=2?3:0;s.unmasked=i>=2;const h=hagAnimation(g,.15,'move'),x=i*300+150,y=row*300+210;
+   r.assets.drawGameplay(c,g.identity,x,y,h.time,h.state,2,row===0?1:-1,false);c.fillText(['Walk','Glamour flight','True form','True flight'][i]+(row===0?' →':' ←'),i*300+35,row*300+35);
+  }
+  window.contactSheet=canvas.toDataURL('image/png');s.flight=3;s.frenzy=3;g.time=10;r.draw(g,10);return {trail,state,facesLeft:g.monster.visual.facesLeft};
+ });assert.ok(result.trail>0);assert.equal(result.state,'unmaskedFlight');assert.equal(result.facesLeft,false);
+ await page.screenshot({path:`test-results/hag-unmasked-flight-${mobile?'touch':'desktop'}.png`});
+ if(!mobile){const fs=await import('node:fs/promises');const data=await page.evaluate(()=>window.contactSheet);await fs.writeFile('test-results/hag-facing-contact-sheet.png',Buffer.from(data.split(',')[1],'base64'));}
+ const stats=await page.evaluate(async()=>{const {hagState}=await import('./src/hag.js'),s=hagState(g);s.frenzy=3;s.flight=0;let worst=0;for(let i=0;i<30;i++){const start=performance.now();r.draw(g,10+i/60);worst=Math.max(worst,performance.now()-start);}return {traps:s.traps.length,drawMaxMs:worst};});
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({mobile,...result,...stats,errors}));await context.close();
+ }
+ const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();await page.goto(origin+'/');await page.waitForSelector('[data-monster=overlord]');assert.equal(await page.locator('[data-monster=hag]').count(),0);await context.close();console.log('Desktop/touch formation placement, true flight, facing atlas and public Hag gate passed.');
+}finally{await browser.close();}
