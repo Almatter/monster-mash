@@ -29,7 +29,7 @@ export function castHowl(g:Game,p:AbilityDef){
  g.effect(g.player.x,g.player.y,'lycanthrope-howl',p.radius,.9);
 }
 export type Grip={serial:number;remaining:number;total:number;tick:number;power:AbilityDef;mass:number};
-export function gripTarget(g:Game){let target:Enemy|null=null,best=Infinity;g.nearby(g.player.x,g.player.y,220,e=>{if(e.grabbed||e.kind==='titan'||e.court||e.realm?.role==='guardian')return;if(e.kind==='brute'&&g.release<2||e.kind==='elite'&&(g.release<4||e.hp/e.maxHp>.35))return;const d=Math.hypot(e.x-g.player.x,e.y-g.player.y);if(d<=180+g.release*10&&d<best){best=d;target=e;}});return target;}
+export function gripTarget(g:Game){let target:Enemy|null=null,best=Infinity;g.nearby(g.player.x,g.player.y,220,e=>{if(!g.canTarget(e)||e.grabbed||e.kind==='titan'||e.court||e.realm?.role==='guardian')return;if(e.kind==='brute'&&g.release<2||e.kind==='elite'&&(g.release<4||e.hp/e.maxHp>.35))return;const d=Math.hypot(e.x-g.player.x,e.y-g.player.y);if(d<=180+g.release*10&&d<best){best=d;target=e;}});return target;}
 export function releaseGrip(g:Game,finish=false){const grip=g.grip;if(!grip)return;g.grip=null;const e=g.enemies.find(e=>e.active&&e.serial===grip.serial);if(!e)return;e.grabbed=false;g.slideArena(e,25);if(finish){if(g.damage(e,e.hp+1,'ravage'))g.completeAttack(1,{},'ravage');}g.rebuildGrid();}
 export function castRavage(g:Game,p:AbilityDef){const e=gripTarget(g);if(!e)return;releaseGrip(g);const total=(p.duration||4)+g.release*.5;e.grabbed=true;e.vx=e.vy=0;g.grip={serial:e.serial,remaining:total,total,tick:0,power:p,mass:e.kind==='elite'?1.4:e.kind==='brute'?1.2:1};g.effect(e.x,e.y,'lycanthrope-grip',150,.55,g.movementAngle);g.sound('devour');g.rebuildGrid();}
 function updateGrip(g:Game,dt:number){const grip=g.grip;if(!grip)return;const e=g.enemies.find(e=>e.active&&e.serial===grip.serial);if(!e){g.grip=null;return;}grip.remaining=Math.max(0,grip.remaining-dt);grip.tick-=dt;const angle=g.movementAngle+Math.sin(g.time*7)*.7;e.x=g.player.x+Math.cos(angle)*62;e.y=g.player.y+Math.sin(angle)*62;
@@ -38,7 +38,7 @@ function updateGrip(g:Game,dt:number){const grip=g.grip;if(!grip)return;const e=
 }
 export function castMoonfury(g:Game,p:AbilityDef){g.moonFury=g.moonFuryTotal=p.duration||7;g.moonFuryTarget=null;g.moonFuryFree=false;g.moonFuryHits.clear();g.moonFuryPulse=0;g.moonFuryVisited.clear();g.moonFuryOrigin={x:g.player.x,y:g.player.y};g.moonFuryView={...g.targetView};g.moonFuryPower=p;}
 function furyTarget(g:Game):Enemy|null{
- let target:Enemy|null=null,best=Infinity;for(const e of g.enemies){if(!e.active||!g.isHostile(e)||e.grabbed||g.moonFuryVisited.has(e.serial)||g.realm&&e.realm?.role==='boss'&&!g.realm.engaged)continue;
+ let target:Enemy|null=null,best=Infinity;for(const e of g.enemies){if(!e.active||!g.canTarget(e)||e.grabbed||g.moonFuryVisited.has(e.serial)||g.realm&&e.realm?.role==='boss'&&!g.realm.engaged)continue;
   const ox=e.x-g.moonFuryOrigin.x,oy=e.y-g.moonFuryOrigin.y;if(Math.abs(ox)>g.moonFuryView.x-30||Math.abs(oy)>g.moonFuryView.y-30)continue;const dx=e.x-g.player.x,dy=e.y-g.player.y;if(Math.abs(dx)>g.targetView.x-30||Math.abs(dy)>g.targetView.y-30)continue;
   const landing={x:e.x,y:e.y+55};if(!g.insideMap(landing.x,landing.y))continue;
   const rank=(e.realm?.role==='boss'||e.colossus?-3000:e.court?.role==='captain'?-2200:e.realm?.role==='guardian'?-1600:e.kind==='elite'?-1000:0)+Math.hypot(dx,dy);
@@ -57,7 +57,7 @@ export function updateLycanthrope(g:Game,dt:number){
  if(g.moonFury<=0)return;
  const remaining=Math.min(dt,g.moonFury);g.moonFury=Math.max(0,g.moonFury-dt);g.moonFuryPulse-=dt;g.heal(g.player.maxHp*.01*remaining,true);
  let e=g.moonFuryTarget;
- if(!e?.active||g.moonFuryPulse<=0){e=furyTarget(g);if(!e&&g.moonFuryVisited.size){g.moonFuryVisited.clear();e=furyTarget(g);}g.moonFuryTarget=e;g.moonFuryHits.clear();g.moonFuryPulse=.65;if(e)g.moonFuryVisited.add(e.serial);}
+ if(!e?.active||!g.canTarget(e)||g.moonFuryPulse<=0){e=furyTarget(g);if(!e&&g.moonFuryVisited.size){g.moonFuryVisited.clear();e=furyTarget(g);}g.moonFuryTarget=e;g.moonFuryHits.clear();g.moonFuryPulse=.65;if(e)g.moonFuryVisited.add(e.serial);}
  if(!e){g.moonFuryFree=true;return;}g.moonFuryFree=false;
  const before={x:g.player.x,y:g.player.y},goal=g.realm?realmCachedWaypoint(g.player,e.x,e.y+45,g.time,e.serial):{x:e.x,y:e.y+45},dx=goal.x-before.x,dy=goal.y-before.y,d=Math.hypot(dx,dy),step=Math.min(d,800*remaining);
  if(d>1){g.player.x+=dx/d*step;g.player.y+=dy/d*step;g.setMovementDirection(dx,dy);g.moving=true;if(g.realm)moveRealm(g.player,before,23);else g.slideArena(g.player,23);}

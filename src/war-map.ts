@@ -11,6 +11,11 @@ const fronts=WAR_MAP_DATA.structures.filter(s=>s[2].length).map(s=>{const points
 const masks=new WeakMap<object,{visible:Path2D;inverse:Path2D}>();
 function foregroundMasks(s:typeof fronts[number]){let pair=masks.get(s);if(pair)return pair;const visible=new Path2D(),inverse=new Path2D();inverse.rect(-20000,-20000,40000,40000);for(const path of [visible,inverse]){s.points.forEach((v,i)=>i?path.lineTo(v.x,v.y):path.moveTo(v.x,v.y));path.closePath();}pair={visible,inverse};masks.set(s,pair);return pair;}
 function occluders(x:number,y:number){return fronts.filter(s=>y<s.depth-3&&s.right>x-130&&s.left<x+130&&s.bottom>y-280&&s.top<y+75);}
+function inForeground(x:number,y:number,points:{x:number;y:number}[]){let inside=false;for(let i=0,j=points.length-1;i<points.length;j=i++){const a=points[i],b=points[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside;}
+// The same editor silhouettes/depth lines used to hide actor art also define
+// concealment. Test the torso, rather than a broad bounding box around a prop.
+export function warCoverAt(x:number,y:number){const ids:number[]=[];for(let i=0;i<fronts.length;i++){const s=fronts[i];if(y>=s.depth-3||x<s.left-16||x>s.right+16||y-80>s.bottom||y<s.top)continue;if([0,-40,-80].some(dy=>inForeground(x,y+dy,s.points)))ids.push(i);}return ids;}
+export function warBehindCover(observer:{x:number;y:number},id:number){return !!fronts[id]&&observer.y<fronts[id].depth-3;}
 export function clipWarActor(c:CanvasRenderingContext2D,x:number,y:number){for(const s of occluders(x,y))c.clip(foregroundMasks(s).inverse,'evenodd');}
 // Precomputed, bounded navigation fields. Each goal shares one field across its army.
 const step=64,cols=129,fields=new Map<number,Int16Array>();
