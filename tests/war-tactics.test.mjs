@@ -81,7 +81,7 @@ test('a witnessed entrance is pursued without tracking movement inside cover; un
 
 test('hidden players are ignored by all rival champion auto attacks, spells and basic targeting',()=>{
  for(const playerId of Object.keys(MONSTERS)){
-  const g=fresh(playerId);Object.assign(g.player,cover.hidden);for(const e of g.enemies)e.active=false;
+  const g=fresh(playerId);g.time=1;Object.assign(g.player,cover.hidden);for(const e of g.enemies)e.active=false;
   for(const leader of g.war.leaders.slice(1)){
    const e=leader.actor,a=g.war.actors.get(e.serial),b=a.brain;e.active=true;Object.assign(e,cover.observer);a.bank=0;
    assert.equal(g.target(a.team,e,800).point,null);g.brain(e,a,.1);
@@ -115,4 +115,26 @@ test('colors identify the owning champion across seeds and conquests, separately
  assert.deepEqual(Object.keys(WAR_BANNERS).sort(),Object.keys(MONSTERS).sort());assert.equal(new Set(Object.values(WAR_BANNERS).map(b=>b.color)).size,8);assert.equal(new Set(Object.values(WAR_BANNERS).map(b=>b.letter)).size,8);
  const g=fresh('hag');assert.equal(warRelation(g,0).name,'YOUR ARMY');assert.equal(warRelation(g,1).name,'ENEMY');g.war.allies=[[0,1]];assert.equal(warRelation(g,1).name,'ALLY');
  const troop=g.actor(1,'infantry',0,0,0),a=g.war.actors.get(troop.serial),before=warBanner(g,a.team);a.team=0;assert.notEqual(warBanner(g,a.team).color,before.color);assert.equal(warBanner(g,a.team),WAR_BANNERS.hag);
+});
+
+test('all rival kits must enter the player viewport before casting or choosing basic attacks against the player',()=>{
+ for(const id of Object.keys(MONSTERS)){
+  const g=fresh(id);g.time=1;g.targetView={x:140,y:120};for(const e of g.enemies)e.active=false;
+  for(const leader of g.war.leaders.slice(1)){
+   const e=leader.actor,a=g.war.actors.get(e.serial),b=a.brain;e.active=true;e.x=g.player.x+250;e.y=g.player.y;a.bank=0;
+   assert.equal(g.rivalOnScreen(e),false);assert.equal(g.target(a.team,e,800).visible,false);g.brain(e,a,.1);
+   assert.ok(b.cooldowns.every(n=>n===0),leader.monsterId+' cast offscreen');assert.equal(b.nearestEnemy(1000),null);assert.equal(b.bolts.length,0);assert.equal(b.attack,0);
+   e.x=g.player.x+60;e.y=g.player.y;assert.equal(g.rivalOnScreen(e),true);assert.equal(g.target(a.team,e,800).visible,true);g.brain(e,a,.1);
+   assert.ok(b.cooldowns.some(n=>n>0)||b.lungeCharges<3,leader.monsterId+' failed to engage on screen');e.active=false;
+  }
+ }
+});
+
+test('the viewport gate responds to both axes and screen sizes without stopping offscreen NPC battles',()=>{
+ const g=fresh('hag'),e=g.war.leaders[1].actor,p=g.player;g.time=1;
+ for(const view of [{x:640,y:360},{x:450,y:200},{x:220,y:500}]){
+  g.targetView=view;Object.assign(e,{x:p.x,y:p.y+view.y+1});assert.equal(g.rivalOnScreen(e),false);Object.assign(e,{x:p.x+view.x+1,y:p.y});assert.equal(g.rivalOnScreen(e),false);Object.assign(e,{x:p.x+view.x-60,y:p.y+view.y-60});assert.equal(g.rivalOnScreen(e),true);
+ }
+ for(const body of g.enemies)body.active=false;const rival=g.war.leaders[2].actor;e.active=rival.active=true;e.x=p.x+600;e.y=p.y;rival.x=e.x+80;rival.y=e.y;g.targetView={x:140,y:120};
+ const a=g.war.actors.get(e.serial);assert.equal(g.rivalOnScreen(e),false);const t=g.target(a.team,e,800);assert.equal(t.enemy,rival);assert.equal(t.visible,true);g.brain(e,a,.1);assert.ok(a.brain.cooldowns.some(n=>n>0)||a.brain.lungeCharges<3);
 });

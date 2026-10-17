@@ -17,3 +17,10 @@ Validation:
 - An exploratory 180-second Stage 4 bot screen ran all eight native kits on seed 77 with no stalls. Reaper cleared; Lycanthrope, Overlord, and Calamity reached the time limit alive; Hag, Devourer, Titan, and Sovereign died. This is a smoke test, not a human win-rate or full roster balance estimate. Ordinary army pressure remains dangerous.
 
 Reproduce unit tests with `node --test tests/war-tactics.test.mjs`, browser checks with `node tests/war-tactics-browser.mjs`, and scenario screening with `SCENARIO_LABEL=war-tactics SCENARIO_SECONDS=180 node tools/champion-scenarios.mjs 4 77`. Local screenshots and JSONL results are under `test-results/`.
+
+
+## Rival attack visibility
+
+Rivals must enter the player's current camera rectangle, inset by 48 world units, before selecting the player for a new basic attack or starting a power against them. The check uses the live `targetView` supplied by the renderer, so portrait, landscape, resized windows, and zoom scaling use the actual visible field instead of the NPC's fixed 800/1100-unit sensing range. Rivals can approach from outside the screen; offscreen NPC-versus-NPC battles and independent troop behavior continue. Projectiles and effects already launched can finish normally.
+
+Additional regression coverage checks every native rival kit, both camera axes and several view shapes, entry into view, and continuing offscreen NPC battles. Desktop/touch browser checks use the renderer's actual world-space camera bounds.
