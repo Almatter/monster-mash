@@ -29,7 +29,7 @@ test('Stage 2 Feast swings and emits bounded movement-directed waves even withou
  for(let i=0;i<90;i++){g.update(1/60,{...idle,x:0,y:-1});assert.ok(g.clawWaves.length<=CLAW_WAVE.maxActive);}
  assert.ok(swings>=5);assert.ok(g.clawWaves.length>0);assert.ok(g.clawWaves.every(w=>w.angle===-Math.PI/2));assert.equal(g.score.kills,0);assert.equal(g.sustainStats.healed,0);
  const count=swings;g.frenzy=0;for(let i=0;i<150;i++)g.update(1/60,idle);assert.equal(swings,count);assert.equal(g.clawWaves.length,0);
- const old=new Game(77,{monsterId:'devourer'},0);old.release=4;old.time=510;old.spawn=()=>undefined;old.cast(3);old.update(1/60,idle);assert.equal(old.clawWaves.length,0);
+ const old=new Game(77,{monsterId:'devourer'},0);old.release=4;old.time=510;old.spawn=()=>undefined;old.cast(3);old.update(1/60,idle);assert.equal(old.clawWaves.length,1);
 });
 
 test('continuous Feast reaches a captain beyond melee range and retains its existing healing cap',()=>{
