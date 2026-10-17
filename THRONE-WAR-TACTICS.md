@@ -24,3 +24,12 @@ Reproduce unit tests with `node --test tests/war-tactics.test.mjs`, browser chec
 Rivals must enter the player's current camera rectangle, inset by 48 world units, before selecting the player for a new basic attack or starting a power against them. The check uses the live `targetView` supplied by the renderer, so portrait, landscape, resized windows, and zoom scaling use the actual visible field instead of the NPC's fixed 800/1100-unit sensing range. Rivals can approach from outside the screen; offscreen NPC-versus-NPC battles and independent troop behavior continue. Projectiles and effects already launched can finish normally.
 
 Additional regression coverage checks every native rival kit, both camera axes and several view shapes, entry into view, and continuing offscreen NPC battles. Desktop/touch browser checks use the renderer's actual world-space camera bounds.
+
+
+## Rival reaction pacing
+
+Newly noticed targets, target switches, and reacquisition after losing sight now start a seeded 0.45-0.75 second reaction delay before basic attacks or ability choices. Ability decisions are spaced 0.80-1.15 seconds apart instead of 0.35-0.60 seconds. Aim/approach snapshots refresh every 0.20-0.30 seconds instead of following the target's latest position every AI tick. A modest preference for the current focus avoids restarting perception because two nearby troops briefly exchange distance order.
+
+These are gameplay reaction windows, not measured human averages. Physics, movement speed, normal basic-attack intervals, and ability cooldowns remain unchanged. Rivals continue traveling while noticing a threat; viewport and cover eligibility still apply. Existing attacks are allowed to finish.
+
+Validation: 458 tests passed, including new reaction-boundary, reacquisition, aim-copy/refresh, basic-opener and real ability-cadence checks. Desktop/touch tests verify that merely entering view no longer produces an instant ability cast, and that the rival engages after its reaction window.
