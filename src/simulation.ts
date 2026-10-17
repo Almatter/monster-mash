@@ -27,7 +27,7 @@ const DESCENDING_MASSACRES=[...MASSACRES].reverse();
 import {createServants,updateServants} from './servants.ts';
 import {threatAt,INTRODUCTIONS,OPENING,SUSTAIN,CLAW_WAVE,enemyMovementSpeed} from './balance.ts';
 import {COURT,createCourt,courtDamage,courtKill,courtEnemyMotion,courtContactScale,updateCourt,courtScoreCredit,courtRelease,upgradeRank,type CourtState,type CourtUnit} from './stage-two.ts';
-export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;grabbed?:boolean;corruptUntil?:number;rushing?:boolean;court?:CourtUnit;colossus?:{expiresAt:number};snaredUntil?:number;staggerUntil?:number;staggerReadyAt?:number;fearedUntil?:number;realm?:RealmUnit;mimic?:RealmMimic;reflection?:{owner:Enemy;servant:Game['servants'][number]};servantTarget?:Game['servants'][number];receiveDamage?:(amount:number,source:string)=>number};
+export type Enemy={active:boolean;kind:EnemyKind;x:number;y:number;hp:number;maxHp:number;vx:number;vy:number;timer:number;windup:number;flash:number;serial:number;grabbed?:boolean;coverStructure?:string;corruptUntil?:number;rushing?:boolean;court?:CourtUnit;colossus?:{expiresAt:number};snaredUntil?:number;staggerUntil?:number;staggerReadyAt?:number;fearedUntil?:number;realm?:RealmUnit;mimic?:RealmMimic;reflection?:{owner:Enemy;servant:Game['servants'][number]};servantTarget?:Game['servants'][number];receiveDamage?:(amount:number,source:string)=>number};
 export type DeathArt={source:string;sprite:string};
 export type Effect={x:number;y:number;kind:string;life:number;max:number;radius:number;angle:number;death?:DeathArt};
 export type Shot={x:number;y:number;vx:number;vy:number;life:number;damage:number;guardianShrine?:number};
@@ -77,7 +77,7 @@ export class Game {
   const e=this.enemies.find(e=>!e.active);if(!e)return;
   const facing=this.time<60?0:this.time*.045;const a=facing+(this.random()-.5)*this.pressure.arc,r=opening?OPENING.distance+this.random()*OPENING.spread:this.pressure.distance+this.random()*160,def=ENEMIES[kind];
   const hpScale=this.court?1+this.court.stats.captains*.07:(1+Math.max(0,this.wave-4)*.045)*(1+Math.max(0,this.time-540)*.0015)*(kind==='elite'?1+this.release*.18:kind==='titan'?1+this.release*.3:1);
-  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,grabbed:false,corruptUntil:0,fearedUntil:undefined,rushing:true,court:undefined,colossus:undefined,snaredUntil:undefined,staggerUntil:undefined,staggerReadyAt:undefined,realm:undefined,mimic:undefined,reflection:undefined,servantTarget:undefined,receiveDamage:undefined});this.alive++;if(kind==='titan')this.sound('titanArrival');return e;
+  Object.assign(e,{active:true,kind,x:this.player.x+Math.cos(a)*r,y:this.player.y+Math.sin(a)*r,hp:def.hp*hpScale,maxHp:def.hp*hpScale,vx:0,vy:0,timer:1+this.random()*2,windup:0,flash:0,serial:++this.serial,grabbed:false,coverStructure:undefined,corruptUntil:0,fearedUntil:undefined,rushing:true,court:undefined,colossus:undefined,snaredUntil:undefined,staggerUntil:undefined,staggerReadyAt:undefined,realm:undefined,mimic:undefined,reflection:undefined,servantTarget:undefined,receiveDamage:undefined});this.alive++;if(kind==='titan')this.sound('titanArrival');return e;
  }
  rebuildGrid(){
   for(const bucket of this.grid.values()){bucket.length=0;this.freeBuckets.push(bucket);}this.grid.clear();

@@ -33,3 +33,11 @@ Newly noticed targets, target switches, and reacquisition after losing sight now
 These are gameplay reaction windows, not measured human averages. Physics, movement speed, normal basic-attack intervals, and ability cooldowns remain unchanged. Rivals continue traveling while noticing a threat; viewport and cover eligibility still apply. Existing attacks are allowed to finish.
 
 Validation: 458 tests passed, including new reaction-boundary, reacquisition, aim-copy/refresh, basic-opener and real ability-cadence checks. Desktop/touch tests verify that merely entering view no longer produces an instant ability cast, and that the rival engages after its reaction window.
+
+## Base sentry repairs
+
+Live turrets were clipped by their own map foreground silhouettes. Each turret now excludes only its matching sentry silhouette from rendering and concealment checks; ordinary units still hide behind the same structure. Turrets remain anchored when rival ability proxies apply knockback. Owner-colored SENTRY labels identify active defenses, and destroyed sentries show their remaining 25-second rebuild time.
+
+Sentry range increases from 600 to 800 world units. Hostile champion attacks against friendly or allied occupants, including troops and shielded players, provoke four seconds of targeting priority. Normal troop attacks do not falsely blame their champion. Fixed turret damage against NPC champions compensates for their fivefold bookkeeping health, retaining defenses and the existing incoming-hit cap; damage against the player is unchanged. The firing interval remains 0.9 seconds.
+
+Validation: all 467 automated tests passed, including seven sentry regressions for spawning, concealment, shielded retaliation, troop protection, projectile impact, comparable champion health impact, rebuilding, and anchoring. Production build passed. Desktop and touch browser checks confirmed that all eight generated turret sprites render at their map markers without page errors; the visible pixel count increased from 1,576 to 25,224 per turret after excluding its own mask. Reproduce with `node --test tests/war-sentry.test.mjs` and `node tests/war-sentry-browser.mjs`. The inspected contact sheet is `test-results/war-sentry-visibility.png`.

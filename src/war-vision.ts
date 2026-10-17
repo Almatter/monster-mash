@@ -1,13 +1,13 @@
 import {warCoverAt,warBehindCover} from './war-map.ts';
 type Point={x:number;y:number};
-type Body=Point&{serial:number};
+type Body=Point&{serial:number;coverStructure?:string};
 type Sighting=Point&{at:number;visible:boolean};
 export const WAR_SIGHT={memory:6,reveal:2,range:1100};
 export class WarVision{
  private covers=new WeakMap<object,{x:number;y:number;ids:number[]}>();
  private memories=new WeakMap<object,Map<number,Sighting>>();
  private reveals=new Map<number,Map<number,number>>();
- private cover(p:Point){let cached=this.covers.get(p);if(!cached||cached.x!==p.x||cached.y!==p.y){cached={x:p.x,y:p.y,ids:warCoverAt(p.x,p.y)};this.covers.set(p,cached);}return cached.ids;}
+ private cover(p:Point&{coverStructure?:string}){let cached=this.covers.get(p);if(!cached||cached.x!==p.x||cached.y!==p.y){cached={x:p.x,y:p.y,ids:warCoverAt(p.x,p.y,p.coverStructure)};this.covers.set(p,cached);}return cached.ids;}
  reset(observer:Point){this.memories.delete(observer);this.covers.delete(observer);}
  reveal(body:Body,toTeam:number,time:number){let teams=this.reveals.get(body.serial);if(!teams){teams=new Map();this.reveals.set(body.serial,teams);}teams.set(toTeam,time+WAR_SIGHT.reveal);}
  update(time:number){for(const [serial,teams] of this.reveals){for(const [team,until] of teams)if(until<=time)teams.delete(team);if(!teams.size)this.reveals.delete(serial);}}
