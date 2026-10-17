@@ -2,7 +2,7 @@ import type {Game,Enemy} from './simulation.ts';
 import type {AbilityDef} from './content-monsters.ts';
 import {ENEMIES} from './data.ts';
 
-export const HAG={maxTraps:48,maxVenom:720,poisonSeconds:4,poisonTick:.5,poisonDamage:14,trapSpacing:88,triggerRadius:35,blastScale:1.65,throwSpeed:950,webPulse:.45,flightSpacing:100,igniteScale:1.25,giantStun:.35,giantStunCooldown:3,placementSearch:240,placementStep:12};
+export const HAG={maxTraps:48,maxVenom:720,poisonSeconds:4,poisonTick:.5,poisonDamage:14,trapSpacing:88,triggerRadius:35,blastScale:1.65,throwSpeed:950,webPulse:.45,flightSpacing:100,igniteScale:5,giantStun:.35,giantStunCooldown:3,placementSearch:240,placementStep:12};
 type Venom={enemy:Enemy;serial:number;remaining:number;tick:number;damage:number};
 export type HexTrap={x:number;y:number;radius:number;remaining:number;armed:number;damage:number;trigger:number};
 type Cloud={x:number;y:number;radius:number;remaining:number;total:number;tick:number;damage:number;ticksLeft:number;igniteDamage:number};
@@ -31,9 +31,10 @@ export function hagHit(g:Game,e:Enemy,source:string){
  if(g.identity.monsterId==='hag'||source.startsWith('hag'))hagVenom(g,e);
 }
 export function hagKill(g:Game,source:string){if(g.identity.monsterId==='hag'&&!source.startsWith('army')&&source!=='collision')hagGlamour(g,8);}
+export const hagHexCount=(g:Game)=>6+3*Math.max(0,Math.min(4,Math.floor(g.release)));
 export function hagHexPoints(g:Game,p:AbilityDef,point?:{x:number;y:number}){
  const angle=point?Math.atan2(point.y-g.player.y,point.x-g.player.x):g.player.angle,forward={x:Math.cos(angle),y:Math.sin(angle)},origin=point||{x:g.player.x+forward.x*225,y:g.player.y+forward.y*225},spacing=Math.max(110,p.radius*.9),points:{x:number;y:number}[]=[];
- for(const row of [-.5,.5])for(const column of [-1,0,1])points.push({x:origin.x+forward.x*row*spacing-forward.y*column*spacing,y:origin.y+forward.y*row*spacing+forward.x*column*spacing});
+ for(let i=0,rows=hagHexCount(g)/3;i<rows;i++)for(const column of [-1,0,1]){const row=i-(rows-1)/2;points.push({x:origin.x+forward.x*row*spacing-forward.y*column*spacing,y:origin.y+forward.y*row*spacing+forward.x*column*spacing});}
  return points;
 }
 type Point={x:number;y:number};
@@ -62,7 +63,7 @@ function placeTrap(g:Game,x:number,y:number,radius:number,damage:number,seconds:
  const s=hagState(g),point=hagResolveBomb(g,x,y);if(!point)return false;
  s.traps.push({...point,radius,damage,remaining:seconds,armed:.35,trigger:HAG.triggerRadius});return true;
 }
-// Two rows of three: no random scatter, and existing mines never overlap new ones.
+// Three predictable lanes gain one row per Unbinding; existing mines are preserved.
 export function castHexes(g:Game,p:AbilityDef){
  const {points}=hagHexPlacement(g,p,g.targetPoint||undefined),origin=g.targetPoint||points[2]||g.player;
  for(const {x,y} of points)placeTrap(g,x,y,p.radius*HAG.blastScale,p.damage,p.duration||14);

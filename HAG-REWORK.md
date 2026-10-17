@@ -104,3 +104,22 @@ Hag's hex and ignition blasts no longer launch giant targets (including Hollow K
 Damage tracing at Unbound III with no bonuses: ignition is 875 base x 2.125 = 1,859.375 direct damage, with continuing poison afterward. A Stage 1 Hollow King spawned at 7:00 has 28,405 HP (6.55% direct damage); the Ashen Colossus has 180,000 HP (1.03%). An exposed realm Titan takes the same direct damage, subject to its defense-layer floor and existing recovery bonus. No missing ignition multiplier was found; no damage buff was applied in this follow-up.
 
 Validation: full simulation suite plus targeted placement/heavy-target/damage regression checks; local desktop and touch browser tests passed, including previews, timer expiry/ignition, flight, and public Hag gating.
+
+
+## Hexes progression and Ignite damage pass
+
+Hexes now deploy 6 / 9 / 12 / 15 / 18 mines at Base / I / II / III / Final. The formation keeps three evenly spaced lanes and gains one row per Unbinding. Preview counts follow the release level, placement still searches safe floor, and the shared 48-mine cap is unchanged.
+
+Ignite now deals 500% of the cloud's full gas-plus-poison budget (previously 125%), a fourfold burst increase. It still consumes the cloud, retains the original ability cooldown, and rewards late ignition by adding the damage already inflicted by the cloud. Direct damage with default duration and no bonuses: Base 3,500; III 7,437.5; Final 8,750. Existing boss defense, guardian protection, and mimic/player damage caps remain in effect.
+
+Matched Stage 2 screening, same deterministic pilot and seeds (normal health/cooldowns, 30 Hz). These are bot runs, not human averages or evidence of a higher win rate:
+
+| Seed | Before | After |
+|---|---|---|
+| 77 | Clear 14:34, 8,176,667 Dominance | Clear 11:09, 10,314,000 Dominance |
+| 123 | Death 13:37, 8 captains | Death 9:04, 8 captains |
+| 444 | Death 10:06, 8 captains | Death 7:50, 7 captains |
+
+The one completed run finished 23.5% faster. Clear count stayed 1/3, so improved survival/clear rate is not established. Reproduce using `SCENARIO_LABEL=hag-burst-after node tools/champion-scenarios.mjs 2 77,123,444 hag`; before reports use label `hag-burst-before` and revision 81ba75c. Local raw JSONL reports retain per-run results.
+
+Validation: 439 tests passed, production build passed, desktop and touch browser checks passed. New regression coverage verifies every mine-count tier, deterministic nonoverlap/preview positions, increased boss damage, cloud consumption, and unchanged cooldown behavior.

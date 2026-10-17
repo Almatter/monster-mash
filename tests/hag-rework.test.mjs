@@ -1,7 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {Game} from '../src/simulation.ts';import {WarGame} from '../src/stage-four.ts';
 import {MONSTERS,ABILITIES} from '../src/content-monsters.ts';import {releasedPower} from '../src/unbound.ts';
-import {HAG,hagBlast,hagState,hagBombWalkable,hagResolveBomb,hagHexPlacement,hagAnimation,hagUnmasked,hagGlamour,updateHag,castHexes,castMiasma,castUnmasked} from '../src/hag.ts';
+import {HAG,hagBlast,hagHexCount,hagHexPoints,hagState,hagBombWalkable,hagResolveBomb,hagHexPlacement,hagAnimation,hagUnmasked,hagGlamour,updateHag,castHexes,castMiasma,castUnmasked} from '../src/hag.ts';
 import {damageKind} from '../src/combat-damage.ts';
 const make=()=>new Game(77,{monsterId:'hag'},0);
 function prey(g,x,y,hp=10000){const e=g.spawn('brute');Object.assign(e,{x,y,hp,maxHp:hp});g.rebuildGrid();return e;}
@@ -90,6 +90,17 @@ test('flight warns when no safe floor is within the bounded relocation distance'
  });
 
 test('third-Unbinding ignition deals its full computed damage to a scaled Hollow King and Colossus',()=>{
- for(const phase of [0,1]){const g=new Game(77,{monsterId:'hag'},phase);g.time=420;g.wave=15;g.release=3;const e=g.spawn('titan');Object.assign(e,{x:100,y:0});if(phase===1)Object.assign(e,{hp:180000,maxHp:180000,colossus:{expiresAt:999}});g.rebuildGrid();const hp=e.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-e.hp,1859.375);assert.equal(e.vx,0);assert.equal(e.staggerUntil,420.35);}
- const g=new Game(77,{monsterId:'hag'},2);g.seedOpening();g.release=3;g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.open=true;g.realm.boss.x=100;g.realm.boss.y=0;g.rebuildGrid();const hp=g.realm.boss.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-g.realm.boss.hp,1859.375);
+ for(const phase of [0,1]){const g=new Game(77,{monsterId:'hag'},phase);g.time=420;g.wave=15;g.release=3;const e=g.spawn('titan');Object.assign(e,{x:100,y:0});if(phase===1)Object.assign(e,{hp:180000,maxHp:180000,colossus:{expiresAt:999}});g.rebuildGrid();const hp=e.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-e.hp,7437.5);assert.equal(e.vx,0);assert.equal(e.staggerUntil,420.35);}
+ const g=new Game(77,{monsterId:'hag'},2);g.seedOpening();g.release=3;g.player.x=g.player.y=0;g.realm.engaged=true;g.realm.open=true;g.realm.boss.x=100;g.realm.boss.y=0;g.rebuildGrid();const hp=g.realm.boss.hp;castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));castMiasma(g,releasedPower(ABILITIES.witchgas,'hag',3));assert.equal(hp-g.realm.boss.hp,7437.5);
+});
+
+test('Hexes add one predictable row per Unbinding and previews match all placed mines',()=>{
+ for(let release=0;release<=4;release++){
+  const g=make();g.release=release;const p=releasedPower(ABILITIES.thornhex,'hag',release),wanted=6+3*release,shape=hagHexPoints(g,p);assert.equal(hagHexCount(g),wanted);assert.equal(shape.length,wanted);assert.equal(new Set(shape.map(q=>q.x)).size,2+release);assert.equal(new Set(shape.map(q=>q.y)).size,3);
+  const preview=hagHexPlacement(g,p);assert.equal(preview.points.length,wanted);castHexes(g,p);assert.deepEqual(hagState(g).traps.map(({x,y})=>({x,y})),preview.points);
+  castHexes(g,p);assert.equal(hagState(g).traps.length,wanted*2);for(let i=0;i<hagState(g).traps.length;i++)for(let j=0;j<i;j++)assert.ok(Math.hypot(hagState(g).traps[i].x-hagState(g).traps[j].x,hagState(g).traps[i].y-hagState(g).traps[j].y)>=HAG.trapSpacing-.01);
+ }
+});
+test('stronger Ignite consumes the cloud, preserves its cooldown and scales from 3500 to 8750 damage',()=>{
+ for(const [release,damage] of [[0,3500],[3,7437.5],[4,8750]]){const g=make();g.release=release;const e=prey(g,150,0,100000);assert.equal(g.cast(1),true);const cooldown=g.cooldowns[1];assert.equal(g.cast(1),true);assert.equal(100000-e.hp,damage);assert.equal(hagState(g).clouds.length,0);assert.equal(g.cooldowns[1],cooldown);assert.equal(g.cast(1),false);}
 });
