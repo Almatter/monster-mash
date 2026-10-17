@@ -1,9 +1,11 @@
+import {mapSentries,type MapDocument} from './realm-map-document.ts';
 import {WAR_MAP_DATA} from './war-map-data.ts';
 import {WAR_FLOOR_COLS,WAR_FLOOR_GRID,WAR_FLOOR_CLEARANCE} from './war-floor-data.ts';
 export const WAR_CHUNKS={size:1024,cols:8,rows:8,left:-4096,top:-4096,gutter:1.6,cacheLimit:24};
 export const WAR_SCALE=WAR_MAP_DATA.unitsPerPixel;
 export const warWorld=(point:number[])=>({x:(point[0]-640)*WAR_SCALE,y:(point[1]-640)*WAR_SCALE});
 export const WAR_CAMPS=WAR_MAP_DATA.rooms.map(r=>({id:r[0],name:r[1],...warWorld(r[4]),sentry:warWorld(r[5]),barracks:warWorld(r[6])}));
+export const WAR_SENTRIES=mapSentries(WAR_MAP_DATA as MapDocument).map(s=>({id:s.id,camp:WAR_CAMPS.findIndex(c=>c.id===s.camp),...warWorld(s.point)}));
 export function insideWar(x:number,y:number,radius=23){const ix=Math.round((x+4096)/WAR_FLOOR_GRID),iy=Math.round((y+4096)/WAR_FLOOR_GRID);return ix>=0&&iy>=0&&ix<WAR_FLOOR_COLS&&iy<WAR_FLOOR_COLS&&WAR_FLOOR_CLEARANCE[iy*WAR_FLOOR_COLS+ix]>=radius+WAR_FLOOR_GRID;}
 export function moveWar(body:{x:number;y:number},from:{x:number;y:number},radius=23){const dx=body.x-from.x,dy=body.y-from.y,n=Math.max(1,Math.ceil(Math.hypot(dx,dy)/12));let x=from.x,y=from.y;for(let i=0;i<n;i++){const nx=x+dx/n,ny=y+dy/n;if(insideWar(nx,ny,radius)){x=nx;y=ny;}else if(insideWar(nx,y,radius))x=nx;else if(insideWar(x,ny,radius))y=ny;}body.x=x;body.y=y;}
 export function slideWar(body:{x:number;y:number},radius=23){if(insideWar(body.x,body.y,radius))return;const original={...body};for(let r=8;r<=500;r+=8)for(let i=0;i<24;i++){const a=i*Math.PI/12,x=original.x+Math.cos(a)*r,y=original.y+Math.sin(a)*r;if(insideWar(x,y,radius)){body.x=x;body.y=y;return;}}}

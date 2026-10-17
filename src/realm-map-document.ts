@@ -1,4 +1,7 @@
-export type MapDocument={version:number;map:string;rooms:any[];decks:any[];structures:any[];arena:number[];patches:{add:boolean;points:number[][]}[];unitsPerPixel?:number;background?:{dataUrl:string;width:number;height:number};markers?:{id:string;name:string;point:number[]}[];zones?:{id:string;name:string;points:number[][]}[];portalInteractions?:{shrine:string;point:number[]}[]};
+export type MapSentry={id:string;camp:string;point:number[]};
+export function mapSentries(d:MapDocument):MapSentry[]{return d.sentries??d.rooms.map(r=>({id:r[0]+'-sentry',camp:r[0],point:r[5]}));}
+export function ensureMapSentries(d:MapDocument){if(d.map==='throne-war-v1')d.sentries??=mapSentries(d).map(s=>({...s,point:[...s.point]}));}
+export type MapDocument={version:number;map:string;sentries?:MapSentry[];disabledRoutes?:string[];rooms:any[];decks:any[];structures:any[];arena:number[];patches:{add:boolean;points:number[][]}[];unitsPerPixel?:number;background?:{dataUrl:string;width:number;height:number};markers?:{id:string;name:string;point:number[]}[];zones?:{id:string;name:string;points:number[][]}[];portalInteractions?:{shrine:string;point:number[]}[]};
 export function polygonContains(points:number[][],x:number,y:number){let hit=false;for(let i=0,j=points.length-1;i<points.length;j=i++){const a=points[i],b=points[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])hit=!hit;}return hit;}
 export function ellipseContains(e:number[],x:number,y:number){return e[2]>0&&e[3]>0&&((x-e[0])/e[2])**2+((y-e[1])/e[3])**2<1;}
 export function structureBaseContains(s:any[],x:number,y:number){return s[4]?polygonContains(s[4],x,y):ellipseContains(s[1],x,y);}
@@ -28,6 +31,8 @@ export function validateMapDocument(value:unknown):MapDocument{
  if(!Array.isArray(d.patches))fail('painted floor must be a list of areas.');
  if(d.patches.length>100000)fail('painted floor exceeds 100,000 sections. Download a draft backup for recovery.');
  for(let i=0;i<d.patches.length;i++){const p=d.patches[i];if(!p||typeof p.add!=='boolean'||!polygon(p.points))fail('painted floor section '+(i+1)+' has invalid points. Download a draft backup for recovery.');}
+ if(d.disabledRoutes!==undefined&&(!Array.isArray(d.disabledRoutes)||d.disabledRoutes.length>100||d.disabledRoutes.some(id=>typeof id!=='string'||!d.decks.some(r=>r[0]===id))))fail('disabled minion routes.');
+ if(d.sentries!==undefined&&(!Array.isArray(d.sentries)||d.sentries.length>64||new Set(d.sentries.map(s=>s?.id)).size!==d.sentries.length||d.sentries.some(s=>!s||typeof s.id!=='string'||!/^[a-z0-9-]{1,60}$/.test(s.id)||!d.rooms.some(r=>r[0]===s.camp)||!point(s.point))))fail('turret placements or camp ownership.');
  if(d.markers!==undefined&&(!Array.isArray(d.markers)||d.markers.length>500||d.markers.some(m=>!m||typeof m.id!=='string'||typeof m.name!=='string'||m.name.length>100||!point(m.point))))fail('map markers.');
  if(d.portalInteractions!==undefined&&(!Array.isArray(d.portalInteractions)||d.portalInteractions.length>100||new Set(d.portalInteractions.map(p=>p?.shrine)).size!==d.portalInteractions.length||d.portalInteractions.some(p=>!p||!d.rooms.some(r=>r[0]===p.shrine)||!point(p.point))))fail('portal interaction points.');
  if(d.zones!==undefined&&(!Array.isArray(d.zones)||d.zones.length>100||new Set(d.zones.map(z=>z?.id)).size!==d.zones.length||d.zones.some(z=>!z||typeof z.id!=='string'||!/^[a-z0-9-]{1,80}$/.test(z.id)||typeof z.name!=='string'||z.name.length>100||!polygon(z.points))))fail('encounter aura boundaries.');
