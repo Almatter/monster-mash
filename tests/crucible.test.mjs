@@ -50,10 +50,10 @@ test('a solo Devourer raid is lethal while a supporting wave can clear the same 
  assert.equal(raid(0).alive,false);const supported=raid(12);assert.equal(supported.alive,true);assert.equal(supported.guards,0);assert.ok(supported.health>.5);
 });
 
-test('the ranged guardian can retaliate against a champion attacking from normal ranged-basic distance',()=>{
+test('the ranged guardian can retaliate against a champion near the edge of its base',()=>{
  const g=new Crucible(17),guard=g.teams[0].guards[1],hero=g.teams[1].champion;
  for(const u of g.units)if(u!==guard&&u!==hero)u.active=false;
- Object.assign(hero,{x:guard.x+300,y:guard.y});g.rebuild();assert.equal(g.target(guard),hero);assert.ok(guard.range>=300);
+ Object.assign(hero,{x:g.teams[0].crystal.x-220,y:g.teams[0].crystal.y});g.rebuild();assert.equal(g.target(guard),hero);assert.ok(guard.range>=220);
 });
 
 function quietWave(kind='infantry'){
@@ -70,13 +70,13 @@ test('both troop types must cross their central rally before approaching guardia
  }
 });
 test('troops stop following a champion outside local aggro and resume their guardian objective',()=>{
- const {g,u,enemy}=quietWave();Object.assign(u,{x:1200,y:700,marched:true});const hero=g.teams[2].champion;Object.assign(hero,{active:true,x:1280,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();assert.equal(g.target(u),hero);
+ const {g,u,enemy}=quietWave();Object.assign(u,{x:1200,y:700,marched:true});const hero=g.teams[2].champion;Object.assign(hero,{active:true,x:1240,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();assert.equal(g.target(u),hero);
  Object.assign(hero,{x:2200,y:100});g.step(1/30);assert.equal(u.target,enemy.guards[0].id);assert.ok(u.recover>0);
  // A destroyed base does not turn a surviving distant champion into a marching destination.
  enemy.guards[0].active=enemy.crystal.active=false;g.rebuild();assert.equal(g.target(u),undefined);assert.deepEqual(g.route(u),{x:1200,y:700});
 });
 test('a moving champion cannot keep troops chasing indefinitely while remaining within local aggro',()=>{
- const {g,u,enemy}=quietWave();Object.assign(u,{x:1200,y:700,marched:true});const hero=g.teams[2].champion;Object.assign(hero,{active:true,x:1280,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();g.target(u);
+ const {g,u,enemy}=quietWave();Object.assign(u,{x:1200,y:700,marched:true});const hero=g.teams[2].champion;Object.assign(hero,{active:true,x:1240,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();g.target(u);
  for(let i=0;i<90&&u.recover<=0;i++){hero.x=u.x+80;hero.y=u.y;g.step(1/30);}
  assert.ok(u.recover>0);assert.equal(u.target,enemy.guards[0].id);
 });
@@ -87,7 +87,7 @@ test('guardian hits remove a substantial fraction of champion health while each 
 });
 test('crowded ordinary projectile traffic cannot consume the guardian projectile reserve',()=>{
  const g=new Crucible(17),guard=g.teams[0].guards[1],u=g.teams[1].champion;
- for(let i=0;i<80;i++)g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(guard,u);assert.equal(g.shots.length,81);assert.equal(g.shots.at(-1).defense,true);
+ Object.assign(u,{x:g.teams[0].crystal.x-180,y:g.teams[0].crystal.y});for(let i=0;i<80;i++)g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(guard,u);assert.equal(g.shots.length,81);assert.equal(g.shots.at(-1).defense,true);
 });
 
 test('without champion intervention, waves sustain a central brawl rather than quickly ending the war',()=>{
@@ -110,16 +110,16 @@ test('a shared siege clears the other guardian then the crystal before choosing 
 });
 test('chase recovery does not make troops ignore another nearby champion',()=>{
  const {g,u}=quietWave();const escaped=g.teams[2].champion,nearby=g.teams[3].champion;
- Object.assign(u,{x:1200,y:700,marched:true,recover:3,avoid:escaped.id});Object.assign(escaped,{active:true,x:2200,y:100});Object.assign(nearby,{active:true,x:1280,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();assert.equal(g.target(u),nearby);g.step(1/30);assert.ok(u.x>1200);assert.equal(u.target,nearby.id);
+ Object.assign(u,{x:1200,y:700,marched:true,recover:3,avoid:escaped.id});Object.assign(escaped,{active:true,x:2200,y:100});Object.assign(nearby,{active:true,x:1240,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();assert.equal(g.target(u),nearby);g.step(1/30);assert.equal(u.x,1200);assert.equal(u.target,nearby.id);
 });
 test('a nearby attacking champion provokes troops, but another minion cannot falsely attribute its hit to that champion',()=>{
- const {g,u}=quietWave(),hero=g.teams[2].champion,enemy=g.units.find(v=>v.team===2&&v.kind==='infantry');Object.assign(u,{x:1200,y:700,recover:3,avoid:hero.id,target:0});Object.assign(hero,{active:true,x:1300,y:700});g.damage(u,1,2,false,false,enemy);assert.equal(u.target,0);g.damage(u,1,2,false,false,hero);assert.equal(u.target,hero.id);assert.equal(u.recover,0);
+ const {g,u}=quietWave(),hero=g.teams[2].champion,enemy=g.units.find(v=>v.team===2&&v.kind==='infantry');Object.assign(u,{x:1200,y:700,recover:3,avoid:hero.id,target:0});Object.assign(hero,{active:true,x:1240,y:700});g.damage(u,1,2,false,false,enemy);assert.equal(u.target,0);g.damage(u,1,2,false,false,hero);assert.equal(u.target,hero.id);assert.equal(u.recover,0);
 });
 
 test('clearing a blocking group lets the surviving wave advance together toward its shared siege target',()=>{
  const {g,u}=quietWave(),rally=g.rally(0),army=g.units.filter(v=>v.team===0&&v.kind==='infantry').slice(0,6),foes=g.units.filter(v=>v.team===2&&v.kind==='infantry').slice(0,3),hero=g.teams[0].champion;
  for(const [i,v] of army.entries())Object.assign(v,{active:true,x:rally.x,y:rally.y+(i-2)*10,marched:true,invuln:0,target:0});
- for(const [i,v] of foes.entries())Object.assign(v,{active:true,x:rally.x+40,y:rally.y+i*12,hp:100,attack:1e9,speed:0,invuln:0});
+ for(const [i,v] of foes.entries())Object.assign(v,{active:true,x:rally.x+20,y:rally.y+i*10,hp:100,attack:1e9,speed:0,invuln:0});
  Object.assign(hero,{active:true,x:rally.x,y:rally.y,target:foes[0].id,power:0});g.controlled=0;g.rebuild();assert.ok(army.every(v=>g.target(v)?.team===2));assert.equal(g.power(0),true);assert.ok(foes.every(v=>!v.active));
  const target=g.armyObjective(0),before=army.map(v=>Math.hypot(v.x-target.x,v.y-target.y));advance(g,2);
  for(const [i,v] of army.entries()){assert.equal(v.active,true);assert.equal(v.target,target.id);assert.ok(Math.hypot(v.x-target.x,v.y-target.y)<before[i]-180);}
@@ -139,14 +139,14 @@ test('after its first neighboring crystal falls, an army prefers its other home 
 });
 test('a clear route is not interrupted by a nearby side fight, but frontal and contact threats still engage',()=>{
  for(const kind of ['infantry','ranged']){const {g,u}=quietWave(kind),foe=g.teams[2].champion;Object.assign(u,{x:1200,y:700,marched:true});Object.assign(foe,{active:true,x:1200,y:800});g.rebuild();assert.equal(g.target(u).kind,'captain');
-  Object.assign(foe,{x:1280,y:700});g.rebuild();assert.equal(g.target(u),foe);
+  Object.assign(foe,{x:1240,y:700});g.rebuild();assert.equal(g.target(u),foe);
   u.target=0;Object.assign(foe,{x:1160,y:700});g.rebuild();assert.equal(g.target(u),foe);
  }
 });
 test('both guardians shoot a rival beyond the decorative crystal circle and their shots meaningfully damage it',()=>{
  const g=new Crucible(17),base=g.teams[0],hero=g.teams[1].champion;for(const u of g.units)u.active=base.guards.includes(u)||u===base.crystal||u===hero;
  for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}
- Object.assign(hero,{x:base.crystal.x-350,y:base.crystal.y,invuln:0,attack:1e9,power:1e9,ultimate:1e9});g.controlled=1;g.rebuild();for(const guard of base.guards)assert.equal(g.target(guard),hero);
+ Object.assign(hero,{x:base.crystal.x-220,y:base.crystal.y,invuln:0,attack:1e9,power:1e9,ultimate:1e9});g.controlled=1;g.rebuild();for(const guard of base.guards)assert.equal(g.target(guard),hero);
  const hp=hero.hp;advance(g,2);assert.ok(hero.hp<hp-hero.maxHp*.3);
 });
 test('guardians resist unsupported champion combos while an actual supporting wave opens a siege window',()=>{
@@ -167,11 +167,32 @@ test('casting an offensive power ends arrival invulnerability',()=>{
 test('guardians retain priority on any in-range attacker of their champion across perception updates',()=>{
  for(const kind of ['champion','infantry','ranged']){const g=new Crucible(17),base=g.teams[0],hero=base.champion,attacker=g.units.find(u=>u.team===1&&u.kind===kind),decoy=g.units.find(u=>u.team===2&&u.kind==='infantry');
   for(const u of g.units)u.active=u===hero||u===attacker||u===decoy||u===base.crystal||base.guards.includes(u);
-  Object.assign(hero,{x:base.crystal.x,y:base.crystal.y});Object.assign(attacker,{x:base.crystal.x-300,y:base.crystal.y});Object.assign(decoy,{x:base.guards[0].x+5,y:base.guards[0].y});g.rebuild();assert.equal(g.target(base.guards[0]),decoy);
+  Object.assign(hero,{x:base.crystal.x,y:base.crystal.y});Object.assign(attacker,{x:base.crystal.x-220,y:base.crystal.y});Object.assign(decoy,{x:base.guards[0].x+5,y:base.guards[0].y});g.rebuild();assert.equal(g.target(base.guards[0]),decoy);
   g.damage(hero,1,1,false,false,attacker);for(const guard of base.guards){assert.equal(guard.target,attacker.id);assert.equal(g.target(guard),attacker);}g.time+=1;for(const guard of base.guards)assert.equal(g.target(guard),attacker);
   attacker.x=base.crystal.x-CRUCIBLE.defenseRadius-10;g.rebuild();assert.equal(g.target(base.guards[0]),decoy);
  }
 });
 test('a new in-range attacker immediately replaces the previous guardian retaliation target',()=>{
  const g=new Crucible(17),base=g.teams[0],hero=base.champion,a=g.teams[1].champion,b=g.units.find(u=>u.team===2&&u.kind==='infantry');Object.assign(hero,{x:base.crystal.x,y:base.crystal.y});Object.assign(a,{x:base.crystal.x-200,y:base.crystal.y});Object.assign(b,{x:base.crystal.x-250,y:base.crystal.y});g.rebuild();g.damage(hero,1,1,false,false,a);g.damage(hero,1,2,false,false,b);for(const guard of base.guards)assert.equal(g.target(guard),b);
+});
+
+test('turrets never acquire neighboring stationary defenses or a champion standing inside its own base',()=>{
+ const g=new Crucible(338053737);for(const u of g.units)if(u.kind==='infantry'||u.kind==='ranged')u.active=false;
+ for(const t of g.teams)Object.assign(t.champion,{x:t.crystal.x,y:t.crystal.y});g.rebuild();
+ for(const t of g.teams)for(const guard of t.guards)assert.equal(g.target(guard),undefined);
+ // Reject structures explicitly even if two camps are placed unusually close in a future layout.
+ const guard=g.teams[0].guards[0],other=g.teams[1];Object.assign(other.guards[0],{x:guard.x+10,y:guard.y});Object.assign(other.crystal,{x:guard.x+20,y:guard.y});g.rebuild();assert.equal(g.target(guard),undefined);
+});
+test('turret projectiles disengage when their target leaves the local base perimeter',()=>{
+ const g=new Crucible(17),base=g.teams[0],guard=base.guards[0],hero=g.teams[1].champion;
+ Object.assign(hero,{x:base.crystal.x-220,y:base.crystal.y});g.fire(guard,hero);assert.equal(g.shots.length,1);
+ hero.x=base.crystal.x-CRUCIBLE.defenseRadius-20;
+ for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}for(const u of g.units)if(u!==hero&&u!==guard&&u!==base.crystal)u.active=false;
+ const hp=hero.hp;g.controlled=1;g.step(1/30);assert.equal(g.shots.length,0);assert.equal(hero.hp,hp);assert.equal(guard.target,0);
+});
+test('ranged and melee minions ignore all non-adjacent side and forward fights, then engage contact without chasing',()=>{
+ for(const kind of ['infantry','ranged']){const {g,u}=quietWave(kind),foe=g.teams[2].champion;Object.assign(u,{x:1200,y:700,marched:true});Object.assign(foe,{active:true,x:1280,y:700,attack:1e9,power:1e9,ultimate:1e9});g.controlled=2;g.rebuild();assert.equal(g.target(u).kind,'captain');
+  foe.x=1240;g.rebuild();assert.equal(g.target(u),foe);const x=u.x;g.step(1/30);assert.equal(u.x,x);
+  foe.x=1280;g.step(1/30);assert.equal(u.target,g.teams[1].guards[0].id);assert.ok(u.x>x);
+ }
 });
