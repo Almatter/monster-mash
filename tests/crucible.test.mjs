@@ -62,7 +62,7 @@ function quietWave(kind='infantry'){
  for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}
  Object.assign(u,{x:700,y:700,marched:false,invuln:0,target:0});Object.assign(enemy.crystal,{x:1800,y:700});Object.assign(enemy.guards[0],{x:1700,y:700,hx:1700,hy:700,attack:1e9});g.rebuild();return {g,u,enemy};
 }
-test('both troop types must cross the inner center before selecting guardians, independently of champion goals',()=>{
+test('both troop types must cross their central rally before approaching guardians, independently of champion goals',()=>{
  for(const kind of ['infantry','ranged']){const {g,u,enemy}=quietWave(kind);g.teams[0].goal=7;
   // An adjacent hostile base cannot divert a newly spawned wave before it crosses the center.
   Object.assign(enemy.crystal,{x:600,y:700});Object.assign(enemy.guards[0],{x:650,y:700,hx:650,hy:700});g.rebuild();advance(g,.5);assert.ok(u.x>730);assert.equal(u.marched,false);assert.equal(u.target,0);
@@ -90,7 +90,37 @@ test('crowded ordinary projectile traffic cannot consume the guardian projectile
  for(let i=0;i<80;i++)g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(g.teams[0].champion,u);assert.equal(g.shots.length,80);g.fire(guard,u);assert.equal(g.shots.length,81);assert.equal(g.shots.at(-1).defense,true);
 });
 
-test('without champion intervention, opposing waves sustain a central brawl instead of quickly ending the war',()=>{
- const g=new Crucible(17);for(const t of g.teams){t.champion.active=false;t.respawnAt=1e9;}
- advance(g,300);assert.ok(g.kills>2000);assert.equal(g.teams.filter(t=>t.crystal.active).length,8);assert.ok(g.units.filter(u=>u.active&&['infantry','ranged'].includes(u.kind)&&Math.hypot((u.x-1200)/420,(u.y-700)/270)<1).length>40);
+test('without champion intervention, waves sustain a central brawl rather than quickly ending the war',()=>{
+ const g=new Crucible(17);for(const t of g.teams){t.champion.active=false;t.respawnAt=1e9;}let central=0;
+ for(let i=0;i<300*30;i++){g.step(1/30);if(i%30===0)central+=g.units.filter(u=>u.active&&['infantry','ranged'].includes(u.kind)&&Math.hypot((u.x-1200)/420,(u.y-700)/270)<1).length;}
+ assert.ok(g.kills>2000);assert.equal(g.teams.filter(t=>t.crystal.active).length,8);assert.ok(central/300>30);
+});
+test('an army selects the closest base at its rally and every minion shares a locked guardian target',()=>{
+ const g=new Crucible(17),rally=g.rally(0),target=g.armyObjective(0),distance=Math.hypot(target.x-rally.x,target.y-rally.y);
+ for(const t of g.teams.slice(1))for(const guard of t.guards)assert.ok(distance<=Math.hypot(guard.x-rally.x,guard.y-rally.y)+.001);
+ const army=g.units.filter(u=>u.team===0&&['infantry','ranged'].includes(u.kind));
+ for(const [i,u] of army.entries()){Object.assign(u,{marched:true,x:i%2?2200:200,y:700});assert.equal(g.route(u),target);assert.equal(u.objective,target.team);}
+ // Even a now-closer rival base cannot split the army while its current target is alive.
+ const other=g.teams.find((t,i)=>i!==0&&i!==target.team);Object.assign(other.guards[0],rally);
+ assert.equal(g.armyObjective(0),target);
+ g.spawn(0);const reinforcement=g.units.filter(u=>u.team===0&&u.active&&['infantry','ranged'].includes(u.kind)).at(-1);g.route(reinforcement);assert.equal(reinforcement.objective,target.team);
+});
+test('a shared siege clears the other guardian then the crystal before choosing another base',()=>{
+ const g=new Crucible(17),first=g.armyObjective(0),team=first.team;kill(g,first,0);const second=g.armyObjective(0);assert.equal(second.team,team);assert.equal(second.kind,'captain');kill(g,second,0);assert.equal(g.armyObjective(0),g.teams[team].crystal);kill(g,g.teams[team].crystal,0);const next=g.armyObjective(0);assert.notEqual(next.team,team);assert.notEqual(next.team,0);
+});
+test('chase recovery does not make troops ignore another nearby champion',()=>{
+ const {g,u}=quietWave();const escaped=g.teams[2].champion,nearby=g.teams[3].champion;
+ Object.assign(u,{x:1200,y:700,marched:true,recover:3,avoid:escaped.id});Object.assign(escaped,{active:true,x:2200,y:100});Object.assign(nearby,{active:true,x:1300,y:700,attack:1e9,power:1e9,ultimate:1e9});g.rebuild();assert.equal(g.target(u),nearby);g.step(1/30);assert.ok(u.x>1200);assert.equal(u.target,nearby.id);
+});
+test('a nearby attacking champion provokes troops, but another minion cannot falsely attribute its hit to that champion',()=>{
+ const {g,u}=quietWave(),hero=g.teams[2].champion,enemy=g.units.find(v=>v.team===2&&v.kind==='infantry');Object.assign(u,{x:1200,y:700,recover:3,avoid:hero.id,target:0});Object.assign(hero,{active:true,x:1300,y:700});g.damage(u,1,2,false,false,enemy);assert.equal(u.target,0);g.damage(u,1,2,false,false,hero);assert.equal(u.target,hero.id);assert.equal(u.recover,0);
+});
+
+test('clearing a blocking group lets the surviving wave advance together toward its shared siege target',()=>{
+ const {g,u}=quietWave(),rally=g.rally(0),army=g.units.filter(v=>v.team===0&&v.kind==='infantry').slice(0,6),foes=g.units.filter(v=>v.team===2&&v.kind==='infantry').slice(0,3),hero=g.teams[0].champion;
+ for(const [i,v] of army.entries())Object.assign(v,{active:true,x:rally.x,y:rally.y+(i-2)*10,marched:true,invuln:0,target:0});
+ for(const [i,v] of foes.entries())Object.assign(v,{active:true,x:rally.x+90,y:rally.y+i*12,hp:100,attack:1e9,speed:0,invuln:0});
+ Object.assign(hero,{active:true,x:rally.x,y:rally.y,target:foes[0].id,power:0});g.controlled=0;g.rebuild();assert.ok(army.every(v=>g.target(v)?.team===2));assert.equal(g.power(0),true);assert.ok(foes.every(v=>!v.active));
+ const target=g.armyObjective(0),before=army.map(v=>Math.hypot(v.x-target.x,v.y-target.y));advance(g,2);
+ for(const [i,v] of army.entries()){assert.equal(v.active,true);assert.equal(v.target,target.id);assert.ok(Math.hypot(v.x-target.x,v.y-target.y)<before[i]-180);}
 });
