@@ -28,6 +28,6 @@ async function hashTree(dir){for(const item of (await readdir(dir,{withFileTypes
 await writeFile('dist/robots.txt','User-agent: *\nAllow: /\n');
 await hashTree('dist');const version=digest.digest('hex').slice(0,16);
 await writeFile('dist/src/config.js',(await readFile('dist/src/config.js','utf8')).replace('__BUILD_HASH__',version));
-for(const file of ['dist/test/map-editor.html','dist/map-editor.html','dist/index.html','dist/stage2-test/index.html','dist/stage3-test/index.html','dist/test/index.html'])await writeFile(file,(await readFile(file,'utf8')).replaceAll('__BUILD_HASH__',version));
+for(const file of ['dist/test/crucible.html','dist/test/map-editor.html','dist/map-editor.html','dist/index.html','dist/stage2-test/index.html','dist/stage3-test/index.html','dist/test/index.html'])await writeFile(file,(await readFile(file,'utf8')).replaceAll('__BUILD_HASH__',version));
 const worker=(await readFile('public/sw.js','utf8')).replace('__BUILD_HASH__',version).replace(/const ASSETS=\[[\s\S]*?\];/, 'const ASSETS='+JSON.stringify([...assets,...modules.map(path=>path+'?v='+version)])+';');await writeFile('dist/sw.js',worker);
 console.log('Production build ready in dist/ (no runtime dependencies).');
