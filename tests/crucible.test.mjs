@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {MONSTERS} from '../src/content-monsters.ts';
 import {hagState} from '../src/hag.ts';
-import {Crucible,CRUCIBLE as C} from '../src/crucible-sim.ts';
+import {CRUCIBLE_AUGMENTS,CRUCIBLE_BUILD_LIMITS} from '../src/crucible-augments.ts';
+import {Crucible,CRUCIBLE as C,CRUCIBLE_SHOP} from '../src/crucible-sim.ts';
 const advance=(g,seconds)=>{for(let i=0;i<seconds*30;i++)g.step(1/30);};
 const kill=(g,u,team)=>{u.invuln=0;for(let i=0;i<30&&u.active;i++){u.invuln=0;g.damage(u,1e6,team);}assert.equal(u.active,false);};
 function quiet(){const g=new Crucible(17);for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}return g;}
@@ -137,13 +138,12 @@ test('augments increase real damage, health, speed and cooldown rate without byp
  const g=quiet(),t=g.teams[0],u=t.champion;t.mana=10000;place(u,t.crystal,0);const victim=g.units.find(v=>v.team===1&&v.kind==='infantry');victim.invuln=0;victim.hp=1000;const before=g.damage(victim,50,0,false,false,u);assert.equal(g.purchase(0,'might'),true);assert.ok(g.damage(victim,50,0,false,false,u)>before);const hp=u.maxHp,speed=u.speed;g.purchase(0,'vitality');g.purchase(0,'swiftness');assert.ok(Math.abs(u.maxHp-hp*1.12)<1e-7);assert.equal(u.speed,speed*1.05);u.power=10;g.purchase(0,'haste');assert.ok(Math.abs(u.power-9.2)<1e-7);const rival=g.teams[1].champion;rival.invuln=0;const hurt=g.damage(rival,1e6,0,false,false,u);assert.ok(hurt<=rival.maxHp*.075);
 });
 test('AI cashes in mana at its own crystal under the same prices and healing rules',()=>{
- const g=quiet(),t=g.teams[0],u=t.champion;place(u,t.crystal,0);u.hp=u.maxHp*.3;t.mana=140;g.autoShop(0);assert.equal(t.mana,100);assert.ok(Math.abs(u.hp/u.maxHp-.65)<1e-8);g.time=1;u.hp=u.maxHp;g.autoShop(0);assert.equal(t.mana,0);assert.equal(t.upgrades.might,1);assert.equal(t.earnedMana,0);
+ const g=quiet(),t=g.teams[0],u=t.champion;place(u,t.crystal,0);u.hp=u.maxHp*.3;t.mana=140;g.autoShop(0);assert.equal(t.mana,100);assert.ok(Math.abs(u.hp/u.maxHp-.65)<1e-8);g.time=1;u.hp=u.maxHp;g.autoShop(0);const bought=Object.entries(t.upgrades).find(([key,rank])=>rank===1);assert.ok(bought);assert.equal(t.mana,100-CRUCIBLE_SHOP[bought[0]].cost);assert.equal(t.earnedMana,0);
 });
 
-test('AI does not keep returning to shop after every augment is maxed out',()=>{
- const g=quiet(),t=g.teams[0];for(const key of Object.keys(t.upgrades))t.upgrades[key]=key==='swiftness'?4:['might','vitality','haste'].includes(key)?5:3;t.mana=10000;place(t.champion,t.crystal,C.baseRadius+20);g.autoShop(0);assert.equal(t.shopping,false);t.upgrades.might=4;g.autoShop(0);assert.equal(t.shopping,true);
+test('AI stops returning when its chosen build is complete',()=>{
+ const g=quiet(),t=g.teams[0];t.build.stats=['might'];t.upgrades.might=5;t.augments=t.build.augments.slice();t.mana=10000;place(t.champion,t.crystal,C.baseRadius+20);g.autoShop(0);assert.equal(t.shopping,false);t.upgrades.might=4;g.autoShop(0);assert.equal(t.shopping,true);
 });
-
 
 function duel(team=0){const g=quiet(),hero=g.teams[team].champion,enemy=g.teams[(team+1)%8].champion;g.controlled=team;only(g,[hero,enemy]);Object.assign(hero,{x:C.cx,y:C.cy,invuln:0,attack:1e9,power:0,ultimate:0,cooldowns:[0,0,0,0]});Object.assign(enemy,{x:C.cx+90,y:C.cy,invuln:0,hp:100000,maxHp:100000,attack:1e9,power:1e9,ultimate:1e9,cooldowns:[1e9,1e9,1e9,1e9]});g.rebuild();return {g,hero,enemy,b:g.combat.actors[team].brain};}
 test('every champion receives all four real native abilities and all thirty-two cast',()=>{
@@ -167,12 +167,8 @@ test('Calamity resonance and Sovereign feeding retain their native traits',()=>{
 test('Overlord summons use a bounded pool that is reused across respawns',()=>{
  const {g,hero,b}=duel(2);g.cast(2,2);advance(g,.05);const active=g.units.filter(u=>u.active&&u.servant);assert.ok(active.length>=8);const count=g.units.length;kill(g,hero,0);assert.equal(active.some(u=>u.active),false);g.combat.reset(2);g.teams[2].eliminated=false;hero.active=true;hero.hp=hero.maxHp;hero.power=hero.ultimate=0;hero.cooldowns=[0,0,0,0];g.cast(2,2);advance(g,.05);assert.equal(g.units.length,count);assert.ok(g.combat.actors[2].brain.servants.some(s=>s.active));
 });
-test('ability purchases require the home crystal, obey regular/ultimate slots and retain cooldowns',()=>{
- const g=quiet(),t=g.teams[0],u=t.champion;t.mana=1000;place(u,t.crystal,C.baseRadius+1);assert.equal(g.combat.equip(0,'meteor',0),false);place(u,t.crystal,0);u.power=8;assert.equal(g.combat.equip(0,'meteor',0),true);assert.equal(t.mana,840);assert.equal(g.combat.equip(0,'meteor',1),false);assert.equal(g.combat.equip(0,'crimson',0),false);assert.equal(g.combat.equip(0,'thornhex',3),false);g.time=1;assert.equal(g.combat.equip(0,'thornhex',0),true);assert.equal(u.power,7);assert.equal(t.mana,840);assert.equal(g.combat.equip(0,'crimson',3),true);assert.equal(t.mana,590);assert.equal(g.combat.equip(0,'missing',0),false);
-});
-test('borrowed Reaper abilities keep updating after the cast returns to the native champion',()=>{
- const {g,hero,b}=duel(0),t=g.teams[0];t.crystal.active=true;place(t.crystal,hero,0);t.mana=500;assert.equal(g.combat.equip(0,'reapingarc',0),true);hero.power=0;assert.equal(g.cast(0,0),true);assert.equal(b.monster.id,'hag');assert.equal(b.scytheWaves.length,3);const x=b.scytheWaves[0].x;advance(g,.1);assert.notEqual(b.scytheWaves[0]?.x,x);
-});
+
+
 test('expanded shop augments strengthen armies and direct-kill sustain under capped ranks',()=>{
  const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;t.mana=2000;place(u,t.crystal,0);const troop=g.units.find(v=>v.team===0&&v.kind==='infantry'),hp=troop.maxHp;assert.equal(g.purchase(0,'legion'),true);assert.ok(troop.maxHp>hp);assert.equal(g.purchase(0,'glamour'),true);u.hp=u.maxHp*.5;const victim=g.units.find(v=>v.team===1&&v.kind==='infantry');victim.invuln=0;g.damage(victim,1e6,0,false,false,u);assert.ok(u.hp>u.maxHp*.5);for(const item of ['reach','duration','tempo','armor'])assert.equal(g.purchase(0,item),true);
 });
@@ -194,10 +190,95 @@ test('native slows affect champion movement and control effects prevent manual c
 test('manual Dominate transfers actual enemy bodies immediately instead of duplicating them',()=>{
  const {g,hero,b}=duel(2),victim=g.units.find(u=>u.team===3&&u.kind==='infantry');Object.assign(victim,{active:true,x:hero.x+50,y:hero.y,invuln:0});g.rebuild();assert.equal(g.cast(2,0),true);assert.equal(victim.active,false);assert.ok(b.servants.some(s=>s.active&&s.source==='controlled'));advance(g,.1);assert.equal(victim.active,false);
 });
-test('a purchased Clinch holds the real minion and releases it if the caster dies',()=>{
- const {g,hero,b}=duel(1),t=g.teams[1],victim=g.units.find(u=>u.team===2&&u.kind==='infantry');t.crystal.active=true;t.crystal.x=hero.x;t.crystal.y=hero.y;t.mana=1000;assert.equal(g.combat.equip(1,'ravage',1),true);hero.cooldowns[1]=0;Object.assign(victim,{active:true,x:hero.x+50,y:hero.y,invuln:0,hp:10000,maxHp:10000});g.rebuild();assert.equal(g.cast(1,1),true);assert.equal(victim.grabbed,true);advance(g,.1);assert.equal(victim.grabOwner,1);kill(g,hero,0);assert.equal(victim.grabbed,false);
-});
+
 
 test('reused summon bodies get new identities and cannot inherit poison or mana contributions',()=>{
  const {g,b}=duel(2);g.cast(2,2);const a=g.combat.actors[2],servant=b.servants.find(s=>s.active),unit=a.summons.get(servant),old=unit.id;unit.contributions[0]=g.time;unit.poison=4;unit.active=false;servant.active=false;g.teams[2].champion.cooldowns[2]=0;g.cast(2,2);assert.ok(servant.active);assert.notEqual(unit.id,old);assert.equal(unit.poison,0);assert.equal(unit.contributions[0],-Infinity);
+});
+
+
+function learn(ctx,id){const {g,hero}=ctx,t=g.teams[hero.team];t.crystal.active=true;t.crystal.x=hero.x;t.crystal.y=hero.y;t.mana=10000;assert.equal(g.purchaseAugment(hero.team,id),true,id);t.crystal.active=false;}
+test('recalling champions can buy stats and kit augments without reviving or wasting mana on healing',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;u.x=C.cx;u.y=C.cy;t.mana=1000;kill(g,u,1);assert.equal(g.shopLocation(0),'');assert.equal(g.purchase(0,'vitality'),true);assert.equal(g.purchaseAugment(0,'remoteFuse'),true);assert.equal(g.purchase(0,'mend'),false);assert.equal(t.mana,680);assert.equal(u.active,false);assert.equal(u.hp,0);advance(g,10.1);assert.equal(u.active,true);assert.equal(u.hp,u.maxHp);assert.ok(t.augments.includes('remoteFuse'));assert.ok(u.cooldowns.every(n=>n<=0));
+});
+test('destroyed crystals and final elimination prevent shopping even while a previous recall was pending',()=>{
+ const g=quiet(),t=g.teams[0];t.mana=1000;kill(g,t.champion,1);t.crystal.active=false;assert.equal(g.purchase(0,'might'),false);assert.equal(g.purchaseAugment(0,'bastion'),false);
+});
+test('augments have native ownership, two limited choices and mutually exclusive basic forms',()=>{
+ const ctx=duel(4);learn(ctx,'spellshot');assert.equal(ctx.g.purchaseAugment(4,'brawler'),false);assert.equal(ctx.g.purchaseAugment(4,'remoteFuse'),false);ctx.g.teams[4].crystal.active=true;assert.equal(ctx.g.purchaseAugment(4,'bloodRush'),true);assert.equal(ctx.g.purchaseAugment(4,'bastion'),false);assert.equal(ctx.g.teams[4].augments.length,2);assert.equal(ctx.g.purchaseAugment(4,'missing'),false);
+});
+test('stat budgets prevent stacking every perk and upgrades remain available during recall',()=>{
+ const g=quiet(),t=g.teams[0];g.controlled=0;t.mana=10000;place(t.champion,t.crystal,0);for(const [item,ranks] of [['might',5],['haste',5],['vitality',5],['armor',1]])for(let n=0;n<ranks;n++)assert.equal(g.purchase(0,item),true);assert.equal(g.statRanks(0),16);assert.equal(g.purchase(0,'reach'),false);assert.equal(g.purchaseAugment(0,'bastion'),true);t.champion.hp*=.5;assert.equal(g.purchase(0,'mend'),true);
+});
+test('NPC builds vary by seeded plan but can never change their four native powers',()=>{
+ const a=quiet(),b=quiet(),other=new Crucible(23);assert.deepEqual(a.teams.map(t=>t.build),b.teams.map(t=>t.build));assert.notDeepEqual(a.teams.map(t=>t.build),other.teams.map(t=>t.build));assert.ok(new Set(a.teams.map(t=>t.build.style)).size>=3);const kits=a.combat.actors.map(actor=>actor.brain.powers.map(p=>p.id));
+ for(let team=0;team<8;team++){const t=a.teams[team];place(t.champion,t.crystal,0);t.mana=100000;for(let n=0;n<50;n++){a.time+=1;a.autoShop(team);}assert.ok(a.statRanks(team)<=CRUCIBLE_BUILD_LIMITS.stats);assert.ok(t.augments.length<=2);assert.deepEqual(a.combat.actors[team].brain.powers.map(p=>p.id),kits[team]);}assert.equal(a.combat.equip,undefined);
+});
+test('weapon-form augments let casters brawl or melee champions cast bolts without changing their kit',()=>{
+ const caster=duel(3);learn(caster,'brawler');assert.equal(caster.b.monster.basic.ranged,false);assert.equal(caster.hero.range,140);assert.equal(MONSTERS.calamity.basic.ranged,true);const melee=duel(5);learn(melee,'spellshot');assert.equal(melee.b.monster.basic.ranged,true);assert.equal(MONSTERS.titan.basic.ranged,false);assert.equal(melee.hero.range,260);assert.deepEqual(melee.b.powers.map(p=>p.id),['worldbreaker','stampede','faultline','heavenfall']);
+});
+test('Arcane Cadence triggers a blast and cooldown reward after three distinct basic hits',()=>{
+ const ctx=duel(0);learn(ctx,'spellweave');ctx.g.combat.prepare(0);const e=ctx.b.enemies.find(e=>e.serial===ctx.enemy.id);ctx.b.cooldowns=[5,5,5,5];for(let n=0;n<3;n++){ctx.b.time+=.1;ctx.enemy.invuln=0;ctx.b.damage(e,100,'hagvenom');}assert.equal(ctx.b.cooldowns[1],4);const before=ctx.enemy.hp;ctx.enemy.invuln=0;ctx.b.mods.update(.01,ctx.b.mods.snapshot());assert.ok(ctx.enemy.hp<before);
+});
+test('Bastion wards ability casts and retaliates against damage to its shield',()=>{
+ const ctx=duel(0);learn(ctx,'bastion');ctx.g.cast(0,0);assert.ok(ctx.b.shield>0);ctx.hero.invuln=0;ctx.g.damage(ctx.hero,100,ctx.enemy.team,false,false,ctx.enemy);ctx.enemy.invuln=0;const before=ctx.enemy.hp;ctx.b.mods.update(.01,ctx.b.mods.snapshot());assert.ok(ctx.enemy.hp<before);
+});
+test('Hag augments offer remote mine detonation and a three-cloud miasma without changing cooldowns',()=>{
+ const ctx=duel(0);learn(ctx,'remoteFuse');ctx.enemy.x=C.cx+1200;ctx.g.cast(0,0,{x:C.cx+250,y:C.cy});advance(ctx.g,.4);const count=hagState(ctx.b).traps.length,cool=ctx.hero.power;assert.ok(count>0);assert.equal(ctx.g.cast(0,0),true);assert.equal(hagState(ctx.b).traps.length,0);assert.equal(ctx.hero.power,cool);
+ const gas=duel(0);learn(gas,'gaspockets');assert.equal(gas.g.cast(0,1),true);assert.equal(hagState(gas.b).clouds.length,3);assert.equal(gas.g.cast(0,1),true);assert.equal(hagState(gas.b).clouds.length,0);
+});
+test('Lycanthrope can return her cyclone or emit howls during Bloodmoon',()=>{
+ const ctx=duel(1);learn(ctx,'returningGale');ctx.g.cast(1,2);advance(ctx.g,.6);const outward=ctx.b.cyclones[0];assert.ok(outward);outward.life=.001;advance(ctx.g,.05);assert.ok(ctx.b.cyclones.some(w=>w!==outward&&w.damage===outward.damage*.5));const wake=duel(1);learn(wake,'moonWake');wake.g.cast(1,3);advance(wake.g,.05);assert.ok(wake.b.effects.some(e=>e.kind==='lycanthrope-howl'));
+});
+test('Overlord can turn corruption kills into hazards or keep his servants in a bodyguard ring',()=>{
+ const ctx=duel(2);learn(ctx,'plagueGround');ctx.g.combat.prepare(2);const e=ctx.b.enemies.find(e=>e.serial===ctx.enemy.id);ctx.enemy.hp=e.hp=1;e.corruptUntil=10;ctx.b.damage(e,10000,'dot');assert.ok(ctx.b.fields.some(f=>f.kind==='vortex'));
+ const guard=duel(2);learn(guard,'royalGuard');guard.g.cast(2,2);advance(guard.g,.4);assert.ok(guard.b.servants.some(s=>s.active));assert.ok(guard.b.servants.filter(s=>s.active).every(s=>Math.hypot(s.x-guard.hero.x,s.y-guard.hero.y)<112));
+});
+test('Calamity can fork her ray and add a single delayed Starfall aftershock',()=>{
+ const ray=duel(3);learn(ray,'splitRay');const troops=ray.g.units.filter(u=>u.team===4&&u.kind==='infantry').slice(0,2);troops.forEach((u,i)=>Object.assign(u,{active:true,x:ray.hero.x+Math.cos((i?1:-1)*.22)*250,y:ray.hero.y+Math.sin((i?1:-1)*.22)*250,hp:10000,maxHp:10000,invuln:0}));ray.g.rebuild();ray.g.cast(3,0);advance(ray.g,.05);assert.ok(troops.every(u=>u.hp<10000));
+ const star=duel(3);learn(star,'starChain');star.g.cast(3,1);const original=star.b.fields[0];original.life=.001;advance(star.g,.05);assert.ok(star.b.fields.some(f=>f!==original&&f.damage===original.damage*.4));
+});
+test('Devourer gains ranged Lunge wakes or an inward Maw pull',()=>{
+ const dash=duel(4);learn(dash,'bloodRush');dash.g.cast(4,0);assert.ok(dash.b.clawWaves.length>0);const pull=duel(4);learn(pull,'feastPull');pull.g.cast(4,1);const e=pull.g.combat.actors[4].proxies.get(pull.enemy.id);assert.ok(e.vx<0);
+});
+test('Titan can leave Stampede fissures or reverse World Breaker into a pull',()=>{
+ const trail=duel(5);learn(trail,'quakeTrail');trail.g.cast(5,1);advance(trail.g,.4);assert.ok(trail.b.fissures.length>0);const pull=duel(5);learn(pull,'implosion');pull.g.cast(5,0);assert.ok(pull.g.combat.actors[5].proxies.get(pull.enemy.id).vx<0);
+});
+test('Sovereign can create a ranged Rupture fan or lingering beam hazards',()=>{
+ const fan=duel(6);learn(fan,'crownflare');fan.g.cast(6,0);assert.equal(fan.b.bolts.length,3);const seal=duel(6);learn(seal,'burningRay');seal.g.cast(6,2);advance(seal.g,.05);assert.ok(seal.b.fields.some(f=>f.kind==='vortex'));
+});
+test('Reaper can return crescents or leave soul circles at both ends of Blink',()=>{
+ const arc=duel(7);learn(arc,'returningArc');arc.g.cast(7,2);const original=arc.b.scytheWaves[0];original.remaining=.001;advance(arc.g,.05);assert.ok(arc.b.scytheWaves.some(w=>w!==original&&Math.abs(w.damage-original.damage*.4)<1e-6));const blink=duel(7);learn(blink,'graveWake');blink.g.cast(7,1);assert.equal(blink.b.relicPulses.length,2);assert.notEqual(blink.b.relicPulses[0].x,blink.b.relicPulses[1].x);
+});
+test('Hag can place mines on neighboring walkable lanes within casting range, including beyond the old 650 limit',()=>{
+ const ctx=duel(0);ctx.g.viewport={x:740,y:440};ctx.enemy.active=false;assert.equal(ctx.g.cast(0,0,{x:C.cx+690,y:C.cy}),true);assert.ok(hagState(ctx.b).traps.some(t=>t.x>C.cx+650));assert.ok(hagState(ctx.b).traps.every(t=>ctx.b.insideMap(t.x,t.y)));
+});
+test('offscreen mines can free space for a new lane while visible untripped mines are preserved',()=>{
+ const ctx=duel(0);ctx.enemy.active=false;ctx.g.viewport={x:220,y:140};const visible={x:C.cx,y:C.cy+100,radius:120,remaining:14,armed:0,damage:1,trigger:35};hagState(ctx.b).traps=[visible,...Array.from({length:47},(_,i)=>({x:100+i*25,y:120,radius:120,remaining:14,armed:0,damage:1,trigger:35}))];assert.equal(ctx.g.cast(0,0,{x:C.cx+200,y:C.cy}),true);assert.ok(hagState(ctx.b).traps.includes(visible));assert.ok(hagState(ctx.b).traps.length<=48);assert.ok(hagState(ctx.b).traps.some(t=>t.x>C.cx));
+});
+test('a full visible minefield gives explicit feedback instead of silently rejecting walkable targets',()=>{
+ const ctx=duel(0);hagState(ctx.b).traps=Array.from({length:48},(_,i)=>({x:ctx.hero.x+(i%8-4)*35,y:ctx.hero.y+(Math.floor(i/8)-3)*35,radius:120,remaining:14,armed:0,damage:1,trigger:35}));assert.equal(ctx.g.cast(0,0,{x:ctx.hero.x+200,y:ctx.hero.y}),false);assert.match(ctx.b.notice,/48 \/ 48/);assert.equal(ctx.hero.power,0);
+});
+function attentionFixture(){const ctx=duel(0);ctx.g.controlled=0;Object.assign(ctx.enemy,{x:C.cx,y:C.cy,attack:0,power:0,ultimate:0,cooldowns:[0,0,0,0]});Object.assign(ctx.hero,{x:C.cx+90,y:C.cy});const s=ctx.g.combat.attention.states[1];s.peripheralAt=0;return {...ctx,s,npc:ctx.g.combat.actors[1].brain};}
+test('rival vision matches the close viewport and requires a human-scale notice delay',()=>{
+ const {g,hero,s,npc}=attentionFixture();g.viewport={x:200,y:100};hero.x=C.cx+201;assert.equal(g.combat.focusTarget(1),undefined);hero.x=C.cx+150;s.scanAt=0;s.peripheralAt=0;assert.equal(g.combat.focusTarget(1),undefined);assert.ok(s.readyAt>=.45&&s.readyAt<=.75);g.time=.8;assert.equal(g.combat.focusTarget(1),hero);g.combat.prepare(1);assert.ok(npc.canTarget(npc.enemies.find(e=>e.serial===hero.id)));hero.y=C.cy+120;g.combat.attention.update(1);assert.equal(g.combat.focusTarget(1),undefined);
+});
+test('rivals hold one focus and cannot simultaneously auto-target every nearby lane threat',()=>{
+ const {g,hero,s,npc}=attentionFixture();g.combat.focusTarget(1);g.time=.8;assert.equal(g.combat.focusTarget(1),hero);const mob=g.units.find(u=>u.team===0&&u.kind==='infantry');Object.assign(mob,{active:true,x:C.cx+10,y:C.cy});s.scanAt=0;s.peripheralAt=0;g.combat.prepare(1);assert.equal(s.focus,hero.id);assert.equal(npc.canTarget(npc.enemies.find(e=>e.serial===mob.id)),false);assert.equal(npc.canTarget(npc.enemies.find(e=>e.serial===hero.id)),true);
+});
+test('rival aim is sampled instead of tracking every movement frame perfectly',()=>{
+ const {g,hero,s,npc}=attentionFixture();g.combat.focusTarget(1);g.time=.8;g.combat.prepare(1);const before={...s.point};hero.x+=40;g.time+=.01;g.combat.prepare(1);assert.deepEqual(npc.targetAim(npc.enemies.find(e=>e.serial===hero.id)),before);g.time+=.4;g.combat.prepare(1);assert.equal(s.point.x,hero.x);
+});
+test('being attacked can interrupt tunnel vision, but only after the rival notices the attacker',()=>{
+ const {g,hero,enemy,s}=attentionFixture(),mob=g.units.find(u=>u.team===0&&u.kind==='infantry');Object.assign(mob,{active:true,x:C.cx+220,y:C.cy});hero.x=C.cx-200;g.teams[1].goal=2;g.teams[2].crystal.x=C.cx+900;g.teams[2].crystal.y=C.cy;s.peripheralAt=Infinity;s.scanAt=0;g.combat.focusTarget(1);assert.equal(s.focus,mob.id);g.time=.8;g.combat.attention.update(1);enemy.invuln=0;g.damage(enemy,100,0,false,false,hero);const notice=s.alarmAt;assert.ok(notice>g.time+.4);g.time+=.2;g.combat.attention.update(1);assert.equal(s.focus,mob.id);g.time=notice+.4;g.combat.attention.update(1);assert.equal(s.focus,hero.id);
+});
+
+test('Spellforged Devourer can sustain Feast waves without a target and without trying to aim a nonexistent bolt',()=>{
+ const ctx=duel(4);learn(ctx,'spellshot');ctx.enemy.active=false;ctx.hero.attack=0;assert.equal(ctx.g.cast(4,3),true);assert.doesNotThrow(()=>advance(ctx.g,.1));assert.ok(ctx.b.clawWaves.length>0);assert.equal(ctx.b.bolts.length,0);
+});
+test('rival focus decisions can favor a visible rival over nearer farm, rather than always optimizing minion kills',()=>{
+ const {g,hero,s}=attentionFixture(),mob=g.units.find(u=>u.team===0&&u.kind==='infantry');Object.assign(mob,{active:true,x:C.cx+10,y:C.cy});hero.x=C.cx+160;const modes=new Set();for(let n=0;n<20;n++){g.time=n*8;s.focus=0;s.scanAt=0;s.peripheralAt=0;s.intentUntil=0;g.combat.attention.update(1);modes.add(s.mode);}assert.ok(modes.has('rival'));assert.ok(modes.has('lane'));
+});
+test('defensive augments preserve a larger native ward and its remaining duration',()=>{
+ const ctx=duel(0);learn(ctx,'brawler');ctx.b.shield=ctx.hero.maxHp*.3;ctx.b.shieldTime=8;ctx.g.combat.prepare(0);const e=ctx.b.enemies.find(e=>e.serial===ctx.enemy.id);ctx.b.damage(e,1,'hagvenom');assert.ok(ctx.b.shield>=ctx.hero.maxHp*.3);assert.ok(ctx.b.shieldTime>=8);
 });
