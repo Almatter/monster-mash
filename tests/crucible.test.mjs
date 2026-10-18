@@ -109,3 +109,35 @@ test('a full supporting wave can defeat both guardians and the armed crystal in 
 test('surviving minions without a crystal return along the lane graph instead of cutting across fields',()=>{
  const g=quiet(),u=g.units.find(v=>v.team===0&&v.kind==='infantry');place(u,g.teams[3].crystal,-50);g.teams[0].crystal.active=false;g.rebuild();g.route(u);const path=u.nav.filter(p=>p.node>=0).map(p=>p.node),{edges}=g.laneSegments();assert.equal(path.at(-1),0);for(let i=1;i<path.length;i++)assert.ok(edges.some(([a,b])=>a===path[i-1]&&b===path[i]||b===path[i-1]&&a===path[i]));
 });
+
+
+test('recall delay increases with deaths and match age, caps at sixty, and freezes when death occurs',()=>{
+ const g=quiet(),t=g.teams[0];t.deaths=1;assert.equal(g.respawnDelay(0),10);t.deaths=3;g.time=360;assert.equal(g.respawnDelay(0),24);t.deaths=50;assert.equal(g.respawnDelay(0),60);t.deaths=0;g.time=179;kill(g,t.champion,1);const due=t.respawnAt;advance(g,2);assert.equal(t.respawnAt,due);assert.equal(due,189);
+});
+test('respawn clears all ability cooldowns and combat debuffs while retaining earned upgrades and mana',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;t.mana=500;u.x=t.crystal.x;u.y=t.crystal.y;assert.equal(g.purchase(0,'vitality'),true);const max=u.maxHp;kill(g,u,1);Object.assign(u,{attack:99,power:99,ultimate:99,poison:9,slow:9,buff:9,pulse:9,retreat:true});advance(g,10.1);assert.equal(u.active,true);assert.equal(u.maxHp,max);assert.equal(u.hp,max);for(const key of ['attack','power','ultimate','poison','slow','buff'])assert.ok(u[key]<=0,key);assert.equal(u.retreat,false);assert.equal(t.upgrades.vitality,1);assert.ok(t.mana>400);
+});
+test('all contenders earn passive mana while alive or recalling, but eliminated teams do not',()=>{
+ const g=quiet();g.controlled=0;kill(g,g.teams[0].champion,1);g.teams[2].eliminated=true;advance(g,1);assert.ok(Math.abs(g.teams[0].mana-1)<1e-6);assert.ok(Math.abs(g.teams[1].mana-1)<1e-6);assert.equal(g.teams[2].mana,0);
+});
+test('mana kill rewards require actual champion damage; recent participants receive assists',()=>{
+ const g=quiet(),victim=g.units.find(u=>u.team===2&&u.kind==='infantry'),a=g.teams[0].champion,b=g.teams[1].champion;victim.invuln=0;g.damage(victim,20,0,false,false,a);g.damage(victim,1e6,1,false,false,b);assert.equal(g.teams[0].mana,4);assert.equal(g.teams[1].mana,8);assert.equal(g.teams[3].mana,0);
+ const next=g.units.find(u=>u.team===3&&u.kind==='infantry');next.invuln=0;g.damage(next,1e6,0,false,false,g.teams[0].guards[0]);assert.equal(g.teams[0].mana,4);
+ const hero=g.teams[4].champion;hero.invuln=0;hero.hp=10;g.damage(hero,1000,0,false,false,a);assert.equal(g.teams[0].mana,154);
+});
+test('stale, blocked and previous-life contributions cannot generate mana assists',()=>{
+ const g=quiet(),u=g.units.find(u=>u.team===2&&u.kind==='infantry'),a=g.teams[0].champion;u.invuln=0;g.damage(u,1,0,false,false,a);g.time=11;g.damage(u,1e6,1,false,false,g.teams[1].guards[0]);assert.equal(g.teams[0].mana,0);g.spawn(2);assert.ok(u.contributions.every(v=>v===-Infinity));u.invuln=1;g.damage(u,100,0,false,false,a);assert.equal(u.contributions[0],-Infinity);
+});
+test('crystal purchases enforce location, funds, full health, destroyed crystal and rank limits',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;t.mana=10000;place(u,t.crystal,C.baseRadius+1);assert.equal(g.purchase(0,'might'),false);place(u,t.crystal,0);assert.equal(g.purchase(0,'mend'),false);u.hp=u.maxHp*.3;assert.equal(g.purchase(0,'mend'),true);assert.ok(Math.abs(u.hp/u.maxHp-.65)<1e-8);assert.equal(t.mana,9960);for(let i=0;i<5;i++)assert.equal(g.purchase(0,'might'),true);assert.equal(g.purchase(0,'might'),false);assert.equal(t.mana,8860);t.mana=0;assert.equal(g.purchase(0,'haste'),false);t.mana=1000;t.crystal.active=false;assert.equal(g.purchase(0,'haste'),false);assert.equal(g.purchase(0,'invalid-item'),false);
+});
+test('augments increase real damage, health, speed and cooldown rate without bypassing duel limits',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;t.mana=10000;place(u,t.crystal,0);const victim=g.units.find(v=>v.team===1&&v.kind==='infantry');victim.invuln=0;victim.hp=1000;const before=g.damage(victim,50,0,false,false,u);assert.equal(g.purchase(0,'might'),true);assert.ok(g.damage(victim,50,0,false,false,u)>before);const hp=u.maxHp,speed=u.speed;g.purchase(0,'vitality');g.purchase(0,'swiftness');assert.ok(Math.abs(u.maxHp-hp*1.12)<1e-7);assert.equal(u.speed,speed*1.05);u.power=10;g.purchase(0,'haste');assert.ok(Math.abs(u.power-9.2)<1e-7);const rival=g.teams[1].champion;rival.invuln=0;const hurt=g.damage(rival,1e6,0,false,false,u);assert.ok(hurt<=rival.maxHp*.075);
+});
+test('AI cashes in mana at its own crystal under the same prices and healing rules',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;place(u,t.crystal,0);u.hp=u.maxHp*.3;t.mana=140;g.autoShop(0);assert.equal(t.mana,100);assert.ok(Math.abs(u.hp/u.maxHp-.65)<1e-8);g.time=1;u.hp=u.maxHp;g.autoShop(0);assert.equal(t.mana,0);assert.equal(t.upgrades.might,1);assert.equal(t.earnedMana,0);
+});
+
+test('AI does not keep returning to shop after every augment is maxed out',()=>{
+ const g=quiet(),t=g.teams[0];Object.assign(t.upgrades,{might:5,vitality:5,haste:5,swiftness:4});t.mana=10000;place(t.champion,t.crystal,C.baseRadius+20);g.autoShop(0);assert.equal(t.shopping,false);t.upgrades.might=4;g.autoShop(0);assert.equal(t.shopping,true);
+});
