@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs').href);
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+try{for(const mobile of [false,true]){
+ const context=await browser.newContext({viewport:mobile?{width:844,height:390}:{width:1440,height:900},isMobile:mobile,hasTouch:mobile,serviceWorkers:'block'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4173/test/crucible.html?seed=338053737');await page.locator('#start-battle').click();await page.selectOption('#control','0');
+ async function openShop(){await page.evaluate(()=>{const t=crucible.teams[0];t.champion.x=t.crystal.x;t.champion.y=t.crystal.y;t.champion.invuln=100;t.mana=10000;});await page.locator('#shop-toggle').click();assert.equal(await page.locator('#pause').innerText(),'Resume');const time=await page.evaluate(()=>crucible.time);await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>crucible.time),time);assert.equal(await page.locator('#map').isHidden(),true);}
+ async function running(){assert.equal(await page.locator('#shop').isHidden(),true);assert.equal(await page.locator('#pause').innerText(),'Pause');const time=await page.evaluate(()=>crucible.time);await page.waitForTimeout(300);assert.ok(await page.evaluate(t=>crucible.time>t,time));assert.deepEqual(errors,[]);}
+ await openShop();await page.locator('#shop-close').click();await running();
+ await page.locator('#pause').click();await openShop();await page.keyboard.press('Escape');await running();
+ await openShop();await page.locator('#pause').click();await running();
+ await openShop();await page.locator('#inspect').click();await running();await page.locator('#inspect').click();
+ await openShop();await page.selectOption('#control','watch');await running();await page.selectOption('#control','0');
+ await openShop();await page.mouse.click(100,150);await running();await page.locator('#map').click();await running();await page.locator('#map').click();
+ await page.evaluate(()=>{const b=document.querySelector('#pause');b.focus();b.blur();});await running();
+ await openShop();await page.locator('#reset').click();assert.equal(await page.locator('#battle-setup').isVisible(),true);await page.locator('#start-battle').click();await running();
+ await page.evaluate(()=>{crucible.winner=1;});await page.waitForTimeout(350);assert.equal(await page.locator('#pause').innerText(),'Finished');assert.equal(await page.locator('#pause').isDisabled(),true);await page.locator('#reset').click();await page.locator('#start-battle').click();await running();
+ await page.screenshot({path:`test-results/crucible-shop-resumed-${mobile?'touch':'desktop'}.png`});console.log(JSON.stringify({mobile,checks:9,errors}));await context.close();
+}}finally{await browser.close();}
