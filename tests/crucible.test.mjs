@@ -1,13 +1,14 @@
+import {CRUCIBLE_DIFFICULTIES} from '../src/crucible-difficulty.ts';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {MONSTERS} from '../src/content-monsters.ts';
 import {hagState} from '../src/hag.ts';
 import {CRUCIBLE_AUGMENTS,CRUCIBLE_BUILD_LIMITS} from '../src/crucible-augments.ts';
-import {Crucible,CRUCIBLE as C,CRUCIBLE_SHOP} from '../src/crucible-sim.ts';
+import {Crucible,CRUCIBLE as C,CRUCIBLE_WAR as WAR,CRUCIBLE_SHOP} from '../src/crucible-sim.ts';
 const advance=(g,seconds)=>{for(let i=0;i<seconds*30;i++)g.step(1/30);};
 const kill=(g,u,team)=>{u.invuln=0;for(let i=0;i<30&&u.active;i++){u.invuln=0;g.damage(u,1e6,team);}assert.equal(u.active,false);};
-function quiet(){const g=new Crucible(17);for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}return g;}
+function quiet(){const g=new Crucible(17,'hell');for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}return g;}
 function place(u,base,dx,dy=0){Object.assign(u,{x:base.x+dx,y:base.y+dy,invuln:0,attack:1e9,power:1e9,ultimate:1e9});}
 function only(g,units){for(const u of g.units)u.active=units.includes(u);g.rebuild();}
 function ring(g){return g.teams.map((t,i)=>({i,a:Math.atan2(t.crystal.y-C.cy,t.crystal.x-C.cx)})).sort((a,b)=>a.a-b.a).map(v=>v.i);}
@@ -267,7 +268,7 @@ test('rivals hold one focus and cannot simultaneously auto-target every nearby l
  const {g,hero,s,npc}=attentionFixture();g.combat.focusTarget(1);g.time=.8;assert.equal(g.combat.focusTarget(1),hero);const mob=g.units.find(u=>u.team===0&&u.kind==='infantry');Object.assign(mob,{active:true,x:C.cx+10,y:C.cy});s.scanAt=0;s.peripheralAt=0;g.combat.prepare(1);assert.equal(s.focus,hero.id);assert.equal(npc.canTarget(npc.enemies.find(e=>e.serial===mob.id)),false);assert.equal(npc.canTarget(npc.enemies.find(e=>e.serial===hero.id)),true);
 });
 test('rival aim is sampled instead of tracking every movement frame perfectly',()=>{
- const {g,hero,s,npc}=attentionFixture();g.combat.focusTarget(1);g.time=.8;g.combat.prepare(1);const before={...s.point};hero.x+=40;g.time+=.01;g.combat.prepare(1);assert.deepEqual(npc.targetAim(npc.enemies.find(e=>e.serial===hero.id)),before);g.time+=.4;g.combat.prepare(1);assert.equal(s.point.x,hero.x);
+ const {g,hero,s,npc}=attentionFixture();g.combat.focusTarget(1);g.time=.8;g.combat.prepare(1);const before={...s.point};hero.x+=40;g.time+=.01;g.combat.prepare(1);assert.deepEqual(npc.targetAim(npc.enemies.find(e=>e.serial===hero.id)),before);g.time+=.4;g.combat.prepare(1);assert.ok(Math.hypot(s.point.x-hero.x,s.point.y-hero.y)<=g.difficultyRules.aimError);assert.notDeepEqual(s.point,before);
 });
 test('being attacked can interrupt tunnel vision, but only after the rival notices the attacker',()=>{
  const {g,hero,enemy,s}=attentionFixture(),mob=g.units.find(u=>u.team===0&&u.kind==='infantry');Object.assign(mob,{active:true,x:C.cx+220,y:C.cy});hero.x=C.cx-200;g.teams[1].goal=2;g.teams[2].crystal.x=C.cx+900;g.teams[2].crystal.y=C.cy;s.peripheralAt=Infinity;s.scanAt=0;g.combat.focusTarget(1);assert.equal(s.focus,mob.id);g.time=.8;g.combat.attention.update(1);enemy.invuln=0;g.damage(enemy,100,0,false,false,hero);const notice=s.alarmAt;assert.ok(notice>g.time+.4);g.time+=.2;g.combat.attention.update(1);assert.equal(s.focus,mob.id);g.time=notice+.4;g.combat.attention.update(1);assert.equal(s.focus,hero.id);
@@ -310,4 +311,47 @@ test('selling and rebuying health or haste cannot create free healing or cooldow
 });
 test('augment sellback frees a slot, restores the native basic and permits a different choice during recall',()=>{
  const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;place(u,t.crystal,0);t.mana=1000;g.purchaseAugment(0,'brawler');assert.equal(g.combat.actors[0].brain.monster.basic.ranged,false);assert.equal(g.sellAugment(0,'brawler'),true);assert.equal(t.mana,956);assert.equal(g.combat.actors[0].brain.monster.basic.ranged,true);assert.deepEqual(t.augments,[]);assert.equal(g.sellAugment(0,'brawler'),false);kill(g,u,1);assert.equal(g.purchaseAugment(0,'remoteFuse'),true);assert.equal(g.sellAugment(0,'remoteFuse'),true);assert.equal(u.hp,0);assert.equal(u.active,false);assert.equal(g.purchaseAugment(0,'gaspockets'),true);
+});
+
+
+test('siege beasts only spawn on a paid purchase, outside the normal troop cap, with a cooldown and one active limit',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;place(u,t.crystal,0);t.mana=999;assert.equal(g.purchaseSiege(0),false);assert.equal(t.siege,undefined);t.mana=10000;const count=g.units.length;assert.equal(g.purchaseSiege(0),true);assert.equal(t.mana,9000);const beast=t.siege;assert.ok(beast.active&&beast.siege);assert.equal(g.units.length,count+1);assert.equal(beast.hp,WAR.siegeHp);assert.equal(g.purchaseSiege(0),false);kill(g,beast,1);assert.equal(g.purchaseSiege(0),false);g.time=91;assert.equal(g.purchaseSiege(0),true);assert.equal(t.siege,beast);assert.equal(g.units.length,count+1);assert.equal(beast.poison,0);
+});
+test('siege purchases enforce home location, recall, a live crystal, enemy bases and match state',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;t.mana=5000;place(u,t.crystal,400);assert.equal(g.purchaseSiege(0),false);kill(g,u,1);assert.equal(g.purchaseSiege(0),true);t.siege.active=false;g.time=100;t.crystal.active=false;assert.equal(g.purchaseSiege(0),false);t.crystal.active=true;u.active=true;place(u,t.crystal,0);g.winner=0;assert.equal(g.purchaseSiege(0),false);g.winner=-1;for(const v of g.teams.slice(1)){v.crystal.active=false;for(const guard of v.guards)guard.active=false;}assert.equal(g.purchaseSiege(0),false);
+});
+test('a siege beast takes several champion attacks, resists displacement and rewards the defending champion',()=>{
+ const g=quiet(),t=g.teams[0],r=g.teams[1];g.controlled=0;t.mana=2000;place(t.champion,t.crystal,0);g.purchaseSiege(0);const beast=t.siege;beast.invuln=0;r.mana=0;const damage=g.damage(beast,100000,1,false,false,r.champion);assert.equal(damage,beast.maxHp*.08);assert.ok(beast.hp>beast.maxHp*.9);place(r.champion,beast,100);g.combat.prepare(1);const proxy=g.combat.actors[1].brain.enemies.find(e=>e.serial===beast.id);assert.ok(proxy);assert.equal(proxy.kind,'titan');{proxy.vx=1000;proxy.vy=1000;const before={x:beast.x,y:beast.y};g.combat.flush(1,.1);assert.equal(beast.x,before.x);assert.equal(beast.y,before.y);}while(beast.active)g.damage(beast,100000,1,false,false,r.champion);assert.equal(r.mana,80);assert.ok(g.events.some(e=>e.text.includes('destroyed')&&e.text.includes('siege beast')));
+});
+test('siege beasts cleave blockers and hit guarded structures much harder than ordinary troops',()=>{
+ const g=quiet(),t=g.teams[0];g.controlled=0;t.mana=2000;place(t.champion,t.crystal,0);g.purchaseSiege(0);const beast=t.siege,guard=g.teams[1].guards[0],troop=g.units.find(u=>u.team===0&&u.kind==='infantry'&&!u.siege);guard.invuln=0;const normal=g.damage(guard,troop.damage,0,false,false,troop),before=guard.hp;g.siegeStrike(beast,guard);assert.ok(before-guard.hp>=normal*10);const victims=g.units.filter(u=>u.team===1&&u.kind==='infantry').slice(0,2);for(const v of victims)Object.assign(v,{x:2200,y:2200,hp:1000,maxHp:1000,invuln:0});g.rebuild();g.siegeStrike(beast,victims[0]);assert.ok(victims.every(v=>v.hp<1000));
+});
+test('purchased siege beasts use the shared lane route and remain additional to normal waves',()=>{
+ const g=quiet(),t=g.teams[0];g.controlled=0;t.mana=2000;place(t.champion,t.crystal,0);g.purchaseSiege(0);const beast=t.siege;g.route(beast);const base=g.teams[t.armyGoal].crystal;assert.deepEqual(beast.nav.at(-1).x,base.x);assert.deepEqual(beast.nav.at(-1).y,base.y);assert.ok(beast.nav.some(p=>p.node>=0&&p.node<8));const normal=g.units.filter(u=>u.team===0&&u.active&&!u.siege&&['infantry','ranged'].includes(u.kind)).length;assert.equal(normal,16);assert.equal(g.units.filter(u=>u.team===0&&u.active&&u.siege).length,1);
+});
+test('a visible siege threat draws a rival home and gains focus only after a notice delay',()=>{
+ const g=quiet(),t=g.teams[0],r=g.teams[1];g.controlled=0;t.mana=2000;place(t.champion,t.crystal,0);g.purchaseSiege(0);const beast=t.siege;place(beast,r.crystal,-150);place(r.champion,r.crystal,0);g.rebuild();assert.equal(g.siegeThreat(1),beast);g.combat.attention.update(1);const state=g.combat.attention.states[1];assert.equal(state.focus,beast.id);assert.ok(state.readyAt>=g.time+.45);assert.equal(g.combat.attention.targetable(1,beast.id),false);g.time=1;g.combat.attention.update(1);assert.equal(g.combat.attention.targetable(1,beast.id),true);beast.x=4000;beast.y=4000;assert.equal(g.siegeThreat(1),undefined);
+});
+test('army training continues after champion slots are full, uses increasing prices, and strengthens current and future troops',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;place(u,t.crystal,0);t.mana=100000;for(const [id,count] of [['might',5],['haste',5],['vitality',5],['armor',1]])for(let n=0;n<count;n++)g.purchase(0,id);g.purchaseAugment(0,'bastion');g.purchaseAugment(0,'remoteFuse');const troop=g.units.find(v=>v.team===0&&v.kind==='infantry'),hp=troop.hp;assert.equal(g.trainingCost(0),600);assert.equal(g.purchaseTraining(0),true);assert.equal(g.trainingCost(0),900);assert.equal(troop.maxHp,110*1.08);assert.ok(troop.hp>hp);assert.equal(g.statRanks(0),16);assert.equal(t.augments.length,2);for(let n=0;n<10;n++)assert.equal(g.purchaseTraining(0),true);assert.equal(t.veterans,11);troop.active=false;g.spawn(0);assert.ok(Math.abs(troop.maxHp-110*(1+.08*11))<1e-6);const victim=g.units.find(v=>v.team===1&&v.kind==='infantry');victim.invuln=0;victim.hp=1000;assert.ok(g.damage(victim,10,0,false,false,troop)>18);
+});
+test('training sellbacks and Legion stacking preserve missing health and cannot heal by cycling purchases',()=>{
+ const g=quiet(),t=g.teams[0];g.controlled=0;place(t.champion,t.crystal,0);t.mana=10000;const troop=g.units.find(v=>v.team===0&&v.kind==='infantry');troop.hp=10;g.purchaseTraining(0);g.purchase(0,'legion');g.sell(0,'legion');g.sellTraining(0);assert.equal(t.veterans,0);assert.ok(Math.abs(troop.hp-10)<1e-6);assert.equal(g.trainingSellValue(0),0);assert.equal(g.sellTraining(0),false);place(t.champion,t.crystal,400);assert.equal(g.purchaseTraining(0),false);
+});
+test('NPC champions spend surplus on paid siege and training while preserving native builds',()=>{
+ const g=quiet(),t=g.teams[0];place(t.champion,t.crystal,0);t.mana=50000;t.upgrades={might:5,vitality:5,haste:5,armor:1,swiftness:0,reach:0,duration:0,tempo:0,legion:0,glamour:0};t.augments=['bastion','remoteFuse'];const kit=g.combat.actors[0].brain.powers.map(p=>p.id);g.autoShop(0);assert.ok(t.siege?.active);assert.equal(t.mana,49000);g.time=2;g.autoShop(0);assert.equal(t.veterans,1);assert.equal(t.mana,48400);assert.deepEqual(g.combat.actors[0].brain.powers.map(p=>p.id),kit);
+});
+
+
+test('battle difficulty defaults to Normal, validates its input and retains symmetric armies and prices',()=>{
+ assert.equal(new Crucible(17).difficulty,'normal');assert.equal(new Crucible(17,'invalid').difficulty,'normal');for(const level of Object.keys(CRUCIBLE_DIFFICULTIES)){const g=new Crucible(17,level);assert.equal(g.difficulty,level);assert.equal(g.teams[0].champion.hp,new Crucible(17,'hell').teams[0].champion.hp);assert.equal(g.shopCost(0,'might'),100);assert.equal(g.trainingCost(0),600);assert.equal(WAR.siegeCost,1000);}
+});
+test('difficulty progressively relaxes delays, errors and hesitation but Hell retains human limits',()=>{
+ const values=Object.values(CRUCIBLE_DIFFICULTIES);for(let i=1;i<values.length;i++){assert.ok(values[i].noticeMin<values[i-1].noticeMin);assert.ok(values[i].castMin<values[i-1].castMin);assert.ok(values[i].aimError<values[i-1].aimError);assert.ok(values[i].missChance<values[i-1].missChance);assert.ok(values[i].rivalDamage>values[i-1].rivalDamage);assert.ok(values[i].scoreMultiplier>values[i-1].scoreMultiplier);}const hell=values[3];assert.ok(hell.noticeMin>=.45);assert.ok(hell.aimMin>=.2);assert.ok(hell.castMin>=1);assert.ok(hell.missChance>0);assert.ok(hell.aimError>0);
+});
+test('easier modes reduce rival champion damage to the player without weakening the player or NPC duels',()=>{
+ const damages=[],human=[],duels=[];for(const level of Object.keys(CRUCIBLE_DIFFICULTIES)){const g=new Crucible(17,level);g.controlled=0;const u=g.teams[0].champion,v=g.teams[1].champion,w=g.teams[2].champion;for(const actor of g.combat.actors){actor.brain.shield=0;actor.brain.shieldTime=0;}u.invuln=v.invuln=w.invuln=0;damages.push(g.damage(u,100,1,false,false,v));human.push(g.damage(v,100,0,false,false,u));duels.push(g.damage(w,100,1,false,false,v));}for(let i=1;i<4;i++){assert.ok(damages[i]>damages[i-1]);assert.equal(human[i],human[0]);assert.equal(duels[i],duels[0]);}assert.ok(Math.abs(damages[0]/damages[3]-.65)<1e-6);
+});
+test('each difficulty uses its own notice and sampled aim limits without allowing fog vision',()=>{
+ for(const level of Object.keys(CRUCIBLE_DIFFICULTIES)){const g=new Crucible(17,level),u=g.teams[1].champion,v=g.teams[0].champion;only(g,[u,v]);Object.assign(u,{x:C.cx,y:C.cy});Object.assign(v,{x:C.cx+90,y:C.cy});g.combat.attention.update(1);const s=g.combat.attention.states[1],rules=g.difficultyRules;assert.ok(s.readyAt>=rules.noticeMin);assert.ok(s.readyAt<=rules.noticeMin+rules.noticeSpread);assert.ok(Math.hypot(s.point.x-v.x,s.point.y-v.y)<=rules.aimError);assert.equal(g.combat.attention.targetable(1,v.id),false);g.time=s.readyAt+.4;g.combat.attention.update(1);assert.equal(g.combat.attention.targetable(1,v.id),true);v.x=C.cx+1500;g.combat.attention.update(1);assert.equal(g.combat.attention.targetable(1,v.id),false);}
 });
