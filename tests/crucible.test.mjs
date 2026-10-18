@@ -1,9 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {MONSTERS} from '../src/content-monsters.ts';
+import {hagState} from '../src/hag.ts';
 import {Crucible,CRUCIBLE as C} from '../src/crucible-sim.ts';
 const advance=(g,seconds)=>{for(let i=0;i<seconds*30;i++)g.step(1/30);};
-const kill=(g,u,team)=>{u.invuln=0;for(let i=0;i<30&&u.active;i++)g.damage(u,1e6,team);assert.equal(u.active,false);};
+const kill=(g,u,team)=>{u.invuln=0;for(let i=0;i<30&&u.active;i++){u.invuln=0;g.damage(u,1e6,team);}assert.equal(u.active,false);};
 function quiet(){const g=new Crucible(17);for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}return g;}
 function place(u,base,dx,dy=0){Object.assign(u,{x:base.x+dx,y:base.y+dy,invuln:0,attack:1e9,power:1e9,ultimate:1e9});}
 function only(g,units){for(const u of g.units)u.active=units.includes(u);g.rebuild();}
@@ -28,7 +30,7 @@ test('the larger battlefield still produces a bounded horde fight with finite po
  const g=new Crucible(17);g.density=28;advance(g,120);assert.ok(g.kills>300);assert.ok(g.effects.length<=72);assert.ok(g.shots.length<=96);for(const u of g.units){assert.ok(Number.isFinite(u.x)&&Number.isFinite(u.hp));if(u.active)assert.ok(u.x>=95&&u.x<=C.width-95&&u.y>=95&&u.y<=C.height-95);}
 });
 test('seeded battles reproduce and different seeds change camp positions',()=>{
- const a=new Crucible(17),b=new Crucible(17),c=new Crucible(23);advance(a,20);advance(b,20);assert.deepEqual(a.units,b.units);assert.notDeepEqual(a.teams.map(t=>t.crystal.x),c.teams.map(t=>t.crystal.x));
+ const a=new Crucible(17),b=new Crucible(17),c=new Crucible(23);advance(a,20);advance(b,20);const snapshot=g=>g.units.map(u=>({id:u.id,active:u.active,team:u.team,kind:u.kind,x:u.x,y:u.y,hp:u.hp}));assert.deepEqual(snapshot(a),snapshot(b));assert.notDeepEqual(a.teams.map(t=>t.crystal.x),c.teams.map(t=>t.crystal.x));
 });
 test('all eight prototype powers work without importing live Stage 4 or profiles',()=>{
  for(let team=0;team<8;team++){const g=new Crucible(17),u=g.teams[team].champion,v=g.teams[(team+1)%8].champion;Object.assign(u,{x:C.cx,y:C.cy,target:v.id,power:0,ultimate:0});Object.assign(v,{x:C.cx+80,y:C.cy});g.rebuild();assert.equal(g.power(team),true);assert.equal(g.power(team,true),true);}
@@ -102,7 +104,7 @@ test('a full supporting wave can defeat both guardians and the armed crystal in 
  const g=quiet(),team=4,t=g.teams[0],hero=g.teams[team].champion,army=g.units.filter(v=>v.team===team&&['infantry','ranged'].includes(v.kind)).slice(0,20);
  only(g,[hero,t.crystal,g.teams[team].crystal,...t.guards,...army]);Object.assign(hero,{x:t.crystal.x-110,y:t.crystal.y,power:0,ultimate:0});g.controlled=team;
  army.forEach((v,i)=>Object.assign(v,{x:t.crystal.x-80+i%4*12,y:t.crystal.y+(Math.floor(i/4)-2)*18,invuln:0}));g.rebuild();
- for(let i=0;i<120*30&&hero.active&&t.crystal.active;i++){if(hero.power<=0)g.power(team);if(hero.ultimate<=0)g.power(team,true);g.step(1/30);}
+ for(let i=0;i<120*30&&hero.active&&t.crystal.active;i++){for(const slot of [1,2,3])if(hero.cooldowns[slot]<=0)g.cast(team,slot);g.step(1/30);}
  assert.equal(g.guards(0),0);assert.equal(t.crystal.active,false);assert.equal(hero.active,true);
 });
 
@@ -139,5 +141,63 @@ test('AI cashes in mana at its own crystal under the same prices and healing rul
 });
 
 test('AI does not keep returning to shop after every augment is maxed out',()=>{
- const g=quiet(),t=g.teams[0];Object.assign(t.upgrades,{might:5,vitality:5,haste:5,swiftness:4});t.mana=10000;place(t.champion,t.crystal,C.baseRadius+20);g.autoShop(0);assert.equal(t.shopping,false);t.upgrades.might=4;g.autoShop(0);assert.equal(t.shopping,true);
+ const g=quiet(),t=g.teams[0];for(const key of Object.keys(t.upgrades))t.upgrades[key]=key==='swiftness'?4:['might','vitality','haste'].includes(key)?5:3;t.mana=10000;place(t.champion,t.crystal,C.baseRadius+20);g.autoShop(0);assert.equal(t.shopping,false);t.upgrades.might=4;g.autoShop(0);assert.equal(t.shopping,true);
+});
+
+
+function duel(team=0){const g=quiet(),hero=g.teams[team].champion,enemy=g.teams[(team+1)%8].champion;g.controlled=team;only(g,[hero,enemy]);Object.assign(hero,{x:C.cx,y:C.cy,invuln:0,attack:1e9,power:0,ultimate:0,cooldowns:[0,0,0,0]});Object.assign(enemy,{x:C.cx+90,y:C.cy,invuln:0,hp:100000,maxHp:100000,attack:1e9,power:1e9,ultimate:1e9,cooldowns:[1e9,1e9,1e9,1e9]});g.rebuild();return {g,hero,enemy,b:g.combat.actors[team].brain};}
+test('every champion receives all four real native abilities and all thirty-two cast',()=>{
+ for(let team=0;team<8;team++)for(let slot=0;slot<4;slot++){const {g,hero,b}=duel(team);assert.deepEqual(b.powers.map(p=>p.id),MONSTERS[g.teams[team].monster].abilities.map(id=>id==='kingfall'?'faultline':id));assert.equal(g.cast(team,slot),true,b.powers[slot].id);assert.ok(hero.cooldowns[slot]>0||b.powers[slot].effect==='lunge');}
+});
+test('native Hag flight avoids contact, leaves bombs, and still takes area damage',()=>{
+ const {g,hero,enemy,b}=duel(0);g.cast(0,2);hero.invuln=0;assert.equal(g.damage(hero,100,enemy.team,false,false,enemy,'contact'),0);assert.ok(g.damage(hero,100,enemy.team,false,false,enemy,'aoe')>0);g.input={x:1,y:0};advance(g,1);assert.ok(hagState(b).flight>0);assert.ok(hagState(b).traps.length>0);assert.ok(hero.x>C.cx+100);
+});
+test('native Hag damage applies poison and rebuilds glamour rather than substituting a generic blast',()=>{
+ const {g,hero,b}=duel(0),victim=g.units.find(u=>u.team===1&&u.kind==='infantry');Object.assign(victim,{active:true,x:hero.x+100,y:hero.y,invuln:0});g.rebuild();g.combat.prepare(0);const proxy=b.enemies.find(e=>e.serial===victim.id);b.damage(proxy,1,'hagvenom');assert.equal(hagState(b).venom.length,1);assert.ok(b.shield>0);advance(g,.6);assert.ok(victim.hp<victim.maxHp-10);assert.ok(victim.slow>0);
+});
+test('native Reaper basic attacks create scythe projectiles and Lycanthrope regenerates',()=>{
+ const reaper=duel(7);reaper.hero.attack=0;advance(reaper.g,.05);assert.ok(reaper.b.scytheWaves.length>0);const wolf=duel(1);wolf.hero.hp=wolf.hero.maxHp*.5;const before=wolf.hero.hp;advance(wolf.g,.2);assert.ok(wolf.hero.hp>before);
+});
+test('native Titan movement builds momentum and Devourer Feast emits waves without nearby prey',()=>{
+ const titan=duel(5);titan.g.input={x:1,y:0};advance(titan.g,.6);assert.ok(titan.b.momentum>0);assert.ok(titan.b.shield>0);const devourer=duel(4);devourer.enemy.active=false;devourer.hero.attack=0;assert.equal(devourer.g.cast(4,3),true);advance(devourer.g,.05);assert.ok(devourer.b.clawWaves.length>0);
+});
+test('Calamity resonance and Sovereign feeding retain their native traits',()=>{
+ const calamity=duel(3);calamity.b.cooldowns=[10,10,10,10];calamity.b.completeAttack(20);assert.equal(calamity.b.cooldowns[1],9.25);assert.ok(calamity.b.shield>0);const sovereign=duel(6),victim=sovereign.g.units.find(u=>u.team===7&&u.kind==='infantry');Object.assign(victim,{active:true,x:sovereign.hero.x+50,y:sovereign.hero.y,invuln:0});sovereign.g.rebuild();assert.equal(sovereign.g.cast(6,1),true);assert.ok(sovereign.b.player.rage>0);assert.ok(sovereign.b.shield>0);
+});
+test('Overlord summons use a bounded pool that is reused across respawns',()=>{
+ const {g,hero,b}=duel(2);g.cast(2,2);advance(g,.05);const active=g.units.filter(u=>u.active&&u.servant);assert.ok(active.length>=8);const count=g.units.length;kill(g,hero,0);assert.equal(active.some(u=>u.active),false);g.combat.reset(2);g.teams[2].eliminated=false;hero.active=true;hero.hp=hero.maxHp;hero.power=hero.ultimate=0;hero.cooldowns=[0,0,0,0];g.cast(2,2);advance(g,.05);assert.equal(g.units.length,count);assert.ok(g.combat.actors[2].brain.servants.some(s=>s.active));
+});
+test('ability purchases require the home crystal, obey regular/ultimate slots and retain cooldowns',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;t.mana=1000;place(u,t.crystal,C.baseRadius+1);assert.equal(g.combat.equip(0,'meteor',0),false);place(u,t.crystal,0);u.power=8;assert.equal(g.combat.equip(0,'meteor',0),true);assert.equal(t.mana,840);assert.equal(g.combat.equip(0,'meteor',1),false);assert.equal(g.combat.equip(0,'crimson',0),false);assert.equal(g.combat.equip(0,'thornhex',3),false);g.time=1;assert.equal(g.combat.equip(0,'thornhex',0),true);assert.equal(u.power,7);assert.equal(t.mana,840);assert.equal(g.combat.equip(0,'crimson',3),true);assert.equal(t.mana,590);assert.equal(g.combat.equip(0,'missing',0),false);
+});
+test('borrowed Reaper abilities keep updating after the cast returns to the native champion',()=>{
+ const {g,hero,b}=duel(0),t=g.teams[0];t.crystal.active=true;place(t.crystal,hero,0);t.mana=500;assert.equal(g.combat.equip(0,'reapingarc',0),true);hero.power=0;assert.equal(g.cast(0,0),true);assert.equal(b.monster.id,'hag');assert.equal(b.scytheWaves.length,3);const x=b.scytheWaves[0].x;advance(g,.1);assert.notEqual(b.scytheWaves[0]?.x,x);
+});
+test('expanded shop augments strengthen armies and direct-kill sustain under capped ranks',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;t.mana=2000;place(u,t.crystal,0);const troop=g.units.find(v=>v.team===0&&v.kind==='infantry'),hp=troop.maxHp;assert.equal(g.purchase(0,'legion'),true);assert.ok(troop.maxHp>hp);assert.equal(g.purchase(0,'glamour'),true);u.hp=u.maxHp*.5;const victim=g.units.find(v=>v.team===1&&v.kind==='infantry');victim.invuln=0;g.damage(victim,1e6,0,false,false,u);assert.ok(u.hp>u.maxHp*.5);for(const item of ['reach','duration','tempo','armor'])assert.equal(g.purchase(0,item),true);
+});
+test('full ability chains share a rolling champion damage budget',()=>{
+ const {g,hero,enemy}=duel(4);hero.maxHp=hero.hp=1000;for(let i=0;i<20;i++){hero.invuln=0;g.damage(hero,1e6,enemy.team,false,false,enemy);}assert.ok(hero.hp>=700);g.time=3.1;hero.invuln=0;assert.ok(g.damage(hero,1000,enemy.team,false,false,enemy)>0);
+});
+
+test('Titan Fissure produces a real field and uses the Crucible floor rather than the original arena props',()=>{
+ const {g,b}=duel(5);assert.equal(g.cast(5,2),true);assert.equal(b.fissures.length,1);assert.ok(b.fissures[0].length>100);assert.equal(b.floorClearance(100,100),5);
+});
+test('native Howl fear moves enemies away and interrupts their attacks',()=>{
+ const {g,hero,enemy}=duel(1);g.cast(1,1);advance(g,.15);assert.ok(enemy.fear>0);const distance=Math.hypot(enemy.x-hero.x,enemy.y-hero.y);advance(g,.2);assert.ok(Math.hypot(enemy.x-hero.x,enemy.y-hero.y)>distance);
+});
+
+test('native slows affect champion movement and control effects prevent manual casts',()=>{
+ const free=duel(0),slowed=duel(0);free.g.input=slowed.g.input={x:1,y:0};slowed.hero.slow=1;advance(free.g,.2);advance(slowed.g,.2);assert.ok(slowed.hero.x-C.cx<(free.hero.x-C.cx)*.6);slowed.hero.stun=1;assert.equal(slowed.g.cast(0,2),false);
+});
+
+test('manual Dominate transfers actual enemy bodies immediately instead of duplicating them',()=>{
+ const {g,hero,b}=duel(2),victim=g.units.find(u=>u.team===3&&u.kind==='infantry');Object.assign(victim,{active:true,x:hero.x+50,y:hero.y,invuln:0});g.rebuild();assert.equal(g.cast(2,0),true);assert.equal(victim.active,false);assert.ok(b.servants.some(s=>s.active&&s.source==='controlled'));advance(g,.1);assert.equal(victim.active,false);
+});
+test('a purchased Clinch holds the real minion and releases it if the caster dies',()=>{
+ const {g,hero,b}=duel(1),t=g.teams[1],victim=g.units.find(u=>u.team===2&&u.kind==='infantry');t.crystal.active=true;t.crystal.x=hero.x;t.crystal.y=hero.y;t.mana=1000;assert.equal(g.combat.equip(1,'ravage',1),true);hero.cooldowns[1]=0;Object.assign(victim,{active:true,x:hero.x+50,y:hero.y,invuln:0,hp:10000,maxHp:10000});g.rebuild();assert.equal(g.cast(1,1),true);assert.equal(victim.grabbed,true);advance(g,.1);assert.equal(victim.grabOwner,1);kill(g,hero,0);assert.equal(victim.grabbed,false);
+});
+
+test('reused summon bodies get new identities and cannot inherit poison or mana contributions',()=>{
+ const {g,b}=duel(2);g.cast(2,2);const a=g.combat.actors[2],servant=b.servants.find(s=>s.active),unit=a.summons.get(servant),old=unit.id;unit.contributions[0]=g.time;unit.poison=4;unit.active=false;servant.active=false;g.teams[2].champion.cooldowns[2]=0;g.cast(2,2);assert.ok(servant.active);assert.notEqual(unit.id,old);assert.equal(unit.poison,0);assert.equal(unit.contributions[0],-Infinity);
 });

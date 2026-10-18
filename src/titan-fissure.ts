@@ -6,8 +6,8 @@ import {insideCourt,courtClearance} from './court-map.ts';
 import {TORCHES} from './arena.ts';
 // Arena Fissure uses the same footprint checks against its circle and stone brazier feet.
 function arenaClearance(g:Game,x:number,y:number){return Math.min(g.arenaRadius-Math.hypot(x,y),...TORCHES.map(t=>Math.hypot(x-t.x,y-t.y)-t.radius));}
-function clearance(g:Game,x:number,y:number){if(g.realm){let lo=0,hi=400;for(let i=0;i<10;i++){const r=(lo+hi)/2;if(insideRealm(x,y,r))lo=r;else hi=r;}return lo;}return g.court?courtClearance(x,y):arenaClearance(g,x,y);}
-function fits(g:Game,x:number,y:number,r:number){return g.realm?insideRealm(x,y,r):g.court?insideCourt(x,y,r):arenaClearance(g,x,y)>=r;}
+function clearance(g:Game,x:number,y:number){if(g.floorClearance)return g.floorClearance(x,y);if(g.realm){let lo=0,hi=400;for(let i=0;i<10;i++){const r=(lo+hi)/2;if(insideRealm(x,y,r))lo=r;else hi=r;}return lo;}return g.court?courtClearance(x,y):arenaClearance(g,x,y);}
+function fits(g:Game,x:number,y:number,r:number){if(g.floorClearance)return g.floorClearance(x,y)>=r;return g.realm?insideRealm(x,y,r):g.court?insideCourt(x,y,r):arenaClearance(g,x,y)>=r;}
 export const FISSURE={maxFields:3,barrierCost:.35,halfWidth:37,tick:.5,impact:80,captainTick:6,captainImpact:8};
 export type TitanFissure={x:number;y:number;endX:number;endY:number;angle:number;length:number;width:number;life:number;bornAt:number;charge:number;damage:number;tick:number;kills:number};
 export function inFissure(f:TitanFissure,e:{x:number;y:number},radius=0){const ax=Math.cos(f.angle),ay=Math.sin(f.angle),dx=e.x-f.x,dy=e.y-f.y,along=Math.max(0,Math.min(f.length,dx*ax+dy*ay));return (dx-ax*along)**2+(dy-ay*along)**2<=(f.width+radius)**2;}
