@@ -282,3 +282,32 @@ test('rival focus decisions can favor a visible rival over nearer farm, rather t
 test('defensive augments preserve a larger native ward and its remaining duration',()=>{
  const ctx=duel(0);learn(ctx,'brawler');ctx.b.shield=ctx.hero.maxHp*.3;ctx.b.shieldTime=8;ctx.g.combat.prepare(0);const e=ctx.b.enemies.find(e=>e.serial===ctx.enemy.id);ctx.b.damage(e,1,'hagvenom');assert.ok(ctx.b.shield>=ctx.hero.maxHp*.3);assert.ok(ctx.b.shieldTime>=8);
 });
+
+
+test('the expanded battlefield separates camps and outer lanes beyond ordinary spell reach',()=>{
+ const g=quiet();assert.equal(C.width,4800);assert.equal(C.height,4800);assert.ok(C.ringRadius>=650);for(let i=0;i<8;i++)for(let j=i+1;j<8;j++)assert.ok(Math.hypot(g.teams[i].crystal.x-g.teams[j].crystal.x,g.teams[i].crystal.y-g.teams[j].crystal.y)>1300);
+});
+test('army vision reveals nearby rivals, follows friendly troops, and disappears when the scout dies',()=>{
+ const g=quiet(),scout=g.units.find(u=>u.team===0&&u.kind==='infantry'),enemy=g.teams[1].champion;only(g,[scout,enemy]);Object.assign(scout,{x:2200,y:2200});Object.assign(enemy,{x:2400,y:2200});assert.equal(g.intel.visible(0,enemy),true);enemy.x=2500;assert.equal(g.intel.visible(0,enemy),false);scout.x=2400;assert.equal(g.intel.visible(0,enemy),true);scout.active=false;assert.equal(g.intel.visible(0,enemy),false);assert.equal(g.intel.visible(-1,enemy),true);
+});
+test('scouted reports freeze their mana and build until a surviving ally sees the rival again',()=>{
+ const g=quiet(),u=g.teams[0].champion,v=g.teams[1].champion,t=g.teams[1];only(g,[u,v]);Object.assign(u,{x:2000,y:2000});Object.assign(v,{x:2100,y:2000});t.mana=100;t.upgrades.might=1;g.intel.update(true);const first=g.intel.reports[0][1];assert.equal(first.mana,100);v.x=4000;t.mana=800;t.upgrades.might=4;t.augments.push('brawler');g.time=20;g.intel.update(true);assert.equal(g.intel.reports[0][1],first);assert.equal(first.upgrades.might,1);assert.deepEqual(first.augments,[]);v.x=2200;g.intel.update(true);assert.equal(g.intel.reports[0][1].mana,800);assert.equal(g.intel.reports[0][1].at,20);
+});
+test('a bot cannot notice a target in its viewport beyond shared army sight',()=>{
+ const g=quiet(),u=g.teams[1].champion,v=g.teams[0].champion;only(g,[u,v]);g.viewport={x:1100,y:900};Object.assign(u,{x:2000,y:2000});Object.assign(v,{x:2750,y:2000});assert.equal(g.combat.attention.inView(1,v),false);const scout=g.units.find(w=>w.team===1&&w.kind==='infantry');Object.assign(scout,{active:true,x:2700,y:2000});assert.equal(g.combat.attention.inView(1,v),true);
+});
+test('ordinary spells cannot harvest distant or unscouted troops while nearby combat still works',()=>{
+ const g=quiet(),u=g.teams[3].champion,v=g.units.find(w=>w.team===1&&w.kind==='infantry');only(g,[u,v]);g.controlled=3;Object.assign(u,{x:2000,y:2000});Object.assign(v,{x:2900,y:2000,hp:10000,maxHp:10000,invuln:0});g.combat.prepare(3);let b=g.combat.actors[3].brain,p=b.enemies.find(e=>e.serial===v.id);const hp=v.hp;assert.equal(b.damage(p,100,'beam'),false);assert.equal(v.hp,hp);v.x=2700;g.combat.prepare(3);p=b.enemies.find(e=>e.serial===v.id);b.damage(p,100,'meteor');assert.equal(v.hp,hp);v.x=2500;g.combat.prepare(3);p=b.enemies.find(e=>e.serial===v.id);b.damage(p,100,'meteor');assert.ok(v.hp<hp);
+});
+test('recall siege speed and power apply only to ordinary troops assigned to that living crystal',()=>{
+ const g=quiet(),army=g.teams[0],t=g.teams[1],troop=g.units.find(u=>u.team===0&&u.kind==='infantry'),other=g.units.find(u=>u.team===2&&u.kind==='infantry');army.armyGoal=1;g.teams[2].armyGoal=3;t.champion.active=false;t.respawnAt=30;assert.equal(g.recallPush(troop),true);assert.equal(g.recallPush(other),false);assert.equal(g.recallPush(army.champion),false);troop.servant={};assert.equal(g.recallPush(troop),false);delete troop.servant;const target=g.units.find(u=>u.team===1&&u.kind==='infantry');target.invuln=0;target.hp=1000;assert.equal(g.damage(target,10,0,false,false,troop),16);const before=troop.x;only(g,[troop,t.crystal]);troop.x=2000;troop.y=2000;g.rebuild();g.move(troop,100,0,.1);assert.ok(Math.abs(troop.x-2000-troop.speed*.135)<1e-6);t.champion.active=true;assert.equal(g.recallPush(troop),false);t.champion.active=false;t.crystal.active=false;assert.equal(g.recallPush(troop),false);
+});
+test('stat sellback refunds the last rank price, frees budget and enforces shop location',()=>{
+ const g=quiet(),t=g.teams[0];g.controlled=0;place(t.champion,t.crystal,0);t.mana=1000;assert.equal(g.purchase(0,'might'),true);assert.equal(g.purchase(0,'might'),true);assert.equal(g.sellValue(0,'might'),128);assert.equal(g.sell(0,'might'),true);assert.equal(t.mana,868);assert.equal(t.upgrades.might,1);assert.equal(g.statRanks(0),1);t.champion.x+=400;assert.equal(g.sell(0,'might'),false);assert.equal(g.sell(0,'mend'),false);assert.equal(g.sell(0,'bogus'),false);
+});
+test('selling and rebuying health or haste cannot create free healing or cooldown reductions',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;place(u,t.crystal,0);t.mana=10000;u.hp=10;const health=u.hp;g.purchase(0,'vitality');g.sell(0,'vitality');assert.ok(Math.abs(u.hp-health)<1e-6);u.power=10;u.cooldowns=[10,10,10,10];g.combat.actors[0].brain.lungeRecharge=10;g.purchase(0,'haste');g.sell(0,'haste');assert.ok(Math.abs(u.power-10)<1e-6);assert.ok(Math.abs(g.combat.actors[0].brain.lungeRecharge-10)<1e-6);assert.ok(u.cooldowns.every(n=>Math.abs(n-10)<1e-6));const troop=g.units.find(v=>v.team===0&&v.kind==='infantry');troop.hp=10;g.purchase(0,'legion');g.sell(0,'legion');assert.ok(Math.abs(troop.hp-10)<1e-6);
+});
+test('augment sellback frees a slot, restores the native basic and permits a different choice during recall',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion;g.controlled=0;place(u,t.crystal,0);t.mana=1000;g.purchaseAugment(0,'brawler');assert.equal(g.combat.actors[0].brain.monster.basic.ranged,false);assert.equal(g.sellAugment(0,'brawler'),true);assert.equal(t.mana,956);assert.equal(g.combat.actors[0].brain.monster.basic.ranged,true);assert.deepEqual(t.augments,[]);assert.equal(g.sellAugment(0,'brawler'),false);kill(g,u,1);assert.equal(g.purchaseAugment(0,'remoteFuse'),true);assert.equal(g.sellAugment(0,'remoteFuse'),true);assert.equal(u.hp,0);assert.equal(u.active,false);assert.equal(g.purchaseAugment(0,'gaspockets'),true);
+});

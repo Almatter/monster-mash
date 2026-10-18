@@ -8,7 +8,7 @@ export class CrucibleAttention{
  constructor(host:Crucible){this.host=host;for(let i=0;i<8;i++)this.reset(i);}
  reset(team:number){const u=this.host.teams[team].champion;this.states[team]={focus:0,mode:'lane',intent:'lane',intentUntil:0,point:{x:u.x,y:u.y},readyAt:Infinity,scanAt:0,aimAt:0,holdUntil:0,lastSeen:0,visible:false,peripheralAt:this.host.time+.7+this.host.random(),alarm:0,alarmAt:Infinity};}
  view(team:number){const u=this.host.teams[team].champion,half=this.host.viewport;return {x:u.x,y:u.y-half.y*.14,halfX:half.x,halfY:half.y};}
- inView(team:number,point:Point){const v=this.view(team);return Math.abs(point.x-v.x)<=v.halfX&&Math.abs(point.y-v.y)<=v.halfY;}
+ inView(team:number,point:Point){if(!this.host.intel.visible(team,point))return false;const v=this.view(team);return Math.abs(point.x-v.x)<=v.halfX&&Math.abs(point.y-v.y)<=v.halfY;}
  attacked(team:number,source:CrucibleUnit){if(this.host.controlled===team||!this.inView(team,source))return;const s=this.states[team];if(s.focus===source.id||s.alarm===source.id)return;s.alarm=source.id;s.alarmAt=this.host.time+WAR_REACTION.noticeMin+this.host.random()*WAR_REACTION.noticeSpread;}
  update(team:number){const h=this.host,s=this.states[team],u=h.teams[team].champion;if(h.controlled===team||!u.active)return;
   const current=h.unit(s.focus);s.visible=!!current?.active&&this.inView(team,current);
