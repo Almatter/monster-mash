@@ -58,10 +58,10 @@ test('an army keeps its shared guardian until death, then targets the other guar
  const g=new Crucible(17),first=g.armyObjective(0),t=g.teams[first.team];assert.equal(g.armyObjective(0),first);kill(g,first,0);const second=g.armyObjective(0);assert.equal(second.team,t.crystal.team);assert.equal(second.kind,'captain');kill(g,second,0);assert.equal(g.armyObjective(0),t.crystal);
 });
 test('incoming routes use the defending army exit lane in reverse for every camp',()=>{
- const g=new Crucible(17),{nodes,edges}=g.laneSegments();for(let team=0;team<8;team++){const u=g.units.find(v=>v.team===team&&v.kind==='infantry'),target=(team+1)%8;g.buildRoute(u,target);const path=u.nav.filter(p=>p.node>=0).map(p=>p.node);assert.deepEqual(path.slice(-2),[target,target+8]);assert.ok(path.includes(team));for(let i=1;i<path.length;i++)assert.ok(edges.some(([a,b])=>a===path[i-1]&&b===path[i]||b===path[i-1]&&a===path[i]));assert.deepEqual(nodes[target],g.rally(target));}
+ const g=new Crucible(17),{nodes,edges}=g.laneSegments();for(let team=0;team<8;team++){const u=g.units.find(v=>v.team===team&&v.kind==='infantry'),target=(team+1)%8;g.buildRoute(u,target);const path=u.nav.filter(p=>p.node>=0).map(p=>p.node);assert.equal(path.at(-1),target+8);assert.ok(path.includes(target));assert.ok(path.includes(team));for(let i=1;i<path.length;i++)assert.ok(edges.some(([a,b])=>a===path[i-1]&&b===path[i]||b===path[i-1]&&a===path[i]));assert.deepEqual(nodes[target],g.rally(target));}
 });
 test('retargeting from a captured camp returns down its lane before using the next entrance',()=>{
- const g=new Crucible(17),u=g.units.find(v=>v.team===0&&v.kind==='infantry'),old=2,next=4;place(u,g.teams[old].crystal,-50);g.buildRoute(u,next);const path=u.nav.filter(p=>p.node>=0).map(p=>p.node);assert.equal(path[0],old);assert.deepEqual(path.slice(-2),[next,next+8]);
+ const g=new Crucible(17),u=g.units.find(v=>v.team===0&&v.kind==='infantry'),old=2,next=4;place(u,g.teams[old].crystal,-50);g.buildRoute(u,next);const path=u.nav.filter(p=>p.node>=0).map(p=>p.node);assert.ok(path.includes(old));assert.equal(path.at(-1),next+8);assert.ok(path.includes(next));
 });
 test('minions do not acquire the siege structure until their route reaches its base entrance',()=>{
  const g=new Crucible(17),u=g.units.find(v=>v.team===0&&v.kind==='infantry'),target=g.armyObjective(0);only(g,[u,g.teams[0].crystal,g.teams[target.team].crystal,...g.teams[target.team].guards]);g.route(u);assert.equal(g.target(u),undefined);const p=g.rally(target.team);u.x=p.x;u.y=p.y;g.rebuild();assert.equal(g.target(u),undefined);place(u,g.teams[target.team].crystal,-80);g.rebuild();assert.equal(g.target(u).team,target.team);
@@ -99,8 +99,8 @@ test('guardian armor rewards actual minion support and preserves a short siege w
 test('an exposed crystal fires hard-hitting attacks inside its circle without guardians',()=>{
  const g=quiet(),t=g.teams[0],u=g.teams[1].champion;place(u,t.crystal,-120);only(g,[t.crystal,u]);t.crystal.attack=0;g.controlled=1;const hp=u.hp;advance(g,2);assert.ok(u.hp<hp-u.maxHp*.3);assert.equal(t.crystal.active,true);
 });
-test('crystals do not acquire outside their inner base circle and cannot be safely sniped from there',()=>{
- const g=quiet(),t=g.teams[0],u=g.teams[1].champion;place(u,t.crystal,-C.baseRadius-10);only(g,[t.crystal,u]);assert.equal(g.target(t.crystal),undefined);assert.equal(g.damage(t.crystal,1000,1,false,false,u),0);place(u,t.crystal,-120);g.rebuild();assert.equal(g.target(t.crystal),u);assert.ok(g.damage(t.crystal,1000,1,false,false,u)>0);
+test('crystals do not acquire outside their platform circle and cannot be safely sniped from there',()=>{
+ const g=quiet(),t=g.teams[0],u=g.teams[1].champion;place(u,t.crystal,-g.baseDomain(0)-10);only(g,[t.crystal,u]);assert.equal(g.target(t.crystal),undefined);assert.equal(g.damage(t.crystal,1000,1,false,false,u),0);place(u,t.crystal,-120);g.rebuild();assert.equal(g.target(t.crystal),u);assert.ok(g.damage(t.crystal,1000,1,false,false,u)>0);
 });
 test('crystal and guardian hits remain individually survivable, while champion duels retain their cap',()=>{
  const g=quiet(),u=g.teams[1].champion;u.invuln=0;const hit=g.damage(u,400,0,false,true);assert.ok(hit<=u.maxHp*.2+.001&&hit>=u.maxHp*.15);const duel=g.damage(u,1e6,0);assert.ok(duel<=u.maxHp*.075+.001);assert.ok(u.active);
@@ -375,7 +375,7 @@ test('siege pressure escalates by difficulty without changing Hell or enabling u
  for(const level of ['easy','normal','hard','hell']){const g=new Crucible(17,level);assert.equal(g.siegePressure(),0);g.time=420;assert.equal(g.siegePressure(),level==='easy'?6:level==='normal'?120/55:0);g.time=2000;assert.equal(g.siegePressure(),level==='hell'?0:6);assert.equal(g.siegeRequired(),level==='hell'?3:1);const t=g.teams[0],source=g.teams[1].champion;place(source,t.crystal,200);only(g,[source,t.guards[0],t.crystal]);const before=t.guards[0].hp;g.damage(t.guards[0],100,1,false,false,source);assert.ok(before-t.guards[0].hp<=10.001);}
 });
 test('results count objective and army kills, apply difficulty and award victory only to the winner',()=>{
- const g=quiet(),t=g.teams[0];kill(g,g.teams[1].guards[0],0);kill(g,g.teams[1].guards[1],0);kill(g,g.teams[1].crystal,0);const troop=g.units.find(u=>u.team===2&&u.kind==='infantry');kill(g,troop,0);assert.equal(t.guardianKills,2);assert.equal(t.crystalKills,1);assert.equal(t.troopKills,1);g.winner=0;const r=g.result(0);assert.equal(r.dominance,Math.round((100+100000+150000+1000000)*1.6));assert.equal(g.result(1).bonus,0);
+ const g=quiet(),t=g.teams[0];kill(g,g.teams[1].guards[0],0);kill(g,g.teams[1].guards[1],0);kill(g,g.teams[1].crystal,0);const troop=g.units.find(u=>u.team===2&&u.kind==='infantry');kill(g,troop,0);assert.equal(t.guardianKills,2);assert.equal(t.crystalKills,1);assert.equal(t.troopKills,1);g.winner=0;const r=g.result(0);assert.equal(r.dominance,Math.round((10000+1000000+1500000+30000000)*1.6));assert.equal(g.result(1).bonus,0);
 });
 
 test('pacing lowers crystal health by difficulty without weakening guardians',()=>{

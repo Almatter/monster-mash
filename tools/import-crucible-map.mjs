@@ -1,3 +1,4 @@
+import {bakeCrucibleRoutes} from './bake-crucible-routes.mjs';
 import fs from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -12,7 +13,7 @@ export function validateCrucibleMap(value){const doc=validateMapDocument(value),
  const anchors=doc.rooms.flatMap(r=>[node(r[2]),node(r[3])]),seen=new Set([anchors[0]]);for(let changed=true;changed;){changed=false;for(const [a,b] of edges)if(seen.has(a)!==seen.has(b)){seen.add(a);seen.add(b);changed=true;}}if(anchors.some(i=>!seen.has(i)))throw Error('Every camp crystal and rally must connect to the army route network.');
  return doc;
 }
-export async function applyCrucibleMap(file){const doc=validateCrucibleMap(JSON.parse(await fs.readFile(file,'utf8'))),geometry=structuredClone(doc);geometry.background.dataUrl='';
+export async function applyCrucibleMap(file){const doc=validateCrucibleMap(bakeCrucibleRoutes(validateCrucibleMap(JSON.parse(await fs.readFile(file,'utf8'))))),geometry=structuredClone(doc);geometry.background.dataUrl='';
  await fs.writeFile('art-source/crucible/layout.json',JSON.stringify(geometry,null,2)+'\n');
  await fs.writeFile('src/crucible-layout.ts',"// Generated from art-source/crucible/layout.json by tools/import-crucible-map.mjs.\nimport type {MapDocument} from './realm-map-document.ts';\nexport const CRUCIBLE_MAP="+JSON.stringify(geometry)+' as MapDocument;\n');
  await fs.writeFile('public/assets/crucible/map-document.json',JSON.stringify(doc));console.log('Applied Crucible terrain, camp anchors, guardians and routes.');

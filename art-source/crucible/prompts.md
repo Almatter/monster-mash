@@ -23,3 +23,12 @@ Reference: Hag selection artwork for its brass-circle and venom-glass design lan
 Prompt: A compact low ornate bronze cauldron pedestal holding a round green-glass venom orb surrounded by concentric gold rings and short red-black thorn roots, very faint wisps above. Elevated three-quarter game camera, centered complete silhouette, restrained glow, sharp clean outlines matching hand-painted fantasy sprites. No woman, letters, labels, frame or square background. Genuine alpha transparency.
 
 Final asset: public/assets/crucible/relic-hag.webp. Other camps reuse their existing Stage 3 relic sprites.
+
+## Animated battlefield effects
+
+Generated with the built-in imagegen tool, transparent backgrounds, 2026-10-18. Retained lossless sources: chaos.webp, aura.webp, fire.webp, beam.webp. Runtime variants are at most 512 pixels and share textures across the battlefield.
+
+Chaos: overhead ethereal deep violet-black wisps around a luminous amethyst fractured energy heart, faint teal sparks, floating arcane fragments; no environment or text.
+Aura: overhead silver-white and pale-cyan smoky circular ward filaments, transparent interior, wispy flames and rune fragments at the circumference, neutral pale colors for team tinting.
+Fire: orange-gold magical flame plume with a compact ember heart, sparks and red wisps, slightly elevated isometric perspective, no brazier or environment.
+Beam: horizontal white-core laser threaded with cyan and lavender energy, narrow wispy fringes and focal flares, transparent above and below for stretching from relic to target.

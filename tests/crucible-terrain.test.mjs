@@ -21,7 +21,7 @@ test('shared army vision cannot reveal a rival through a sight blocker',()=>{
  const g=new Crucible(17),s=g.terrain.solids[0],a=g.teams[0].champion,b=g.teams[1].champion;for(const u of g.units)u.active=false;a.active=b.active=true;a.x=s.left-50;b.x=s.right+50;a.y=b.y=(s.top+s.bottom)/2;assert.ok(Math.hypot(a.x-b.x,a.y-b.y)<620);assert.equal(g.intel.sees(0,b),false);b.x=a.x+20;assert.equal(g.intel.sees(0,b),true);
 });
 test('caustic pools slow grounded units but leave flight unaffected',()=>{
- const t=new CrucibleTerrain(CRUCIBLE_MAP);for(const s of t.slows){const p={x:(s.left+s.right)/2,y:(s.top+s.bottom)/2};assert.ok(t.walkable(p.x,p.y,27));assert.equal(t.speedAt(p),.6);assert.equal(t.speedAt(p,true),1);assert.equal(t.hazardAt(p),0);}
+ const t=new CrucibleTerrain(CRUCIBLE_MAP);for(const s of t.slows){const p={x:(s.left+s.right)/2,y:(s.top+s.bottom)/2};assert.ok(t.walkable(p.x,p.y,27));assert.equal(t.speedAt(p),.6);assert.equal(t.speedAt(p,true),1);assert.equal(t.hazardAt(p),180);assert.equal(t.hazardAt(p,true),0);}
 });
 test('grounded path steering reaches the other side of a ridge instead of sticking at its edge',()=>{
  const t=new CrucibleTerrain(CRUCIBLE_MAP),s=t.solids[0],u={x:s.left-130,y:(s.top+s.bottom)/2},goal={x:s.right+130,y:u.y};for(let step=0;step<1600&&Math.hypot(u.x-goal.x,u.y-goal.y)>25;step++){const target=t.steer(1,u,goal,step/30),dx=target.x-u.x,dy=target.y-u.y,d=Math.hypot(dx,dy)||1,old={...u};u.x+=dx/d*6;u.y+=dy/d*6;t.slide(u,27,old);assert.ok(t.walkable(u.x,u.y,27));}assert.ok(Math.hypot(u.x-goal.x,u.y-goal.y)<30,JSON.stringify(u));
