@@ -60,3 +60,7 @@ test('army orders stop at an active base encountered on the road after half the 
 test('a Normal victory alone exceeds the current Stage 3 maximum without idle-time score farming',()=>{
  const max=Object.values(realmMaximum('2026.10-v47-titan-realm')).reduce((a,b)=>a+b,0),g=new Crucible(17,'normal');g.winner=0;assert.ok(g.result(0).dominance>max);const before=g.result(0).dominance;g.time=10000;assert.equal(g.result(0).dominance,before);assert.equal(g.result(1).bonus,0);
 });
+
+test('shipped diagonal approach routes stay on the painted road instead of detouring beside it',()=>{
+ for(const d of CRUCIBLE_MAP.decks.filter(d=>d[0].startsWith('spoke-'))){const a=d[2][0],b=d[2].at(-1),dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);for(const p of d[2])assert.ok(Math.abs(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/length<25,d[0]);}
+});

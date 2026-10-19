@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(pathToFileURL('C:/Users/novam/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs').href);
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+try{for(const mobile of [false,true]){
+ const context=await browser.newContext({viewport:mobile?{width:844,height:390}:{width:1440,height:900},isMobile:mobile,hasTouch:mobile,deviceScaleFactor:mobile?2:1,serviceWorkers:'block'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:4173/test/crucible.html?seed=17');await page.waitForFunction(()=>document.querySelector('#loading').hidden);await page.locator('#start-battle').click();await page.locator('#pause').click();await page.selectOption('#control','0');
+ await page.evaluate(()=>{const g=crucible;for(const u of g.units)u.active=false;Object.assign(g.teams[0].champion,{active:true,x:2050,y:2300});Object.assign(g.teams[1].champion,{active:true,x:2400,y:2300});g.time=1;g.intel.update(true);});await page.waitForTimeout(300);
+ const evidence=await page.evaluate(()=>{const g=crucible,v=crucibleView,canvas=document.querySelector('#arena'),ctx=canvas.getContext('2d'),cx=(2400*v.scale+v.x)*canvas.width/v.w,cy=(2300*v.sy+v.y)*canvas.height/v.h;let purple=0;for(let y=-25;y<=25;y+=5)for(let x=-25;x<=25;x+=5){const [r,green,b]=ctx.getImageData(Math.round(cx+x),Math.round(cy+y),1,1).data;if((r+b)/2-green>25&&Math.max(r,b)>80)purple++;}return {purple,hiddenRival:!g.intel.sees(0,g.teams[1].champion),blocked:g.terrain.lineVisible(g.teams[0].champion,{x:2400,y:2300})===false,firelightPixels:crucibleMapStats.firelightPixels};});
+ assert.ok(evidence.purple>8,JSON.stringify(evidence));assert.ok(evidence.hiddenRival&&evidence.blocked);assert.ok(evidence.firelightPixels>100&&evidence.firelightPixels<15000);await page.screenshot({path:`test-results/crucible-center-power-${mobile?'touch':'desktop'}.png`});
+ await page.selectOption('#control','watch');await page.locator('#map').click();await page.waitForTimeout(200);await page.screenshot({path:`test-results/crucible-scenery-overview-${mobile?'touch':'desktop'}.png`});assert.deepEqual(errors,[]);console.log(JSON.stringify({mobile,...evidence,errors}));await context.close();
+}}finally{await browser.close();}
