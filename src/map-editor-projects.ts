@@ -3,6 +3,7 @@ import {REALM_MAP_DATA} from './realm-map-data.ts';
 import {validateMapDocument,type MapDocument} from './realm-map-document.ts';
 export const EDITOR_PROJECTS=[
  {id:'mana-abyss-v43',query:'abyss',name:'Stage 3 · Mana Abyss',draft:'draft'},
+ {id:'crucible-v1',query:'crucible',name:'Prototype · Horde’s Judgment',draft:'draft:crucible-v1',url:'assets/crucible/map-document.json'},
  {id:'throne-war-v1',query:'war',name:'Stage 4 · Throne War',draft:'draft:throne-war-v1',url:'assets/stage4/map-document.json'}
 ];
 export function editorDraftKey(map:string){return EDITOR_PROJECTS.find(p=>p.id===map)?.draft||'draft:custom';}

@@ -33,3 +33,25 @@ Reuse assets/stage3/relic-<champion>.webp as each camp’s recognizable monument
 Check world-space art alignment, seam continuity, safe landing points, minion routes, sight occlusion and projectile blocking. Test heavy combat on desktop and a real midrange phone. The map should increase atmosphere without adding per-frame terrain scans or raising the bounded unit counts.
 
 Rendering reference: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
+
+
+## Implemented prototype
+
+The Crucible prototype now uses 25 streamed 1024-pixel tiles (with sampling gutters), a 1200-square overview, and a 4800-square world. Sixteen independently generated detail sections build a 5120-square offline assembly. Actual source density is approximately 1.07 pixels/world unit, rather than the provisional 2-pixel target above. Only the nearby detail tiles decode during close play; the decoded cache is capped at 16 tiles on coarse-pointer devices and 24 on desktop. The huge assembly never loads in the browser.
+
+The art includes eight camps, eight broad roads, the central plaza, nine stone footprints/sight blockers, and four slowing pools. Flight ignores low solids and slowing pools until landing. Map boundaries remain enforced. Native damage and skill limits are preserved.
+
+Shared terrain compiles once into an 8-unit collision grid; old paint strokes do not run for every actor/frame. Independent sight polygons drive shared vision, fog shadows and ranged obstruction. Foreground silhouettes clip actors behind raised scenery and leave the controlled champion faintly visible. NPCs steer around footprints; minion centerlines retain their home/center/target routing. Base-loss rivals no longer wait for a replenishing escort.
+
+Open test/map-editor.html?map=crucible to edit feet footprints, foreground, camp anchors, guardians, roads, slowing terrain, sight blockers and optional attrition terrain. Attrition zones are deliberately nonlethal (minimum 1 HP); no damage zones are placed by default. The camp defense outlines are independent of walkable ground. Moving a crystal marker moves its linked spawn points and guardians; moving an aligned rally updates route connections. Save/export remains explicit, so editing never changes the running match or the published Stage 4 scenario.
+
+To apply an editor export:
+
+    node tools/import-crucible-map.mjs path/to/export.json
+    node tools/build.mjs
+
+The import validates the eight camps, scale and usable spawn/guardian positions, then regenerates gameplay data and the editor document from the same export. To rebuild art from retained generated sources:
+
+    python tools/pack-crucible-map.py
+
+Use a Python environment with Pillow. The generation prompts and retained source-art locations are in art-source/crucible/prompts.md. Final assets are in public/assets/crucible/.

@@ -18,3 +18,7 @@ art-source/stage3/v42/assembled.png
 art-source/stage4/assembled.png
 art-source/stage4/overview.webp
 art-source/stage4/sectors/*.png
+
+# Rebuildable Crucible image references and assembled atlas.
+output/imagegen/crucible/
+art-source/crucible/assembled.png

@@ -5,7 +5,11 @@ import fs from 'node:fs';
 import {MONSTERS} from '../src/content-monsters.ts';
 import {hagState} from '../src/hag.ts';
 import {CRUCIBLE_AUGMENTS,CRUCIBLE_BUILD_LIMITS} from '../src/crucible-augments.ts';
-import {Crucible,CRUCIBLE as C,CRUCIBLE_WAR as WAR,CRUCIBLE_SHOP} from '../src/crucible-sim.ts';
+import {Crucible as WorldCrucible,CRUCIBLE as C,CRUCIBLE_WAR as WAR,CRUCIBLE_SHOP} from '../src/crucible-sim.ts';
+// Kit/economy regressions use an open-floor fixture; terrain has its own integration suite.
+import {CRUCIBLE_MAP} from '../src/crucible-layout.ts';
+const OPEN_MAP={...CRUCIBLE_MAP,structures:[],zones:[],terrain:{sight:[],slows:[],hazards:[]}};
+class Crucible extends WorldCrucible{constructor(seed=17,mode='normal'){super(seed,mode,OPEN_MAP);}}
 const advance=(g,seconds)=>{for(let i=0;i<seconds*30;i++)g.step(1/30);};
 const kill=(g,u,team)=>{u.invuln=0;for(let i=0;i<30&&u.active;i++){u.invuln=0;g.damage(u,1e6,team);}assert.equal(u.active,false);};
 function quiet(){const g=new Crucible(17,'hell');for(const t of g.teams){t.wave=1e9;t.respawnAt=1e9;t.trapReady=[1e9,1e9,1e9];}return g;}
@@ -178,7 +182,7 @@ test('full ability chains share a rolling champion damage budget',()=>{
 });
 
 test('Titan Fissure produces a real field and uses the Crucible floor rather than the original arena props',()=>{
- const {g,b}=duel(5);assert.equal(g.cast(5,2),true);assert.equal(b.fissures.length,1);assert.ok(b.fissures[0].length>100);assert.equal(b.floorClearance(100,100),5);
+ const {g,b}=duel(5);assert.equal(g.cast(5,2),true);assert.equal(b.fissures.length,1);assert.ok(b.fissures[0].length>100);assert.equal(b.floorClearance(100,100),g.terrain.clearance(100,100));assert.ok(b.floorClearance(100,100)>0);
 });
 test('native Howl fear moves enemies away and interrupts their attacks',()=>{
  const {g,hero,enemy}=duel(1);g.cast(1,1);advance(g,.15);assert.ok(enemy.fear>0);const distance=Math.hypot(enemy.x-hero.x,enemy.y-hero.y);advance(g,.2);assert.ok(Math.hypot(enemy.x-hero.x,enemy.y-hero.y)>distance);
