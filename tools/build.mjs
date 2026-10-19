@@ -21,6 +21,7 @@ for(const route of ['test','stage2-test','stage3-test']){await mkdir('dist/'+rou
 await writeFile('dist/test/map-editor.html',(await readFile('dist/map-editor.html','utf8')).replace('<head>','<head>\n<base href="../">'));
 const modules=(await readdir('src')).filter(n=>n.endsWith('.ts')&&!['art-lab.ts','music-lab.ts'].includes(n)).map(n=>'src/'+n.replace('.ts','.js'));
 await writeFile('dist/boot.js',(await readFile('dist/boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
+await writeFile('dist/crucible-boot.js',(await readFile('dist/crucible-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 await writeFile('dist/map-editor-boot.js',(await readFile('dist/map-editor-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 const assets=['./','index.html','stage2-test/','stage2-test/index.html','test/','test/index.html','stage3-test/','stage3-test/index.html','boot.js','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
 const digest=createHash('sha256');
