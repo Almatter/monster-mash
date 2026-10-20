@@ -64,3 +64,35 @@ test('a Normal victory alone exceeds the current Stage 3 maximum without idle-ti
 test('shipped diagonal approach routes stay on the painted road instead of detouring beside it',()=>{
  for(const d of CRUCIBLE_MAP.decks.filter(d=>d[0].startsWith('spoke-'))){const a=d[2][0],b=d[2].at(-1),dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);for(const p of d[2])assert.ok(Math.abs(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/length<25,d[0]);}
 });
+
+test('small replay seeds shuffle every champion across every camp, rather than rotating a fixed order',()=>{
+ const visited=Array.from({length:8},()=>new Set()),orders=new Set();for(let seed=1;seed<=128;seed++){const g=new Crucible(seed);assert.equal(new Set(g.slots).size,8);g.slots.forEach((slot,team)=>visited[team].add(slot));const ring=g.teams.map((t,i)=>({id:i,slot:g.slots[i]})).sort((a,b)=>a.slot-b.slot).map(x=>x.id);const at=ring.indexOf(0);orders.add([...ring.slice(at),...ring.slice(0,at)].join(','));}for(const camps of visited)assert.equal(camps.size,8);assert.ok(orders.size>100);
+});
+
+
+test('a shattered crystal sends its surviving troops after their champion, not the old rally',()=>{
+ const g=quiet(),t=g.teams[0],c=t.champion;g.controlled=0;Object.assign(c,{active:true,x:2400,y:1700});
+ const u=g.free[0][1];Object.assign(u,{active:true,x:2250,y:1700,target:0,nav:[],recover:0});
+ t.crystal.active=true;g.rebuild();g.route(u);g.damage(t.crystal,1e9,1);assert.equal(t.crystal.active,false);assert.equal(t.eliminated,false);const before=Math.hypot(u.x-c.x,u.y-c.y);g.rebuild();for(let i=0;i<30;i++)g.step(1/30);
+ assert.ok(Math.hypot(u.x-c.x,u.y-c.y)<before-40);assert.equal(u.objective,-1);
+ // The escort adjusts after the player moves, without requiring a living home crystal.
+ c.x=2550;g.input.x=1;const x=u.x;for(let i=0;i<30;i++)g.step(1/30);assert.ok(u.x>x+20);
+});
+test('a distant surviving escort uses the road graph and updates its route as the champion moves',()=>{
+ const g=quiet(),t=g.teams[0],u=g.free[0][1];t.champion.active=u.active=true;Object.assign(u,{...g.rally(0),recover:0,nav:[]});Object.assign(t.champion,g.rally(3));
+ g.terrain.steer=()=>{throw Error('Escort requested dynamic hazard pathfinding');};
+ const goal=g.route(u);assert.ok(Number.isFinite(goal.x)&&Number.isFinite(goal.y));assert.equal(u.navTeam,-100);assert.ok(u.nav.length>2);
+ const end={...u.nav.at(-1)};Object.assign(t.champion,g.rally(5));u.recover=0;g.route(u);assert.ok(Math.hypot(u.nav.at(-1).x-end.x,u.nav.at(-1).y-end.y)>100);
+});
+test('surviving troops support their champion against its nearby attacker, then disengage',()=>{
+ const g=quiet(),t=g.teams[0],c=t.champion,u=g.free[0][1],enemy=g.teams[1].champion;g.controlled=0;
+ Object.assign(c,{active:true,x:2400,y:1700,invuln:0});Object.assign(u,{active:true,x:2310,y:1700});Object.assign(enemy,{active:true,x:2470,y:1700,invuln:0});g.rebuild();g.damage(c,1,1,false,false,enemy);
+ assert.equal(g.troopTarget(u),enemy);enemy.x=2900;g.rebuild();assert.notEqual(g.troopTarget(u),enemy);
+});
+test('a baseless rival leaves its old rally and ignores siege threats to its destroyed home',()=>{
+ const g=quiet(),t=g.teams[0],u=t.champion,enemy=g.teams[1];Object.assign(u,{active:true,...g.rally(0),target:0});enemy.crystal.active=true;
+ // A stale team goal and phantom home siege used to strand the survivor.
+ t.goal=2;t.plan=1e9;const beast=g.free[2][0];Object.assign(beast,{active:true,siege:true,x:t.crystal.x,y:t.crystal.y});
+ assert.equal(g.siegeThreat(0),undefined);const start={x:u.x,y:u.y};g.combat.focusTarget=()=>undefined;g.combat.focusPoint=()=>null;g.rebuild();for(let i=0;i<90;i++)g.step(1/30);
+ assert.equal(t.goal,1);assert.ok(Math.hypot(u.x-start.x,u.y-start.y)>80);assert.ok(u.active);
+});

@@ -75,3 +75,13 @@ Cold-start and fire-contact correction (2026-10-19): Crucible now inserts a vers
 Fire contact polygons are centered on the painted flame cores instead of the lower floor position of their braziers. Four phantom fire zones at entrances without flames were removed. Each flame animates a small transparent crop of its own painted pixels, anchored at its base, with individually phased stretching and reflected light. The ambient animation continues while paused, so its motion remains inspectable. No independent generated flame is placed beside the original.
 
 In the prototype editor select **Damage areas / fire**, choose a named Fire area, and use Edit: drag inside its orange polygon to move the entire damage area; drag white handles to resize it. Damage / second remains independently editable. Export/import applies those edits to gameplay.
+
+Mobile controls and match presentation: touch abilities fire on pointer down, independently of the captured joystick pointer. Only that pointer may release the stick; additional contacts and compatibility clicks cannot cancel movement or duplicate casts. Browser tests use real simultaneous CDP touch contacts, including lifting the ability finger while movement continues.
+
+A dismissible portrait prompt recommends landscape; fullscreen buttons are available during setup and battle. Fullscreen uses a user gesture, requests hidden navigation UI, and attempts landscape orientation when supported. Unsupported browsers show installation/Home Screen guidance; no fake fullscreen or forced rotation is used. Controls respect landscape safe-area insets.
+
+The setup introduces the ritual, hunts, depths and final contest. Result cards name the champion. Each ordinary Start uses a fresh cryptographic seed; Replay/use seed remains deterministic. An avalanche step removes the low-seed bias before the full Fisher–Yates camp shuffle. Tests cover every champion/camp across 128 seeds and reject a mere rotated roster.
+
+The four acid pools now churn their existing painted textures inside their terrain outlines, with staggered bubbles and highlights. Only visible pools render; no minion routing or hazard geometry changes.
+
+After losing a crystal, a surviving rival abandons home defense and seeks a live enemy objective. Its remaining infantry, ranged troops and siege beast escort the champion in a loose formation and support nearby fights, disengaging when enemies leave the escort area. Distant escorts reuse the baked road graph, refreshed at most once per 0.75 seconds per troop, rather than invoking dynamic hazard pathfinding. Living bases retain their existing army orders.
