@@ -36,9 +36,9 @@ test('ordinary troop spell resistance leaves basic attacks and siege beast resis
  b.damage(p,100,'direct');const basic=1000-troop.hp;troop.hp=p.hp=1000;b.damage(p,100,'meteor');assert.ok(Math.abs((1000-troop.hp)/basic-CRUCIBLE_SIEGE.troopSpellScale)<1e-8);
  troop.siege=true;troop.hp=p.hp=1000;b.damage(p,100,'meteor');const spell=1000-troop.hp;troop.hp=1000;const ordinary=g.damage(troop,75,3,false,false,hero);assert.equal(spell,ordinary);
 });
-test('Crucible abilities recover slower without charging mana or slowing basic attacks',()=>{
+test('Crucible abilities recover slower while charging mana and preserving basic attack speed',()=>{
  for(let team=0;team<8;team++){const g=quiet(),t=g.teams[team],u=t.champion;g.controlled=team;Object.assign(u,{active:true,x:2400,y:2400,power:0,ultimate:0,cooldowns:[0,0,0,0]});g.rebuild();const b=g.combat.actors[team].brain,native=new Game(17,{monsterId:t.monster},3,'fissure',true);assert.equal(b.releaseStats.attack,releaseStats(t.monster,4).attack);
-  for(let slot=0;slot<4;slot++){const p=b.powers[slot],factor=slot===3?1.5:2;assert.equal(factor,slot===3?CRUCIBLE_SIEGE.ultimateCooldown:CRUCIBLE_SIEGE.regularCooldown);const expected=releasedPower(native.powers[slot],t.monster,4).cooldown*factor;if(p.effect!=='wolfravage'&&p.effect!=='parkour'){u.power=u.ultimate=0;u.cooldowns=[0,0,0,0];const before=t.mana;if(g.cast(team,slot)&&p.effect!=='lunge')assert.ok(Math.abs(u.cooldowns[slot]-expected)<1e-8,p.id);assert.equal(t.mana,before);}}
+  for(let slot=0;slot<4;slot++){const p=b.powers[slot],factor=slot===3?1.5:2;assert.equal(factor,slot===3?CRUCIBLE_SIEGE.ultimateCooldown:CRUCIBLE_SIEGE.regularCooldown);const expected=releasedPower(native.powers[slot],t.monster,4).cooldown*factor;if(p.effect!=='wolfravage'&&p.effect!=='parkour'){u.power=u.ultimate=0;u.cooldowns=[0,0,0,0];const before=t.mana,cost=g.abilityCost(team,slot),cast=g.cast(team,slot);if(cast&&p.effect!=='lunge')assert.ok(Math.abs(u.cooldowns[slot]-expected)<1e-8,p.id);assert.equal(t.mana,before-(cast?cost:0));}}
  }
 });
 
