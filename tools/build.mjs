@@ -1,3 +1,4 @@
+import {cruciblePlayerPage} from './crucible-player-page.mjs';
 import { readdir, readFile, mkdir, writeFile, rm } from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {join,resolve,dirname} from 'node:path';
@@ -19,16 +20,17 @@ await mkdir('dist/stage2-test',{recursive:true});
 const testEntry=(await readFile('dist/index.html','utf8')).replace('<head>','<head>\n<base href="../">');
 for(const route of ['test','stage2-test','stage3-test']){await mkdir('dist/'+route,{recursive:true});await writeFile('dist/'+route+'/index.html',testEntry);}
 await writeFile('dist/test/map-editor.html',(await readFile('dist/map-editor.html','utf8')).replace('<head>','<head>\n<base href="../">'));
+const prototype=await readFile('public/test/crucible.html','utf8');await writeFile('dist/stage4.html',cruciblePlayerPage(prototype));await writeFile('dist/test/stage4.html',cruciblePlayerPage(prototype,true));
 const modules=(await readdir('src')).filter(n=>n.endsWith('.ts')&&!['art-lab.ts','music-lab.ts'].includes(n)).map(n=>'src/'+n.replace('.ts','.js'));
 await writeFile('dist/boot.js',(await readFile('dist/boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 await writeFile('dist/crucible-boot.js',(await readFile('dist/crucible-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 await writeFile('dist/map-editor-boot.js',(await readFile('dist/map-editor-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
-const assets=['./','index.html','stage2-test/','stage2-test/index.html','test/','test/index.html','stage3-test/','stage3-test/index.html','boot.js','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
+const assets=['./','index.html','stage4.html','test/stage4.html','crucible-boot.js','stage2-test/','stage2-test/index.html','test/','test/index.html','stage3-test/','stage3-test/index.html','boot.js','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
 const digest=createHash('sha256');
 async function hashTree(dir){for(const item of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){const path=join(dir,item.name);if(item.isDirectory())await hashTree(path);else if(item.isFile()&&path!==join('dist','sw.js')){digest.update(path);digest.update(await readFile(path));}}}
 await writeFile('dist/robots.txt','User-agent: *\nAllow: /\n');
 await hashTree('dist');const version=digest.digest('hex').slice(0,16);
 await writeFile('dist/src/config.js',(await readFile('dist/src/config.js','utf8')).replace('__BUILD_HASH__',version));
-for(const file of ['dist/test/crucible.html','dist/test/map-editor.html','dist/map-editor.html','dist/index.html','dist/stage2-test/index.html','dist/stage3-test/index.html','dist/test/index.html'])await writeFile(file,(await readFile(file,'utf8')).replaceAll('__BUILD_HASH__',version));
+for(const file of ['dist/stage4.html','dist/test/stage4.html','dist/test/crucible.html','dist/test/map-editor.html','dist/map-editor.html','dist/index.html','dist/stage2-test/index.html','dist/stage3-test/index.html','dist/test/index.html'])await writeFile(file,(await readFile(file,'utf8')).replaceAll('__BUILD_HASH__',version));
 const worker=(await readFile('public/sw.js','utf8')).replace('__BUILD_HASH__',version).replace(/const ASSETS=\[[\s\S]*?\];/, 'const ASSETS='+JSON.stringify([...assets,...modules.map(path=>path+'?v='+version)])+';');await writeFile('dist/sw.js',worker);
 console.log('Production build ready in dist/ (no runtime dependencies).');

@@ -13,7 +13,7 @@ export const PHASES = [
  { name:'THE SWARM', pressure:1, weights:[72,13,4,5,6], eliteEvery:4, titanEvery:8 },
  { name:'THE HUNT', pressure:1.08, weights:[40,20,16,14,10], eliteEvery:3, titanEvery:7 },
  { name:'TITAN', pressure:1.12, weights:[42,15,10,13,20], eliteEvery:2, titanEvery:4 },
- { name:'THRONE WAR', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
+ { name:'HORDE’S JUDGMENT', pressure:1.3, weights:[40,20,13,12,15], eliteEvery:2, titanEvery:3 }
 ];
 // Default stage for direct Game creation and historical run codes; player selection is gated in stage-access.ts.
 export const EVENT = { phase:0, rules:'2026.10-v15-autotarget-squad', waveSeconds:30, maxEnemies:720, arenaRadius:1500 };

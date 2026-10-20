@@ -23,7 +23,7 @@ export type CrucibleShot={x:number;y:number;tx:number;ty:number;team:number;targ
 export class Crucible{
  difficulty:CrucibleDifficulty='normal';get difficultyRules(){return CRUCIBLE_DIFFICULTIES[this.difficulty];}
  terrain:CrucibleTerrain;slots:number[]=[];
- combat:CrucibleCombat;intel:CrucibleIntel;viewport={x:625,y:400};
+ sound:(key:string)=>void=()=>{};combat:CrucibleCombat;intel:CrucibleIntel;viewport={x:625,y:400};
  seed=17;time=0;serial=0;state:number;units:CrucibleUnit[]=[];teams:CrucibleTeam[]=[];effects:CrucibleEffect[]=[];shots:CrucibleShot[]=[];events:{time:number;text:string}[]=[];kills=0;winner=-1;controlled=-1;density=20;input={x:0,y:0};
  private defenseRadii=new Map<number,number>();private orderChecks=new Map<number,{until:number;destination:number;result:number}>();private lanes:{nodes:{x:number;y:number}[];edges:[number,number][]}|null=null;private gridCols=Math.ceil(CRUCIBLE.width/160)+1;private grid=new Map<number,CrucibleUnit[]>();private byId=new Map<number,CrucibleUnit>();private free:CrucibleUnit[][]=[];
  constructor(seed=17,difficulty:CrucibleDifficulty='normal',map:MapDocument=CRUCIBLE_MAP){this.terrain=new CrucibleTerrain(map);this.difficulty=Object.hasOwn(CRUCIBLE_DIFFICULTIES,difficulty)?difficulty:'normal';this.seed=seed;let mixed=seed>>>0;mixed=Math.imul(mixed^(mixed>>>16),0x21f0aaad);mixed=Math.imul(mixed^(mixed>>>15),0x735a2d97);this.state=(mixed^(mixed>>>15))>>>0||1;const ids=Object.keys(MONSTERS),positions=ids.map((_,i)=>i);for(let i=positions.length-1;i>0;i--){const j=Math.floor(this.random()*(i+1));[positions[i],positions[j]]=[positions[j],positions[i]];}

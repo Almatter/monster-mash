@@ -20,3 +20,5 @@ const boot=await readFile('dist/boot.js','utf8');assert.doesNotMatch(boot,/__MOD
 assert.match(await readFile('dist/src/main.js','utf8'),/import\('\.\/realm-debug\.js'\)/);
 
 const crucibleBoot=await readFile('dist/crucible-boot.js','utf8');assert.doesNotMatch(crucibleBoot,/__MODULES__/);assert.match(crucibleBoot,/src\/crucible-prototype\.js/);assert.match(await readFile('dist/test/crucible.html','utf8'),/crucible-boot\.js\?v=[0-9a-f]{16}/);
+
+for(const entry of ['stage4.html','test/stage4.html']){const html=await readFile('dist/'+entry,'utf8');assert.match(html,/data-crucible="player"/);assert.doesNotMatch(html,/__BUILD_HASH__|Arena Prototype|id="(?:control|seed|speed|density|vision|focus|replay)"/);assert.match(html,/crucible-boot\.js\?v=[0-9a-f]{16}/);}

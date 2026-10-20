@@ -12,7 +12,7 @@ import {CRUCIBLE,CRUCIBLE_SIEGE,type Crucible,type CrucibleUnit} from './crucibl
 // Only terrain, army orders, economy and damage routing belong to the prototype.
 export class CrucibleBrain extends Game{
  host:Crucible;team:number;mods:CrucibleAugmentRuntime;
- constructor(host:Crucible,team:number){super(host.seed^((team+1)*0x9e3779b9),{monsterId:host.teams[team].monster},3,'throw',true);this.host=host;this.team=team;this.titanKit='fissure';this.floorClearance=(x,y)=>this.host.terrain.clearance(x,y);this.release=4;this.lungeCharges=3;this.damageScale=.75;this.recoveryScale=1;this.cooldowns=[0,0,0,0];this.powers=this.powers.map((p,i)=>({...p,cooldown:p.cooldown*(i===3?CRUCIBLE_SIEGE.ultimateCooldown:CRUCIBLE_SIEGE.regularCooldown)}));this.mods=new CrucibleAugmentRuntime(this);this.mods.apply();}
+ constructor(host:Crucible,team:number){super(host.seed^((team+1)*0x9e3779b9),{monsterId:host.teams[team].monster},3,'throw',true);this.host=host;this.team=team;this.sound=key=>host.sound(key);this.titanKit='fissure';this.floorClearance=(x,y)=>this.host.terrain.clearance(x,y);this.release=4;this.lungeCharges=3;this.damageScale=.75;this.recoveryScale=1;this.cooldowns=[0,0,0,0];this.powers=this.powers.map((p,i)=>({...p,cooldown:p.cooldown*(i===3?CRUCIBLE_SIEGE.ultimateCooldown:CRUCIBLE_SIEGE.regularCooldown)}));this.mods=new CrucibleAugmentRuntime(this);this.mods.apply();}
  override heal(amount:number,recovery=false){super.heal(amount,recovery);const u=this.host?.teams[this.team]?.champion;if(u?.active)u.hp=this.player.hp;}
  override get arenaRadius(){return 100000;}
  override insideMap(x:number,y:number){return this.host.terrain.walkable(x,y);}
@@ -35,7 +35,7 @@ export class CrucibleBrain extends Game{
  }
 }
 
-type Actor={brain:CrucibleBrain;proxies:Map<number,Enemy>;summons:Map<Game['servants'][number],CrucibleUnit>;summonPool:CrucibleUnit[];nextCast:number;slot:number;healAt:number};
+type Actor={sourceTotals:Record<string,number>;brain:CrucibleBrain;proxies:Map<number,Enemy>;summons:Map<Game['servants'][number],CrucibleUnit>;summonPool:CrucibleUnit[];nextCast:number;slot:number;healAt:number};
 export class CrucibleCombat{
  actors:Actor[]=[];attention:CrucibleAttention;private resisted=new WeakMap<Enemy,Record<string,{raw:number;until:number}>>();private venomTimers=new WeakMap<object,number>();
  private status(p:Enemy,key:'snaredUntil'|'staggerUntil'|'fearedUntil',team:number,time:number){const raw=p[key]||0;if(raw<=time)return 0;let timers=this.resisted.get(p);if(!timers){timers={};this.resisted.set(p,timers);}let entry=timers[key];if(!entry||raw>entry.raw+.001){entry={raw,until:time+(raw-time)*this.host.resistance(team,'resolve')};timers[key]=entry;}return Math.max(0,entry.until-time);}
@@ -43,7 +43,7 @@ export class CrucibleCombat{
  airborne(team:number){const b=this.actors[team]?.brain;return !!b&&(hagState(b).flight>0||!!b.vault);}
  constructor(host:Crucible){this.host=host;this.attention=new CrucibleAttention(host);for(let team=0;team<8;team++)this.reset(team);}
  reset(team:number){const old=this.actors[team],brain=new CrucibleBrain(this.host,team);if(old){for(const u of old.summons.values())u.active=false;}
-  this.actors[team]={brain,proxies:new Map(),summons:new Map(),summonPool:old?.summonPool||[],nextCast:this.host.time+.6,slot:0,healAt:0};this.attention.reset(team);if(!old)Object.assign(this.host.teams[team].champion,{power:0,ultimate:0,cooldowns:[0,0,0,0]});this.sync(team);
+  const sourceTotals={...old?.sourceTotals};for(const [source,count] of Object.entries(old?.brain.score.sources||{}))sourceTotals[source]=(sourceTotals[source]||0)+count;this.actors[team]={sourceTotals,brain,proxies:new Map(),summons:new Map(),summonPool:old?.summonPool||[],nextCast:this.host.time+.6,slot:0,healAt:0};this.attention.reset(team);if(!old)Object.assign(this.host.teams[team].champion,{power:0,ultimate:0,cooldowns:[0,0,0,0]});this.sync(team);
  }
  sync(team:number){const u=this.host.teams[team].champion,b=this.actors[team].brain;b.time=this.host.time;b.ended=false;b.recoveryScale=this.host.sustainScale(team);Object.assign(b.player,{x:u.x,y:u.y,hp:u.hp,maxHp:u.maxHp,invuln:u.invuln});b.cooldowns=[u.power,u.cooldowns[1],u.cooldowns[2],u.ultimate];b.attack=u.attack;if(u.slow>0)b.moveSlowUntil=Math.max(b.moveSlowUntil,this.host.time+u.slow);b.attacksBlockedUntil=u.stun>0||u.fear>0?this.host.time+Math.max(u.stun,u.fear):0;b.controlledUntil=u.stun>0?this.host.time+u.stun:0;b.facingX=u.facing;b.targetView={...this.host.viewport};b.hexCastRange=Math.max(650,Math.hypot(b.targetView.x,b.targetView.y))*(1+.1*this.host.teams[team].upgrades.reach);b.mods.apply();}
  prepare(team:number){this.sync(team);this.attention.update(team);const a=this.actors[team],b=a.brain,h=this.host,u=h.teams[team].champion,targets:Enemy[]=[],live=new Set<number>();
@@ -76,6 +76,7 @@ export class CrucibleCombat{
 
  fallen(team:number){const a=this.actors[team];for(const u of this.host.units)if(u.grabOwner===team){u.grabbed=false;u.grabOwner=-1;}for(const s of a.brain.servants)s.active=false;for(const u of a.summonPool)u.active=false;}
  private summons(team:number){const a=this.actors[team];for(const servant of a.brain.servants){let u=a.summons.get(servant);if(!servant.active){if(u)u.active=false;continue;}if(!u){u=a.summonPool.find(v=>!v.active&&![...a.summons.values()].includes(v));if(!u){if(a.summonPool.length>=32)continue;u=this.host.summonActor(team,servant.x,servant.y);a.summonPool.push(u);}a.summons.set(servant,u);}if(!u.active)this.host.reviveSummon(u);a.brain.slideArena(servant,13);Object.assign(u,{active:true,x:servant.x,y:servant.y,hp:servant.hp,maxHp:220});u.servant=servant;}}
+ sources(team:number){const a=this.actors[team],sources={...a.sourceTotals};for(const [source,count] of Object.entries(a.brain.score.sources))sources[source]=(sources[source]||0)+count;return sources;}
  focusTarget(team:number){return this.attention.target(team);}
  focusPoint(team:number){return this.attention.aim(team);}
 }

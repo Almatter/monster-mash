@@ -72,7 +72,7 @@ Players post their PNG card and run code manually to Discord. `/verify/` reads c
 
 Adding a monster that uses existing effects requires a definition, stats, four ability references, passive choice and palette/art references. A genuinely new mechanic or passive requires a small handler; this is intentionally not a freeform ability builder. New achievements using existing aggregated metrics and new feats using existing contexts require data rows. Keep the plain-language condition and implementation threshold synchronized.
 
-Stage selection uses `src/stage-access.ts`: each later stage needs its own qualifying title, opening date, scenario and map. Stage 1 remains the baseline; Stage 2 uses Adaptation and Shattered Court. Stages 3 and 4 remain locked until their own content and gate definitions are added. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. Production character and enemy art is bundled under `public/assets/`; editable original images stay in `art-source/`.
+Stage selection uses `src/stage-access.ts`: each later stage needs its own qualifying title, opening date, scenario and map. Stage 1 remains the baseline; Stage 2 uses Adaptation and Shattered Court. Stage 3 is the Mana Abyss. Stage 4 is Horde’s Judgment (Crucible), launched from champion selection with the saved name, title and palette. It opens October 22, 2026 at midnight Eastern after earning The Deep Gatebreaker in Stage 3; there is no additional testing lock. **[ART_ASSET_SPEC.md](ART_ASSET_SPEC.md)** gives exact atlas dimensions, animation rows, anchors, tint composition, portrait/cut-in requirements and integration boundaries. Production character and enemy art is bundled under `public/assets/`; editable original images stay in `art-source/`.
 
 ## Performance contracts
 
@@ -125,3 +125,13 @@ Devourer Lunge follows current movement or the last movement heading when statio
 
 
 Enemy pursuit now uses a shared 180-unit baseline and the existing time curve, independent of champion speed. Movement advantages no longer increase the horde's catch-up pace. `2026.10-v8-pursuit` keeps prior rules readable and scores separate. See [PURSUIT_FIX_REPORT.md](PURSUIT_FIX_REPORT.md) for all five survival comparisons and tests.
+
+### Stage 4: Horde’s Judgment
+
+Crucible replaces the former camp-conquest scenario in the player launch flow. Choose a champion, name, title and colors on the event page, then select Stage 4. Its live `stage4.html` entry verifies the server date and the earned Deep Gatebreaker (one champion: eight Titan clears, three without resets, seven distinct altar powers used to break defenses in successful clears). The existing earlier-stage passage requirements remain in effect.
+
+The player page preserves the full Crucible battle, difficulty selection, mana/shop, four powers, recalls, fog, scouting and touch controls. It contains no workshop controls or debug globals. Wins, losses and early exits save achievements, native ability practice and mastery to Monster Records. Each difficulty has a separate comparable ruleset and authenticated MM4 run code. Existing Stage 4 title/achievement IDs remain valid; their wording now refers to crystals, builds and last-champion victories.
+
+`test/crucible.html` remains the isolated workshop. The ordinary player version can also be launched from `test/index.html` into `test/stage4.html`, using only the separate exhibition profile. The Stage 4 map remains editable with `map-editor.html?map=crucible` after passage opens, or in the test workshop beforehand. Legacy Throne War run codes remain verifiable.
+
+Validation: `node --test tests/*.test.mjs`, `node tools/build.mjs`, `node tools/check-pages-build.mjs`, and `node tests/crucible-player-browser.mjs` (desktop and mobile selection, gates, cosmetics, admin removal, wins, losses, records and run codes).

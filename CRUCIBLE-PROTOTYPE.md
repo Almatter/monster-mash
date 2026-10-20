@@ -1,3 +1,5 @@
+> Crucible now also supplies the actual Stage 4 player scenario. This document describes the isolated workshop at `test/crucible.html`; the player entry is `stage4.html`, with date/title gates and saved progression. See README’s Stage 4 section.
+
 # Horde’s Judgment: isolated arena prototype
 
 Open `test/crucible.html?seed=17`. This standalone page does not import the live Stage 4 engine, read/write profiles, award scores, change release gates, or replace the published Stage 4 map. The build change only adds version stamping for its new page. No new art is required: the prototype reuses generated champion selection cutouts, infantry/arbalists, guardian art, crystal shrines and spell textures. Pose bobbing and signature powers are simplified; this is not a champion balance or full native-kit test.
