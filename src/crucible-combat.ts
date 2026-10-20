@@ -6,13 +6,13 @@ import {damageKind,type DamageKind} from './combat-damage.ts';
 import {hagState,hagHexCount,HAG} from './hag.ts';
 import {harvestLife} from './reaper.ts';
 import {fissureMotion} from './titan-fissure.ts';
-import {CRUCIBLE,type Crucible,type CrucibleUnit} from './crucible-sim.ts';
+import {CRUCIBLE,CRUCIBLE_SIEGE,type Crucible,type CrucibleUnit} from './crucible-sim.ts';
 
 // Use the actual champion simulation, including its passives and persistent spells.
 // Only terrain, army orders, economy and damage routing belong to the prototype.
 export class CrucibleBrain extends Game{
  host:Crucible;team:number;mods:CrucibleAugmentRuntime;
- constructor(host:Crucible,team:number){super(host.seed^((team+1)*0x9e3779b9),{monsterId:host.teams[team].monster},3,'throw',true);this.host=host;this.team=team;this.titanKit='fissure';this.floorClearance=(x,y)=>this.host.terrain.clearance(x,y);this.release=4;this.lungeCharges=3;this.damageScale=.75;this.recoveryScale=1;this.cooldowns=[0,0,0,0];this.mods=new CrucibleAugmentRuntime(this);this.mods.apply();}
+ constructor(host:Crucible,team:number){super(host.seed^((team+1)*0x9e3779b9),{monsterId:host.teams[team].monster},3,'throw',true);this.host=host;this.team=team;this.titanKit='fissure';this.floorClearance=(x,y)=>this.host.terrain.clearance(x,y);this.release=4;this.lungeCharges=3;this.damageScale=.75;this.recoveryScale=1;this.cooldowns=[0,0,0,0];this.powers=this.powers.map((p,i)=>({...p,cooldown:p.cooldown*(i===3?CRUCIBLE_SIEGE.ultimateCooldown:CRUCIBLE_SIEGE.regularCooldown)}));this.mods=new CrucibleAugmentRuntime(this);this.mods.apply();}
  override heal(amount:number,recovery=false){super.heal(amount,recovery);const u=this.host?.teams[this.team]?.champion;if(u?.active)u.hp=this.player.hp;}
  override get arenaRadius(){return 100000;}
  override insideMap(x:number,y:number){return this.host.terrain.walkable(x,y);}
@@ -27,10 +27,10 @@ export class CrucibleBrain extends Game{
   if(point&&(Math.hypot(point.x-this.player.x,point.y-this.player.y)>this.hexCastRange||!this.insideMap(point.x,point.y))){this.notice='HEX TARGET OUT OF RANGE OR OUTSIDE WALKABLE FLOOR';this.noticeTime=3;return false;}
   const s=hagState(this);if(this.cooldowns[slot]<=0){let reclaim=Math.max(0,hagHexCount(this)-(HAG.maxTraps-s.traps.length));s.traps=s.traps.filter(trap=>{const offscreen=Math.abs(trap.x-this.player.x)>this.targetView.x+trap.trigger||Math.abs(trap.y-this.player.y)>this.targetView.y+trap.trigger;if(reclaim>0&&offscreen){reclaim--;return false;}return true;});}
   if(s.traps.length>=HAG.maxTraps){this.notice='HEX FIELD FULL · 48 / 48 MINES';this.noticeTime=3;return false;}}
- const t=this.host.teams[this.team],wasReady=this.cooldowns[slot]<=0;
+ const t=this.host.teams[this.team],wasReady=this.cooldowns[slot]<=0,rechargeBefore=this.lungeRecharge;
   this.powers[slot]={...original,radius:original.radius*(1+.1*t.upgrades.reach),...(original.duration&&!['lunge','charge','meteor'].includes(original.effect)?{duration:original.duration*(1+.15*t.upgrades.duration)}:{})};
   const origin={x:this.player.x,y:this.player.y};let success=false;try{success=super.cast(slot,point);}finally{this.powers[slot]=original;}
-  if(success&&wasReady){const factor=1-.08*t.upgrades.haste;this.cooldowns[slot]*=factor;this.lungeRecharge*=factor;}if(success){this.beamPower={...this.beamPower,radius:Math.min(800,this.beamPower.radius)};this.mods.afterCast(original,origin);}return success;
+  if(success&&wasReady){const factor=1-.08*t.upgrades.haste;this.cooldowns[slot]*=factor;if(original.effect==='lunge'&&rechargeBefore<=0)this.lungeRecharge*=factor;}if(success){this.beamPower={...this.beamPower,radius:Math.min(800,this.beamPower.radius)};this.mods.afterCast(original,origin);}return success;
  }
 }
 
@@ -49,7 +49,7 @@ export class CrucibleCombat{
   for(const v of h.units){if(!v.active||v.team===team||Math.abs(v.x-u.x)>1250||Math.abs(v.y-u.y)>1250)continue;live.add(v.id);let proxy=a.proxies.get(v.id);
    if(!proxy){proxy={active:true,kind:v.siege||v.kind==='crystal'?'titan':v.kind==='champion'||v.kind==='captain'?'elite':v.kind==='ranged'?'spitter':'thrall',x:v.x,y:v.y,hp:v.hp,maxHp:v.maxHp,vx:0,vy:0,timer:0,windup:0,flash:0,serial:v.id};
     if(v.kind==='captain')proxy.realm={role:'guardian',shrine:v.team} as Enemy['realm'];
-    proxy.receiveDamage=(amount,source)=>{if(!['haghex','hagflight','hagfrenzy','hagpoison','controlled','summoned'].includes(source)&&(!h.intel.visible(team,v)||Math.hypot(v.x-u.x,v.y-u.y)>800))return 0;if(source==='beam'&&v.team===h.controlled&&(Math.abs(v.x-u.x)>h.viewport.x||Math.abs(v.y-u.y)>h.viewport.y))return 0;const summoned=['controlled','summoned'].includes(source),member=summoned?[...a.summons.values()].filter(actor=>actor.active&&Math.hypot(actor.x-v.x,actor.y-v.y)<150).sort((left,right)=>Math.hypot(left.x-v.x,left.y-v.y)-Math.hypot(right.x-v.x,right.y-v.y))[0]:undefined,actual=h.damage(v,amount,team,false,false,summoned?member:u,damageKind(source,b.monster.basic.ranged),summoned?team:undefined);return actual;};a.proxies.set(v.id,proxy);
+    proxy.receiveDamage=(amount,source)=>{if(!['haghex','hagflight','hagfrenzy','hagpoison','controlled','summoned'].includes(source)&&(!h.intel.visible(team,v)||Math.hypot(v.x-u.x,v.y-u.y)>800))return 0;if(source==='beam'&&v.team===h.controlled&&(Math.abs(v.x-u.x)>h.viewport.x||Math.abs(v.y-u.y)>h.viewport.y))return 0;const summoned=['controlled','summoned'].includes(source),member=summoned?[...a.summons.values()].filter(actor=>actor.active&&Math.hypot(actor.x-v.x,actor.y-v.y)<150).sort((left,right)=>Math.hypot(left.x-v.x,left.y-v.y)-Math.hypot(right.x-v.x,right.y-v.y))[0]:undefined,actual=h.damage(v,amount,team,false,false,summoned?member:u,damageKind(source,b.monster.basic.ranged),summoned?team:undefined,false,!summoned&&!['direct','hagvenom','scythe'].includes(source));return actual;};a.proxies.set(v.id,proxy);
    }
    Object.assign(proxy,{active:true,x:v.x,y:v.y,hp:v.hp,maxHp:v.maxHp,grabbed:v.grabbed||b.grip?.serial===v.id,servantTarget:v.servant});targets.push(proxy);
   }
