@@ -25,7 +25,7 @@ const modules=(await readdir('src')).filter(n=>n.endsWith('.ts')&&!['art-lab.ts'
 await writeFile('dist/boot.js',(await readFile('dist/boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 await writeFile('dist/crucible-boot.js',(await readFile('dist/crucible-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
 await writeFile('dist/map-editor-boot.js',(await readFile('dist/map-editor-boot.js','utf8')).replace('/*__MODULES__*/[]',JSON.stringify(modules)));
-const assets=['./','index.html','stage4.html','test/stage4.html','crucible-boot.js','stage2-test/','stage2-test/index.html','test/','test/index.html','stage3-test/','stage3-test/index.html','boot.js','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
+const assets=['./','index.html','stage4.html','test/stage4.html','crucible-boot.js','crucible.css','stage2-test/','stage2-test/index.html','test/','test/index.html','stage3-test/','stage3-test/index.html','boot.js','style.css','event.css','icon.svg','manifest.webmanifest','verify.html','verify/','verify/index.html','assets/catalog.json','assets/audio/catalog.json',...modules];
 const digest=createHash('sha256');
 async function hashTree(dir){for(const item of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){const path=join(dir,item.name);if(item.isDirectory())await hashTree(path);else if(item.isFile()&&path!==join('dist','sw.js')){digest.update(path);digest.update(await readFile(path));}}}
 await writeFile('dist/robots.txt','User-agent: *\nAllow: /\n');
