@@ -34,6 +34,7 @@ export class CrucibleOrders{
    const foe=h.teams[s.target];if(!foe?.champion.active||foe.eliminated||h.time-s.seenAt>=12)this.change(team,'automatic');
   }
   // Rivals issue orders only from home or recall, using their own shared sight.
+  if(h.strategy?.managesOrders(team))return;
   if(team===h.controlled||h.time<24||h.time<s.npcAt||h.shopLocation(team))return;s.npcAt=h.time+4+h.random()*4;
   const threatened=h.units.some(v=>v.active&&v.team!==team&&!['captain','crystal'].includes(v.kind)&&Math.hypot(v.x-t.crystal.x,v.y-t.crystal.y)<h.baseDomain(team)&&h.intel.visible(team,v));
   if(threatened&&(!t.champion.active||t.crystal.hp<t.crystal.maxHp*.5)){if(s.mode!=='defend')this.set(team,'defend');return;}

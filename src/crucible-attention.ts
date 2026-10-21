@@ -19,6 +19,7 @@ export class CrucibleAttention{
   const alarm=h.unit(s.alarm);if(alarm?.active&&h.time>=s.alarmAt&&this.inView(team,alarm)){this.focus(team,alarm,true);s.alarm=0;s.alarmAt=Infinity;return;}
   if(s.alarm&&(!alarm?.active||!this.inView(team,alarm))){s.alarm=0;s.alarmAt=Infinity;}
   const siege=h.siegeThreat(team);if(siege&&this.inView(team,siege)){if(s.focus!==siege.id)this.focus(team,siege);return;}
+  const strategic=h.strategy?.target(team);if(strategic!==undefined){if(strategic){if(s.focus!==strategic.id)this.focus(team,strategic);}else{s.focus=0;s.visible=false;s.readyAt=Infinity;}return;}
   if(current?.active&&(s.visible||h.time-s.lastSeen<1.25)&&h.time<s.holdUntil)return;
   const broad=h.time>=s.peripheralAt;if(broad)s.peripheralAt=h.time+h.difficultyRules.peripheralMin+h.random()*h.difficultyRules.peripheralSpread;
   const goal=h.teams[h.teams[team].goal]?.crystal||{x:1800,y:1600},dx=goal.x-u.x,dy=goal.y-u.y,d=Math.hypot(dx,dy)||1;
