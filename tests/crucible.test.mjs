@@ -131,7 +131,7 @@ test('all contenders earn passive mana while alive or recalling, but eliminated 
 test('mana kill rewards require actual champion damage; recent participants receive assists',()=>{
  const g=quiet();for(const t of g.teams)t.mana=0;const victim=g.units.find(u=>u.team===2&&u.kind==='infantry'),a=g.teams[0].champion,b=g.teams[1].champion;victim.invuln=0;g.damage(victim,20,0,false,false,a);g.damage(victim,1e6,1,false,false,b);assert.equal(g.teams[0].mana,4);assert.equal(g.teams[1].mana,8);assert.equal(g.teams[3].mana,0);
  const next=g.units.find(u=>u.team===3&&u.kind==='infantry');next.invuln=0;g.damage(next,1e6,0,false,false,g.teams[0].guards[0]);assert.equal(g.teams[0].mana,4);
- const hero=g.teams[4].champion;hero.invuln=0;hero.hp=10;g.damage(hero,1000,0,false,false,a);assert.equal(g.teams[0].mana,154);
+ const hero=g.teams[4].champion;hero.invuln=0;hero.hp=10;g.damage(hero,1000,0,false,false,a);assert.equal(g.teams[0].mana,4+CRUCIBLE_MANA.championKill);
 });
 test('stale, blocked and previous-life contributions cannot generate mana assists',()=>{
  const g=quiet();for(const t of g.teams)t.mana=0;const u=g.units.find(u=>u.team===2&&u.kind==='infantry'),a=g.teams[0].champion;u.invuln=0;g.damage(u,1,0,false,false,a);g.time=11;g.damage(u,1e6,1,false,false,g.teams[1].guards[0]);assert.equal(g.teams[0].mana,0);g.spawn(2);assert.ok(u.contributions.every(v=>v===-Infinity));u.invuln=1;g.damage(u,100,0,false,false,a);assert.equal(u.contributions[0],-Infinity);
@@ -380,4 +380,12 @@ test('results count objective and army kills, apply difficulty and award victory
 
 test('pacing lowers crystal health by difficulty without weakening guardians',()=>{
  for(const [mode,scale] of [['easy',.5],['normal',.7],['hard',.9],['hell',1]]){const g=new Crucible(17,mode);for(const t of g.teams){assert.equal(t.crystal.hp,C.crystalHp*scale);assert.equal(t.crystal.maxHp,t.crystal.hp);assert.ok(t.guards.every(u=>u.hp===C.captainHp&&u.damage>=360));}}
+});
+test('a direct champion kill funds one siege beast or several early upgrades, for player and NPC alike',()=>{
+ for(const team of [0,1]){const g=quiet();g.controlled=0;for(const t of g.teams){t.mana=0;t.earnedMana=0;}const target=g.teams[2].champion;target.hp=1;target.invuln=0;g.damage(target,1e6,team,false,false,g.teams[team].champion);assert.equal(g.teams[team].mana,1000);assert.equal(g.teams[team].earnedMana,1000);place(g.teams[team].champion,g.teams[team].crystal,0);assert.equal(g.purchaseSiege(team),true);assert.equal(g.teams[team].mana,0);assert.ok(g.teams[team].siege.active);}
+ const g=quiet();g.teams[0].mana=0;const target=g.teams[2].champion;target.hp=1;target.invuln=0;g.damage(target,1e6,0,false,false,g.teams[0].champion);place(g.teams[0].champion,g.teams[0].crystal,0);for(const item of ['might','vitality','haste'])assert.equal(g.purchase(0,item),true);assert.equal(g.teams[0].mana,680);
+});
+test('recent champion assists award 500 once while stale and uninvolved teams receive nothing',()=>{
+ const g=quiet();for(const t of g.teams){t.mana=0;t.earnedMana=0;}const target=g.teams[3].champion;target.invuln=0;g.damage(target,100,0,false,false,g.teams[0].champion);target.hp=1;target.invuln=0;g.damage(target,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[0].mana,500);assert.equal(g.teams[1].mana,1000);assert.equal(g.teams[2].mana,0);g.damage(target,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[1].mana,1000);
+ const old=g.teams[4].champion;old.invuln=0;g.damage(old,100,0,false,false,g.teams[0].champion);g.time=11;old.hp=1;old.invuln=0;g.damage(old,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[0].mana,500);assert.equal(g.teams[1].mana,2000);
 });

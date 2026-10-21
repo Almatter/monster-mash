@@ -1,0 +1,9 @@
+import {MONSTERS} from './content-monsters.ts';
+import type {PrestigeTitle} from './content-titles.ts';
+export type TitleCategory='passage'|'area'|'champion-area'|'champion-activity'|'lifetime';
+export const TITLE_CATEGORIES:Record<TitleCategory,string>={passage:'Stage passage',area:'Area titles', 'champion-area':'Champion area titles','champion-activity':'Champion activity titles',lifetime:'Lifetime titles'};
+const AREAS=['Ritual Arena','Ashen Wilds','Titan depths','Horde’s Judgment'];
+export function titleStage(t:PrestigeTitle){if(t.stage!==undefined)return t.stage;for(const [prefix,stage] of [['war',3],['realm',2],['court',1]] as const)if(t.requirements.some(r=>r.metric.startsWith(prefix)))return stage;return null;}
+export type TitleBucket={category:TitleCategory;champion?:string;stage:number|null;label:string;titles:PrestigeTitle[]};
+// Call after visibility filtering: locked stages and champions never create empty/leaking groups.
+export function titleBuckets(titles:PrestigeTitle[]):TitleBucket[]{const buckets=new Map<string,TitleBucket>();for(const t of titles){const champion=t.requirements.find(r=>Object.hasOwn(MONSTERS,r.scope))?.scope,stage=titleStage(t),category:TitleCategory=t.family==='Stage passage'?'passage':champion?(stage!==null?'champion-area':'champion-activity'):stage!==null?'area':'lifetime',label=category==='passage'?'Stage passage':category==='champion-activity'?MONSTERS[champion!].archetype:stage!==null?'Stage '+(stage+1)+' · '+AREAS[stage]:t.family,key=[category,champion,stage,label].join('|');let bucket=buckets.get(key);if(!bucket){bucket={category,champion,stage,label,titles:[]};buckets.set(key,bucket);}bucket.titles.push(t);}const order=Object.keys(TITLE_CATEGORIES);return [...buckets.values()].sort((a,b)=>order.indexOf(a.category)-order.indexOf(b.category)||(a.champion||'').localeCompare(b.champion||'')||(a.stage??0)-(b.stage??0));}

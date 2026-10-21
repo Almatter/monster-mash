@@ -41,7 +41,7 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
  // This historic best was already explicitly restricted to Calamity by the caller.
  const calamity=progress.archetypes.calamity;if((calamity.magic||0)>0&&(progress.best.calamityMulti||0)>0)calamity.masteryBestCalamityMulti=Math.max(calamity.masteryBestCalamityMulti||0,progress.best.calamityMulti);
  awardTitles(progress);
- const profile:Profile={version:3,titanKit:normalizeTitanKit(raw.titanKit),identity,palettes,records,progress,personalBests};identity.colors={...palettes[identity.monsterId]};if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
+ const profile:Profile={version:3,titanKit:normalizeTitanKit(raw.titanKit),identity,palettes,records,progress,personalBests};identity.colors={...palettes[identity.monsterId]};if(identity.title==='The Hell-Crowned'&&progress.titles.warHell)identity.title='Horde Lord';if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
 }
 export function availableTitles(profile:Profile){return [...new Set([...BASE_TITLES,...profile.progress.legacyTitles,...TITLES.filter(t=>profile.progress.titles[t.id]).map(t=>t.name)])];}
 export function loadProfile(storage?:StorageLike):Profile{try{return normalizeProfile(JSON.parse(storage?.getItem('mm-profile')||'null'),storage?.getItem('mm-name')||'');}catch{return normalizeProfile(null);}}
