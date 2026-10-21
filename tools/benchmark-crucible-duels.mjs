@@ -1,0 +1,8 @@
+// Native-kit AI duels isolate combat; they do not estimate human stage win rates.
+import {writeFile} from 'node:fs/promises';
+import {Crucible} from '../src/crucible-sim.ts';
+import {CRUCIBLE_MAP} from '../src/crucible-layout.ts';
+import {MONSTERS} from '../src/content-monsters.ts';
+const map={...CRUCIBLE_MAP,structures:[],zones:[],terrain:{sight:[],slows:[],hazards:[]}},ids=Object.keys(MONSTERS),results=Object.fromEntries(ids.map(id=>[id,{wins:0,losses:0,draws:0,seconds:0}])),rounds=[];
+for(const seed of [17,23,41])for(let a=0;a<8;a++)for(let b=a+1;b<8;b++){const g=new Crucible(seed,'hell',map);for(const u of g.units)u.active=false;for(let team=0;team<8;team++){const t=g.teams[team];t.eliminated=team!==a&&team!==b;t.shopAt=t.wave=t.respawnAt=1e9;t.mana=1000;t.crystal.active=false;t.trapReady=[1e9,1e9,1e9];if(!t.eliminated){Object.assign(t.champion,{active:true,x:2400+(team===a?-140:140),y:2400,invuln:0});g.combat.reset(team);}}g.rebuild();for(let i=0;i<90*20&&g.winner<0;i++)g.step(.05);const winner=g.winner<0?null:ids[g.winner];for(const team of [a,b]){const r=results[ids[team]];r.seconds+=g.time;if(!winner)r.draws++;else if(winner===ids[team])r.wins++;else r.losses++;}rounds.push({seed,a:ids[a],b:ids[b],winner,seconds:Math.round(g.time)});}
+const report={method:'84 seeded 90-second native-kit AI duels, Hell modifiers, no bases/troops/shops/upgrades; both sides use the same AI. Not human win rates or full-match balance.',results,rounds};await writeFile('test-results/crucible-kit-duels.json',JSON.stringify(report,null,2));console.log(JSON.stringify({method:report.method,results},null,2));

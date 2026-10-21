@@ -1,0 +1,32 @@
+# Crucible difficulty and native-kit check
+
+Hell is tougher in configuration, but the shared champion burst safety limits reduce the perceived difference on attacks that already reach the damage ceiling. The differences show more in ordinary hits, sustained combat, aim, reactions, sustain and long sieges.
+
+| Rival setting | Easy | Normal | Hard | Hell |
+| --- | ---: | ---: | ---: | ---: |
+| Raw damage against the controlled champion | 50% | 65% | 80% | 100% |
+| Effective durability multiplier | 65% | 80% | 90% | 100% |
+| Healing/shield sustain while crystal survives | 35% | 55% | 75% | 100% |
+| Earliest notice delay | 1.10 s | 0.85 s | 0.65 s | 0.45 s |
+| Earliest spacing between AI cast attempts | 2.80 s | 2.20 s | 1.65 s | 1.35 s |
+| Aim error | 90 | 60 | 35 | 16 |
+| Explicit miss probability | 35% | 23% | 12% | 6% |
+
+All difficulties preserve the 13% per-hit and 50%-of-health rolling three-second champion burst ceilings against the player. Actual damage below those caps responds to the raw damage multipliers. Hell has no automatic siege escalation; easier modes gradually ease supported sieges. These values describe the code, not an independently validated human skill benchmark.
+
+## Controlled native-kit duels
+
+Reproduce with `node tools/benchmark-crucible-duels.mjs`. Three seeds (17, 23, 41), all 28 pairings: 84 duels total, 21 appearances per champion. Both sides use the same AI with Hell modifiers. Full native kits, 1,000 starting mana, a 90-second round limit, no upgrades, minions, bases, shops, terrain or traps placed before the duel. Starting separation is 280 world units. This is a close-combat diagnostic, not player win rates or full-stage balance. Removing armies and preparation especially limits summoners and trappers.
+
+| Champion | Wins | Losses | Draws |
+| --- | ---: | ---: | ---: |
+| Lycanthrope | 20 | 1 | 0 |
+| Titan | 17 | 4 | 0 |
+| Calamity | 15 | 6 | 0 |
+| Sovereign | 13 | 8 | 0 |
+| Devourer | 9 | 12 | 0 |
+| Reaper | 7 | 14 | 0 |
+| Overlord | 3 | 18 | 0 |
+| Hag | 0 | 21 | 0 |
+
+This flags strong close-range performance from Lycanthrope and Titan; the ranged Calamity also performs strongly. Devourer is not universally dominant in these duels. His recovery, melee basic attacks and ability to maintain combat pressure can still make an efficient human-led siege run forgiving. A nine-minute clear alone cannot establish a full-match melee advantage. The next meaningful balance study should compare whole-map participation, objective contribution, mana generation, recall cycles and outcomes across champions with a consistent player-control model, then validate against real player runs.
