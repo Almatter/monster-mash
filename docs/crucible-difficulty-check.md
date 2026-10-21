@@ -30,3 +30,10 @@ Reproduce with `node tools/benchmark-crucible-duels.mjs`. Three seeds (17, 23, 4
 | Hag | 0 | 21 | 0 |
 
 This flags strong close-range performance from Lycanthrope and Titan; the ranged Calamity also performs strongly. Devourer is not universally dominant in these duels. His recovery, melee basic attacks and ability to maintain combat pressure can still make an efficient human-led siege run forgiving. A nine-minute clear alone cannot establish a full-match melee advantage. The next meaningful balance study should compare whole-map participation, objective contribution, mana generation, recall cycles and outcomes across champions with a consistent player-control model, then validate against real player runs.
+
+
+### Opportunistic crystal finishes (Hell)
+
+Hell rivals now evaluate visible nearby crystals while their owners are recalling. A finish may override retreat, shopping and escort preferences when the rival still has a living crystal of its own, can finish before the defender returns, and can survive long enough to land the finishing damage. The calculation includes current crystal health and wards, unsupported siege mitigation, basic attack cadence, affordable ready direct spells or a discounted beam window, current health/shield and base retaliation timers. It does not require surviving afterward or waiting for a full escort. The decision is revisited on attention scans, keeps normal noticing delays and vision restrictions, and does not change damage or defenses. Other difficulties retain their cautious policy.
+
+Regression tests cover native combat finishing despite a retreat plan, rejected suicidal failures, mana/cooldown limits, fog and line of sight, defender return and loss of the attacker's respawn crystal. Guardian/crystal retaliation now also clears immediately when the protected champion dies, returning to the closest eligible target; an already fired projectile may still arrive afterward.

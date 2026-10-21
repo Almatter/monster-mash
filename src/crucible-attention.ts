@@ -1,11 +1,12 @@
 import type {Crucible,CrucibleUnit} from './crucible-sim.ts';
+import {crystalDive} from './crucible-dive.ts';
 
 type Point={x:number;y:number};
-export type Attention={focus:number;mode:'lane'|'rival'|'base';intent:'lane'|'rival'|'base';intentUntil:number;point:Point;readyAt:number;scanAt:number;aimAt:number;holdUntil:number;lastSeen:number;visible:boolean;peripheralAt:number;alarm:number;alarmAt:number};
+export type Attention={dive:number;focus:number;mode:'lane'|'rival'|'base';intent:'lane'|'rival'|'base';intentUntil:number;point:Point;readyAt:number;scanAt:number;aimAt:number;holdUntil:number;lastSeen:number;visible:boolean;peripheralAt:number;alarm:number;alarmAt:number};
 export class CrucibleAttention{
  host:Crucible;states:Attention[]=[];
  constructor(host:Crucible){this.host=host;for(let i=0;i<8;i++)this.reset(i);}
- reset(team:number){const u=this.host.teams[team].champion;this.states[team]={focus:0,mode:'lane',intent:'lane',intentUntil:0,point:{x:u.x,y:u.y},readyAt:Infinity,scanAt:0,aimAt:0,holdUntil:0,lastSeen:0,visible:false,peripheralAt:this.host.time+.7+this.host.random(),alarm:0,alarmAt:Infinity};}
+ reset(team:number){const u=this.host.teams[team].champion;this.states[team]={dive:0,focus:0,mode:'lane',intent:'lane',intentUntil:0,point:{x:u.x,y:u.y},readyAt:Infinity,scanAt:0,aimAt:0,holdUntil:0,lastSeen:0,visible:false,peripheralAt:this.host.time+.7+this.host.random(),alarm:0,alarmAt:Infinity};}
  view(team:number){const u=this.host.teams[team].champion,half=this.host.viewport;return {x:u.x,y:u.y-half.y*.14,halfX:half.x,halfY:half.y};}
  inView(team:number,point:Point){if(!this.host.intel.visible(team,point))return false;const v=this.view(team);return Math.abs(point.x-v.x)<=v.halfX&&Math.abs(point.y-v.y)<=v.halfY;}
  attacked(team:number,source:CrucibleUnit){if(this.host.controlled===team||!this.inView(team,source))return;const s=this.states[team];if(s.focus===source.id||s.alarm===source.id)return;s.alarm=source.id;s.alarmAt=this.host.time+this.host.difficultyRules.noticeMin+this.host.random()*this.host.difficultyRules.noticeSpread;}
@@ -13,6 +14,8 @@ export class CrucibleAttention{
   const current=h.unit(s.focus);s.visible=!!current?.active&&this.inView(team,current);
   if(s.visible&&current){s.lastSeen=h.time;if(h.time>=s.aimAt){s.point=this.sample(current);s.aimAt=h.time+h.difficultyRules.aimMin+h.random()*h.difficultyRules.aimSpread;}}
   if(h.time<s.scanAt)return;s.scanAt=h.time+h.difficultyRules.scanMin+h.random()*h.difficultyRules.scanSpread;
+  const dive=crystalDive(h,team);s.dive=dive?.target.id||0;
+  if(dive){if(s.focus!==dive.target.id)this.focus(team,dive.target);return;}
   const alarm=h.unit(s.alarm);if(alarm?.active&&h.time>=s.alarmAt&&this.inView(team,alarm)){this.focus(team,alarm,true);s.alarm=0;s.alarmAt=Infinity;return;}
   if(s.alarm&&(!alarm?.active||!this.inView(team,alarm))){s.alarm=0;s.alarmAt=Infinity;}
   const siege=h.siegeThreat(team);if(siege&&this.inView(team,siege)){if(s.focus!==siege.id)this.focus(team,siege);return;}
@@ -33,6 +36,7 @@ export class CrucibleAttention{
  }
  private sample(p:Point){const a=this.host.random()*Math.PI*2,r=this.host.random()*this.host.difficultyRules.aimError;return {x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r};}
  private focus(team:number,u:CrucibleUnit,alreadyNoticed=false){const s=this.states[team],h=this.host;s.focus=u.id;s.mode=u.kind==='champion'?'rival':u.kind==='captain'||u.kind==='crystal'?'base':'lane';if(alreadyNoticed){s.intent=s.mode;s.intentUntil=h.time+3;}s.point=this.sample(u);s.visible=true;s.lastSeen=h.time;s.readyAt=h.time+(alreadyNoticed?0:this.host.difficultyRules.noticeMin+h.random()*this.host.difficultyRules.noticeSpread);s.holdUntil=h.time+h.difficultyRules.focusMin+h.random()*h.difficultyRules.focusSpread;s.aimAt=h.time+h.difficultyRules.aimMin+h.random()*h.difficultyRules.aimSpread;}
+ diving(team:number){const s=this.states[team],target=this.host.unit(s.dive);return !!target?.active&&s.focus===target.id&&this.host.difficulty==='hell'&&this.host.teams[team].crystal.active&&!this.host.teams[target.team].champion.active&&this.host.teams[target.team].respawnAt>this.host.time&&this.targetable(team,target.id);}
  targetable(team:number,id:number){const s=this.states[team];return s.focus===id&&s.visible&&this.host.time>=s.readyAt;}
  target(team:number){this.update(team);const s=this.states[team];return this.targetable(team,s.focus)?this.host.unit(s.focus):undefined;}
  aim(team:number){const s=this.states[team];return s.focus&&s.visible&&this.host.time>=s.readyAt?{...s.point}:null;}

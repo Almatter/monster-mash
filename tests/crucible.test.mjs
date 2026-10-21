@@ -389,3 +389,27 @@ test('recent champion assists award 500 once while stale and uninvolved teams re
  const g=quiet();for(const t of g.teams){t.mana=0;t.earnedMana=0;}const target=g.teams[3].champion;target.invuln=0;g.damage(target,100,0,false,false,g.teams[0].champion);target.hp=1;target.invuln=0;g.damage(target,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[0].mana,500);assert.equal(g.teams[1].mana,1000);assert.equal(g.teams[2].mana,0);g.damage(target,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[1].mana,1000);
  const old=g.teams[4].champion;old.invuln=0;g.damage(old,100,0,false,false,g.teams[0].champion);g.time=11;old.hp=1;old.invuln=0;g.damage(old,1000,1,false,false,g.teams[1].champion);assert.equal(g.teams[0].mana,500);assert.equal(g.teams[1].mana,2000);
 });
+
+
+test('a champion death immediately releases guardian and crystal retaliation to nearest targets',()=>{
+ const g=quiet(),t=g.teams[0],attacker=g.teams[1].champion,closer=g.units.find(u=>u.team===2&&u.kind==='infantry');
+ place(t.champion,t.crystal,0);place(attacker,t.crystal,160);place(closer,t.crystal,30);
+ place(t.guards[0],t.crystal,-40);place(t.guards[1],t.crystal,40);
+ only(g,[t.champion,attacker,closer,t.crystal,...t.guards]);
+ g.damage(t.champion,1,1,false,false,attacker);
+ for(const defense of [...t.guards,t.crystal])assert.equal(g.target(defense),attacker,'live champion protection overrides closer minions');
+ g.damage(t.champion,1e6,1,false,false,attacker,'aoe',undefined,true);
+ assert.equal(t.champion.active,false);assert.equal(t.defendTarget,0);
+ for(const defense of [...t.guards,t.crystal]){
+  assert.equal(defense.think,0,'reconsider immediately rather than retaining the killer');
+  assert.equal(g.target(defense),closer,'return to nearest eligible enemy with no champion bias');
+ }
+});
+
+test('a dead champion cannot leave an old retaliation priority even with a stale saved target',()=>{
+ const g=quiet(),t=g.teams[0],attacker=g.teams[1].champion,closer=g.units.find(u=>u.team===2&&u.kind==='infantry');
+ place(attacker,t.crystal,160);place(closer,t.crystal,30);
+ only(g,[attacker,closer,t.crystal]);
+ t.defendTarget=attacker.id;t.defendUntil=g.time+4;
+ assert.equal(g.target(t.crystal),closer);
+});
