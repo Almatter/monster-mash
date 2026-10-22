@@ -18,7 +18,7 @@ export const THEMES:Record<ThemeId,Theme>={
  'titan-realm':{bpm:86,bars:16,mode:'E suspended / dream bells and displaced 3+2+3 pulse',roots:repeat([40,41,40,46,40,38,41,40],16),third:repeat([2,2,2,3,2,2,2,2],16),motif:[0,1,6,7,13,6,2,12],drums:[0,1.5,2.5],bass:[0,2.5],texture:'dream'}
 };
 export const MUSIC={sampleRate:22050,layers:['drone / harmony','character bass','character percussion','signature motif','Carnage counterline','Unbound and Final Release','Titan threat / results cadence']} as const;
-const MIX:Record<MusicState,number[]>={menu:[.72,.35,.22,.58,0,0,.08],combat:[.65,.8,.75,.72,0,0,0],escalation:[.7,.86,.88,.84,.55,.12,0],unbound:[.7,.95,.94,.9,.72,.7,0],final:[.74,1,1,.95,.9,1,.18],titan:[.75,.95,.96,.82,.63,.72,.9],results:[.55,0,0,.13,0,0,.5],boon:[0,0,0,0,0,0,0]};
+const MIX:Record<MusicState,number[]>={menu:[.72,.35,.22,.58,0,0,.08],combat:[.65,.8,.75,.72,0,0,0],escalation:[.7,.86,.88,.84,.55,.12,0],unbound:[.7,.95,.94,.9,.72,.7,0],final:[.74,1,1,.95,.9,1,.18],titan:[.75,.95,.96,.82,.63,.72,.9],results:[.55,0,0,.13,0,0,.5],defeat:[.62,0,0,0,0,0,.58],boon:[0,0,0,0,0,0,0]};
 function midiFrequency(midi:number){return 440*2**((midi-69)/12);}
 // Each bar yields to the browser. All notes are authored or selected from a fixed motif;
 // seven buffers/sources are reused through every intensity change in a run.

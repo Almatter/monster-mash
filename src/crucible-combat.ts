@@ -1,3 +1,4 @@
+import {damageDetail} from './crucible-deaths.ts';
 import {Game,type Enemy,type Input} from './simulation.ts';
 import {MONSTERS} from './content-monsters.ts';
 import {CrucibleAugmentRuntime} from './crucible-augments.ts';
@@ -52,7 +53,7 @@ export class CrucibleCombat{
   for(const v of h.units){if(!v.active||v.team===team||Math.abs(v.x-u.x)>1250||Math.abs(v.y-u.y)>1250)continue;live.add(v.id);let proxy=a.proxies.get(v.id);
    if(!proxy){proxy={active:true,kind:v.siege||v.kind==='crystal'?'titan':v.kind==='champion'||v.kind==='captain'?'elite':v.kind==='ranged'?'spitter':'thrall',x:v.x,y:v.y,hp:v.hp,maxHp:v.maxHp,vx:0,vy:0,timer:0,windup:0,flash:0,serial:v.id};
     if(v.kind==='captain')proxy.realm={role:'guardian',shrine:v.team} as Enemy['realm'];
-    proxy.receiveDamage=(amount,source)=>{if(!['haghex','hagflight','hagfrenzy','hagpoison','controlled','summoned'].includes(source)&&(!h.intel.visible(team,v)||Math.hypot(v.x-u.x,v.y-u.y)>800))return 0;if(source==='beam'&&v.team===h.controlled&&(Math.abs(v.x-u.x)>h.viewport.x||Math.abs(v.y-u.y)>h.viewport.y))return 0;const summoned=['controlled','summoned'].includes(source),member=summoned?[...a.summons.values()].filter(actor=>actor.active&&Math.hypot(actor.x-v.x,actor.y-v.y)<150).sort((left,right)=>Math.hypot(left.x-v.x,left.y-v.y)-Math.hypot(right.x-v.x,right.y-v.y))[0]:undefined,actual=h.damage(v,amount,team,false,false,summoned?member:u,damageKind(source,b.monster.basic.ranged),summoned?team:undefined,false,!summoned&&!['direct','hagvenom','scythe'].includes(source),!summoned&&['direct','hagvenom','scythe'].includes(source));return actual;};a.proxies.set(v.id,proxy);
+    proxy.receiveDamage=(amount,source)=>{if(!['haghex','hagflight','hagfrenzy','hagpoison','controlled','summoned'].includes(source)&&(!h.intel.visible(team,v)||Math.hypot(v.x-u.x,v.y-u.y)>800))return 0;if(source==='beam'&&v.team===h.controlled&&(Math.abs(v.x-u.x)>h.viewport.x||Math.abs(v.y-u.y)>h.viewport.y))return 0;const summoned=['controlled','summoned'].includes(source),member=summoned?[...a.summons.values()].filter(actor=>actor.active&&Math.hypot(actor.x-v.x,actor.y-v.y)<150).sort((left,right)=>Math.hypot(left.x-v.x,left.y-v.y)-Math.hypot(right.x-v.x,right.y-v.y))[0]:undefined,actual=h.damage(v,amount,team,false,false,summoned?member:u,damageKind(source,b.monster.basic.ranged),summoned?team:undefined,false,!summoned&&!['direct','hagvenom','scythe'].includes(source),!summoned&&['direct','hagvenom','scythe'].includes(source),damageDetail(source,b.monster.basic.name,b.powers));return actual;};a.proxies.set(v.id,proxy);
    }
    Object.assign(proxy,{active:true,x:v.x,y:v.y,hp:v.hp,maxHp:v.maxHp,grabbed:v.grabbed||b.grip?.serial===v.id,servantTarget:v.servant});targets.push(proxy);
   }

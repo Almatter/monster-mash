@@ -26,6 +26,11 @@ function design(kind:string):Design{
 }
 function hash(value:string){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
+ if(kind.startsWith('defeat.')){
+  const root:Record<string,number>={titan:43,devourer:48,calamity:57,overlord:52,sovereign:50,reaper:54,lycanthrope:47,hag:48},tonic=root[kind.slice(7)]||50,rate=context.sampleRate,buffer=context.createBuffer(1,rate*3,rate),data=buffer.getChannelData(0);
+  for(const [offset,start,duration] of [[12,0,.65],[10,.5,.7],[7,1,.8],[3,1.55,1.1],[0,1.8,1.2],[-12,1.8,1.2]]){const hz=440*2**((tonic+offset-69)/12);for(let i=0,n=Math.floor(duration*rate);i<n;i++){const t=i/rate,p=i/n,index=Math.round(start*rate)+i;if(index<data.length)data[index]+=(Math.sin(2*Math.PI*hz*t)+.2*Math.sin(4*Math.PI*hz*t))*Math.sin(Math.PI*p)**1.4*.17;}}
+  return buffer;
+ }
  if(kind==='victory'){
   const buffer=context.createBuffer(1,Math.ceil(3.6*context.sampleRate),context.sampleRate),data=buffer.getChannelData(0),rate=context.sampleRate;
   // A rising brass-like call resolves into a sustained D-major coronation chord.

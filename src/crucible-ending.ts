@@ -1,0 +1,21 @@
+import {MONSTERS} from './content-monsters.ts';
+import type {Identity} from './identity.ts';
+
+const ENDINGS:Record<string,{action:string;speech:string;fall:string}>={
+ titan:{action:'The Titan plants both fists in the broken stone. The kneeling horde feels the answer through the earth: its new lord will bear the weight of the invasion and break whatever stands before it.',speech:'Stand with me. Let their walls learn to fall.',fall:'Even a mountain can fall. The earth closes over your broken claim.'},
+ devourer:{action:'The Devourer raises its bloodied maw, and the lesser beasts lower theirs. There is no coronation feast. Across the sea waits a continent that has not yet learned to fear its hunger.',speech:'Across the sea. There is more.',fall:'Your jaws close on nothing. For once, the hunger of another proves greater.'},
+ calamity:{action:'The Calamity lifts one hand. The last sparks of the battlefield rise into a terrible constellation, and the horde falls silent beneath it. Their new lord accepts command as a promise of disasters still to come.',speech:'Let them mistake winter for shelter.',fall:'Your last spell gutters out. The storm passes into other hands.'},
+ overlord:{action:'The Overlord extends a hand, and every banner bows. Living monsters and restless dead answer the same command. Victory has made an army of the rival hordes, and their ruler will tolerate no second will.',speech:'One horde. One will. Mine.',fall:'Your command is broken. The ranks you once ruled turn toward another voice.'},
+ sovereign:{action:'The Sovereign accepts the mantle as though it had always belonged to them. A measured bow acknowledges the surviving legions; the raised crown demands their obedience. Beyond the sea, another continent awaits its ruler.',speech:'Kneel now. The world will follow.',fall:'The crown slips from your grasp. Another will claim the obedience you demanded.'},
+ reaper:{action:'The Reaper lowers the blade. For a moment, even the dead are still. Then the horde kneels, accepting a lord who knows the price of every life in its keeping—and every life the invasion will take.',speech:'Every crown casts a shadow. Walk in mine.',fall:'Your blade falls silent. This time, you stand among the souls being gathered.'},
+ lycanthrope:{action:'The Lycanthrope throws back her head and howls. The answer rolls through eight broken armies until they sound like one pack. She accepts their loyalty with bared claws and a promise that none will hunt alone.',speech:'Stay with the pack. We hunt beyond the sea.',fall:'Your howl fades beneath the answering cries. The pack must follow another hunter.'},
+ hag:{action:'The Hag smooths her ruined finery and offers the horde a graceful curtsy. Her beautiful smile hides the teeth beneath it. The monsters swear themselves to their new lady, and she accepts each oath as a delicious, binding bargain.',speech:'Be good, my darlings. Winter has so much to give.',fall:'Your glamour breaks, and no bargain buys this moment back.'}
+};
+export function crucibleEnding(identity:Identity,victory:boolean,winner?:string){
+ const entry=ENDINGS[identity.monsterId],name=[identity.name,identity.title].filter(Boolean).join(', ');
+ if(victory)return {heading:'THE MANTLE IS YOURS',claim:name+' is acknowledged as the undisputed Lord of the Horde.',body:entry.action,speech:'“'+entry.speech+'”',future:'This winter, your legions of monsters will cross the sea to invade the Second Continent. The ritual forged your claim. The hunts proved your strength. Now the horde marches under your command.',again:'Fight again'};
+ const victor=winner&&MONSTERS[winner]?'The '+MONSTERS[winner].archetype:'Another champion';
+ return {heading:'CHAOS KEEPS ITS DUE',claim:name+' falls. '+entry.fall,body:victor+(winner?' takes':' will take')+' the mantle and will lead the horde against the Second Continent this winter. Your power and sacrifice feed the victor and the legions that march on.',speech:'',future:'Chaos has not promised that this is your final end. Will you rise again when it calls?',again:'Rise again'};
+}
+
+export function crucibleMusicState(survivors:number,finished=false,victory=false){return finished?(victory?'results':'defeat'):survivors===2?'final':'combat';}

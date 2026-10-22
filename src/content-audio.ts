@@ -13,6 +13,7 @@ export const CUES:Record<string,Cue>={
  defeat:{bus:'sfx',priority:8,gap:1},wave:{bus:'sfx',priority:3,gap:2,frequency:330,duration:.25},
  ultimateStart:{bus:'sfx',priority:6,gap:.5,frequency:110,duration:.45},ultimateImpact:{bus:'sfx',priority:7,gap:.4},meteorImpact:{bus:'sfx',priority:5,gap:.3}
 };
+for(const id of Object.keys(MONSTERS))CUES['defeat.'+id]={bus:'ui',priority:10,gap:2,duration:3,gain:1.2};
 for(const kind of ['thrall','hound','wing','spitter'])CUES['enemyDeath.'+kind]={...CUES.enemyDeath};
 export const isDeathCue=(kind:string)=>kind==='enemyDeath'||kind.startsWith('enemyDeath.')||['heavyDeath','eliteDeath','titanDeath','defeat'].includes(kind);
 export const isFissureCue=(kind:string)=>kind==='ability.faultline'||kind.startsWith('fissure.');
@@ -24,7 +25,7 @@ CUES['ability.faultline']={bus:'sfx',priority:5,gap:.15,gain:1.1};
 CUES['fissure.rumble']={bus:'sfx',priority:2,gap:.48,gain:.48};
 CUES['fissure.hit']={bus:'sfx',priority:3,gap:.48,gain:.85};
 for(const m of Object.values(MONSTERS))CUES['basic.'+m.id]={bus:'sfx',priority:1,gap:.15,...(m.basic.ranged?{frequency:m.id==='calamity'?290:220,duration:.07}:{})};
-export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'results'|'boon';
+export type MusicState='menu'|'combat'|'escalation'|'unbound'|'final'|'titan'|'results'|'defeat'|'boon';
 export type AudioCatalog={sfx?:Record<string,string[]>;music?:Partial<Record<MusicState,{file:string;loopStart?:number;loopEnd?:number}>>};
 
 CUES.colossusArrival={bus:'sfx',priority:10,gap:5};CUES.realmTeleport={bus:'sfx',priority:5,gap:.2};CUES.wolfLanding={bus:'sfx',priority:5,gap:.2};
