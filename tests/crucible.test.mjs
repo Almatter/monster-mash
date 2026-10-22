@@ -391,25 +391,25 @@ test('recent champion assists award 500 once while stale and uninvolved teams re
 });
 
 
-test('a champion death immediately releases guardian and crystal retaliation to nearest targets',()=>{
- const g=quiet(),t=g.teams[0],attacker=g.teams[1].champion,closer=g.units.find(u=>u.team===2&&u.kind==='infantry');
+test('a champion kill keeps guardian and crystal retaliation until the attacker exits',()=>{
+ const g=quiet(),t=g.teams[0],attacker=g.teams.find(v=>v.monster==='lycanthrope').champion,closer=g.units.find(u=>u.team===2&&u.kind==='infantry');
  place(t.champion,t.crystal,0);place(attacker,t.crystal,160);place(closer,t.crystal,30);
  place(t.guards[0],t.crystal,-40);place(t.guards[1],t.crystal,40);
  only(g,[t.champion,attacker,closer,t.crystal,...t.guards]);
- g.damage(t.champion,1,1,false,false,attacker);
- for(const defense of [...t.guards,t.crystal])assert.equal(g.target(defense),attacker,'live champion protection overrides closer minions');
- g.damage(t.champion,1e6,1,false,false,attacker,'aoe',undefined,true);
- assert.equal(t.champion.active,false);assert.equal(t.defendTarget,0);
- for(const defense of [...t.guards,t.crystal]){
-  assert.equal(defense.think,0,'reconsider immediately rather than retaining the killer');
-  assert.equal(g.target(defense),closer,'return to nearest eligible enemy with no champion bias');
- }
+ g.damage(t.champion,1,attacker.team,false,false,attacker);
+ g.damage(t.champion,1e6,attacker.team,false,false,attacker,'aoe',undefined,true);
+ assert.equal(t.champion.active,false);assert.equal(t.defendTarget,attacker.id);
+ g.time+=20;
+ for(const defense of [...t.guards,t.crystal])assert.equal(g.target(defense),attacker,'killer remains priority over closer minions after death and time');
+ attacker.x=t.crystal.x+C.defenseRadius+20;g.rebuild();
+ for(const defense of [...t.guards,t.crystal])assert.equal(g.target(defense),closer,'exit resets priority');
+ place(attacker,t.crystal,160);g.rebuild();
+ for(const defense of [...t.guards,t.crystal])assert.equal(g.target(defense),closer,'re-entry without attacking does not restore priority');
 });
 
-test('a dead champion cannot leave an old retaliation priority even with a stale saved target',()=>{
+test('dead attackers immediately release base retaliation to the nearest enemy',()=>{
  const g=quiet(),t=g.teams[0],attacker=g.teams[1].champion,closer=g.units.find(u=>u.team===2&&u.kind==='infantry');
- place(attacker,t.crystal,160);place(closer,t.crystal,30);
- only(g,[attacker,closer,t.crystal]);
- t.defendTarget=attacker.id;t.defendUntil=g.time+4;
- assert.equal(g.target(t.crystal),closer);
+ place(t.champion,t.crystal,0);place(attacker,t.crystal,160);place(closer,t.crystal,30);
+ only(g,[t.champion,attacker,closer,t.crystal]);g.damage(t.champion,1,1,false,false,attacker);
+ attacker.active=false;assert.equal(g.target(t.crystal),closer);assert.equal(t.defendTarget,0);
 });

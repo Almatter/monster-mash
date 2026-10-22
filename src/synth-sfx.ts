@@ -26,6 +26,8 @@ function design(kind:string):Design{
 }
 function hash(value:string){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
+ if(CUES[kind]?.bus==='ui'&&CUES[kind].frequency){const cue=CUES[kind],duration=cue.duration||.08,buffer=context.createBuffer(1,Math.ceil(duration*context.sampleRate),context.sampleRate),data=buffer.getChannelData(0);let phase=0;for(let i=0;i<data.length;i++){const p=i/data.length;phase+=Math.PI*2*cue.frequency!*(1+p*.18)/context.sampleRate;data[i]=Math.sin(phase)*Math.sin(Math.PI*p)*Math.exp(-p*3)*.5;}return buffer;}
+
  const base=design(kind),devourerBasic=kind==='basic.devourer',organic=isOrganicCue(kind),death=isDeathCue(kind),style=base.style,duration=base.duration*(organic?[.84,.93,1,1.08,1.16][variant%5]:1),pitch=base.pitch*(organic?1+((variant*7)%11-5)*(death?.022:.014):1),weight=base.weight,rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));
  const buffer=context.createBuffer(1,length,rate),samples=buffer.getChannelData(0);
  let seed=hash(kind)+variant*91891,phase=0,subPhase=0,low=0,lowSlow=0,drift=0,delay=0,peak=0;

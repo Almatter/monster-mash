@@ -1,6 +1,7 @@
 import {ABILITIES,MONSTERS} from './content-monsters.ts';
 export type Cue={bus:'sfx'|'ui';priority:number;gap:number;frequency?:number;duration?:number;gain?:number};
 export const CUES:Record<string,Cue>={
+ hover:{bus:'ui',priority:2,gap:.08,frequency:460,duration:.055,gain:.45},
  menu:{bus:'ui',priority:3,gap:.08,frequency:520,duration:.08},confirm:{bus:'ui',priority:4,gap:.1,frequency:680,duration:.13},
  heal:{bus:'sfx',priority:3,gap:.4,frequency:460,duration:.16},shield:{bus:'sfx',priority:3,gap:.5,frequency:760,duration:.2},
  hurt:{bus:'sfx',priority:4,gap:.25},lowHealth:{bus:'sfx',priority:6,gap:6},

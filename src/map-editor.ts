@@ -1,3 +1,5 @@
+import {AudioEngine} from './audio.ts';
+import {bindUIAudio} from './ui-audio.ts';
 import {BUILD_VERSION} from './config.ts';
 import {localStageTest} from './local-stage-test.ts';
 import {loadProfile} from './profile.ts';
@@ -159,3 +161,5 @@ $('new-turret').onclick=()=>{if(!warMap())return;ensureMapSentries(doc);if(doc.s
 $('new-route').onclick=()=>{if(!warMap())return;if(doc.decks.length>=100){message('This map supports up to 100 centerlines. Edit an existing route or remove an unused one.');return;}checkpoint();const x=(w/2-ox)/zoom,y=(h/2-oy)/zoom,id='army-route-'+Date.now();doc.decks.push([id,false,[[x-30,y],[x+30,y]],[[x,y],[x,y],[x,y]]]);selected=id;layer='route';tool='edit';select('layer').value=layer;select('tool').value=tool;refresh();saved();message('Drag both endpoints onto existing route points to join the network. Add bends with Insert point. This line does not add floor.');};
 
 $('new-terrain').onclick=()=>{if(!layer.startsWith('terrain-'))return;checkpoint();doc.terrain??={sight:[],slows:[],hazards:[]};const x=(w/2-ox)/zoom,y=(h/2-oy)/zoom,id='terrain-'+Date.now(),area:any={id,name:layer==='terrain-sight'?'Sight blocker':layer==='terrain-slow'?'Slowing ground':'Damage area',points:[[x-25,y-25],[x+25,y-25],[x+25,y+25],[x-25,y+25]]};if(layer==='terrain-slow')area.factor=.6;if(layer==='terrain-hazard')area.dps=20;doc.terrain[terrainKind()].push(area);selected=id;tool='edit';select('tool').value=tool;refresh();saved();};
+
+bindUIAudio(new AudioEngine());
