@@ -16,7 +16,7 @@ test('defeat feeds the victor and asks the player whether they will rise again, 
  const identity=createIdentity({monsterId:'hag',name:'Thorn Queen',title:'Hag Grandmaster'}),unresolved=crucibleEnding(identity,false),resolved=crucibleEnding(identity,false,'titan');
  assert.match(unresolved.claim,/Thorn Queen, Hag Grandmaster/);assert.match(unresolved.body,/Another champion will take/);assert.match(unresolved.body,/power and sacrifice feed/);assert.match(resolved.body,/The Titan takes/);assert.match(resolved.future,/Will you rise again.*\?/);assert.equal(resolved.again,'Rise again');
 });
-test('two remaining claimants change only the score intensity, while defeat has its own music state',()=>{
+test('two remaining claimants select the final duel music, while defeat has its own music state',()=>{
  for(const n of [8,7,3])assert.equal(crucibleMusicState(n),'combat');assert.equal(crucibleMusicState(2),'final');assert.equal(crucibleMusicState(1,true,true),'results');assert.equal(crucibleMusicState(4,true,false),'defeat');
 });
 test('Hell uses real native attack and ultimate frames, then settles on the high-resolution portrait; reduced motion stays still',()=>{

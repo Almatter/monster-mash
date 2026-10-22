@@ -1,9 +1,10 @@
 import type {MusicState} from './content-audio.ts';
-export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper'|'titan-realm'|'lycanthrope'|'hag'|'throne-war';
+export type ThemeId='menu'|'sovereign'|'overlord'|'titan'|'devourer'|'calamity'|'ashen-wilds'|'boon'|'reaper'|'titan-realm'|'lycanthrope'|'hag'|'throne-war'|'throne-duel';
 type Theme={bpm:number;bars:number;mode:string;roots:number[];third:number[];motif:number[];drums:number[];bass:number[];texture:'bells'|'choir'|'hammer'|'breath'|'arcane'|'dulcimer'|'desert'|'dream'};
 const repeat=(bars:number[],count:number)=>Array.from({length:count},(_,i)=>bars[i%bars.length]);
 export const THEMES:Record<ThemeId,Theme>={
  hag:{bpm:116,bars:16,mode:'C harmonic minor / thorn-waltz glamour',roots:repeat([36,32,43,35,36,39,32,35],16),third:repeat([3,4,3,4],16),motif:[0,7,1,12,8,7,3,1],drums:[0,1.5,3],bass:[0,2.5],texture:'bells'},
+ 'throne-duel':{bpm:156,bars:16,mode:'F sharp harmonic minor / last-claimant reckoning',roots:repeat([42,42,38,37,42,45,38,37],16),third:repeat([3,3,4,4],16),motif:[0,1,7,12,10,7,3,1],drums:[0,.5,1,1.5,2,2.5,3,3.5],bass:[0,.75,1.5,2,2.75,3.5],texture:'choir'},
  'throne-war':{bpm:128,bars:16,mode:'D minor / eight-banner war march',roots:repeat([38,41,36,38,34,43,36,33],16),third:repeat([3,4,3,3],16),motif:[0,7,12,7,3,5,10,7],drums:[0,1,2.5,3],bass:[0,1.5,2,3],texture:'hammer'},
  'ashen-wilds':{bpm:112,bars:16,mode:'D Phrygian dominant / desert pursuit',roots:repeat([38,39,38,36,38,43,39,38],16),third:repeat([4,4,4,3,4,3,4,4],16),motif:[0,1,4,7,8,7,4,1],drums:[0,1.5,2,3.5],bass:[0,2.5],texture:'desert'},
  menu:{bpm:104,bars:16,mode:'D natural minor / festival modal',roots:repeat([38,34,43,36,38,41,36,33],16),third:repeat([3,4,3,4,3,4,4,4],16),motif:[0,7,3,12,7,3,5,0],drums:[0,2.5],bass:[0,2],texture:'dulcimer'},
@@ -25,9 +26,10 @@ function midiFrequency(midi:number){return 440*2**((midi-69)/12);}
 export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,themeId:ThemeId='menu'):Promise<Float32Array>{
  const theme=THEMES[themeId],beat=60/theme.bpm,total=theme.bars*4*beat,data=new Float32Array(Math.ceil(total*sampleRate));let seed=9137+layer*7919+Object.keys(THEMES).indexOf(themeId)*1013;
  const noise=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
- function note(at:number,duration:number,midi:number,volume:number,kind:'flute'|'pad'|'bass'|'pluck'|'bell'|'kick'|'tom'|'tick'|'breath'|'arcane'|'dreambell'|'drift'){
+ function note(at:number,duration:number,midi:number,volume:number,kind:'flute'|'pad'|'bass'|'pluck'|'bell'|'kick'|'tom'|'tick'|'breath'|'arcane'|'dreambell'|'drift'|'brass'){
   const start=Math.round(at*sampleRate),n=Math.round(duration*sampleRate),freq=midiFrequency(midi);for(let i=0;i<n;i++){const t=i/sampleRate,u=i/n,phase=2*Math.PI*freq*t;let value=0,envelope=1;
-   if(kind==='flute'){envelope=Math.sin(Math.PI*u)*Math.min(1,t/.04);value=.6*Math.sin(phase+.025*Math.sin(t*32))+.08*Math.sin(phase*2)+noise()*.02;}
+   if(kind==='brass'){envelope=Math.min(1,t/.025)*Math.min(1,(duration-t)/.09)*(.8+.2*Math.sin(Math.PI*u));value=.5*Math.sin(phase)+.24*Math.sin(phase*2)+.12*Math.sin(phase*3)+.05*Math.sin(phase*4);}
+   else if(kind==='flute'){envelope=Math.sin(Math.PI*u)*Math.min(1,t/.04);value=.6*Math.sin(phase+.025*Math.sin(t*32))+.08*Math.sin(phase*2)+noise()*.02;}
    else if(kind==='pad'){envelope=Math.sin(Math.PI*u)**1.5;value=(Math.sin(phase)+.2*Math.sin(phase*2+.2*Math.sin(t*3))+.12*Math.sin(phase*3))*.62;}
    else if(kind==='dreambell'){envelope=Math.min(1,t/.18)*Math.exp(-u*3)*(1-u);value=.52*Math.sin(phase+.13*Math.sin(t*2.7))+.2*Math.sin(phase*2.71)+.1*Math.sin(phase*4.13);}
    else if(kind==='drift'){envelope=Math.sin(Math.PI*u)**1.7;value=.43*Math.sin(phase+.36*Math.sin(t*1.1))+.23*Math.sin(phase*1.004)+.1*Math.sin(phase*1.497);}
@@ -43,6 +45,16 @@ export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,
   }
  }
  for(let bar=0;bar<theme.bars;bar++){const at=bar*4*beat,root=theme.roots[bar],third=theme.third[bar],variation=Math.floor(bar/4);
+  if(themeId==='throne-duel'){
+   if(layer===0)for(const off of [0,7,15])note(at,4.2*beat,root+off,.065,'pad');
+   if(layer===1)for(const b of theme.bass)note(at+b*beat,.45*beat,root-12,.17,'bass');
+   if(layer===2){for(const b of theme.drums)note(at+b*beat,.25,b%1?43:29,b%1?.08:.2,b%1?'tom':'kick');for(const b of [1,3])note(at+b*beat,.3,48,.17,'tom');}
+   if(layer===3)for(const [i,b] of [0,.75,1.5,2.5,3].entries())note(at+b*beat,.65*beat,root+12+theme.motif[(bar*2+i)%8],.105,'brass');
+   if(layer===4)for(let i=0;i<16;i++)note(at+i*.25*beat,.22*beat,root+12+[0,7,12,15][(i+bar)%4],.042,'pluck');
+   if(layer===5){note(at,3.8*beat,root+24,.065,'brass');note(at+2*beat,1.8*beat,root+19,.06,'brass');}
+   if(layer===6&&bar%4===3)for(const b of [2,2.5,3,3.25,3.5,3.75])note(at+b*beat,.2,38,.08,'tom');
+   await new Promise<void>(resolve=>setTimeout(resolve,0));continue;
+  }
   // TITAN has its own spacious score. Half-beat offsets and inharmonic bells
   // unsettle exploration without obscuring warning sounds; threat adds a pulse.
   if(theme.texture==='dream'){
@@ -66,8 +78,16 @@ export async function renderMusicLayer(layer:number,sampleRate=MUSIC.sampleRate,
  }
  return data;
 }
+// A single horn challenge and accelerating war-drum roll herald the final duel.
+export function renderDuelHerald(rate=MUSIC.sampleRate){
+ const data=new Float32Array(Math.ceil(2.8*rate));let seed=811;
+ for(const [midi,start,duration,volume] of [[42,0,.9,.24],[49,.7,.7,.23],[54,1.3,1.35,.26],[61,1.3,1.35,.12]])for(let i=0,n=Math.floor(duration*rate);i<n;i++){const t=i/rate,u=i/n,f=2*Math.PI*midiFrequency(midi)*t,index=Math.round(start*rate)+i;if(index<data.length)data[index]+=(Math.sin(f)+.36*Math.sin(f*2)+.16*Math.sin(f*3))*Math.min(1,t/.035)*Math.min(1,(duration-t)/.18)*(.9-.25*u)*volume;}
+ for(const start of [0,.6,1.05,1.4,1.7,1.95,2.15,2.3,2.43,2.54])for(let i=0;i<rate*.22;i++){const t=i/rate,index=Math.round(start*rate)+i;seed=(Math.imul(seed,1664525)+1013904223)>>>0;if(index<data.length)data[index]+=(Math.sin(2*Math.PI*(48*t+2*(1-Math.exp(-25*t))))*.17+(seed/2147483648-1)*.035)*Math.exp(-t*18);}
+ return data;
+}
 export class ProceduralMusic {
  voices:{source:AudioBufferSourceNode;gain:GainNode}[]=[];buffers:AudioBuffer[]=[];state:MusicState='menu';theme:ThemeId='menu';requestedTheme:ThemeId='menu';ready:Promise<void>|null=null;enabled=true;disposed=false;generation=0;
+ private herald:AudioBufferSourceNode|null=null;
  private scoreWorker:Worker|null=null;private cancelScore:()=>void=()=>{};
  private releaseScore(worker:Worker){worker.terminate();worker.onmessage=null;worker.onerror=null;if(this.scoreWorker===worker){this.scoreWorker=null;this.cancelScore=()=>{};}}
  private score(theme:ThemeId):Promise<Float32Array[]>{if(typeof Worker==='undefined')return (async()=>{const layers:Float32Array[]=[];for(let i=0;i<MUSIC.layers.length;i++)layers.push(await renderMusicLayer(i,MUSIC.sampleRate,theme));return layers;})();return new Promise((resolve,reject)=>{const worker=new Worker(new URL('./music-worker.js',import.meta.url),{type:'module'}),layers:Float32Array[]=[];this.scoreWorker=worker;this.cancelScore=()=>{this.releaseScore(worker);resolve([]);};worker.onmessage=event=>{if(event.data.error){this.releaseScore(worker);reject(Error(event.data.error));}else if(event.data.complete){this.releaseScore(worker);resolve(layers);}else layers[event.data.layer]=event.data.pcm;};worker.onerror=()=>{this.releaseScore(worker);reject(Error('Background score unavailable'));};worker.postMessage({theme});});}
@@ -76,11 +96,12 @@ export class ProceduralMusic {
  async prepare(theme:ThemeId=this.requestedTheme){if(this.ready&&this.requestedTheme===theme)return this.ready;this.cancelScore();const gen=++this.generation;this.requestedTheme=theme;this.ready=(async()=>{let pieces:Float32Array[];try{pieces=await this.score(theme);}catch{pieces=[];for(let i=0;i<MUSIC.layers.length;i++){if(this.disposed||gen!==this.generation)return;pieces.push(await renderMusicLayer(i,MUSIC.sampleRate,theme));}}if(this.disposed||gen!==this.generation||pieces.length!==MUSIC.layers.length)return;const next:AudioBuffer[]=[];for(const pcm of pieces){if(this.disposed||gen!==this.generation)return;const buffer=this.context.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);next.push(buffer);}if(this.disposed||gen!==this.generation)return;const enabled=this.enabled;this.stop();this.theme=theme;this.buffers=next;this.enabled=enabled;this.start();})();return this.ready;}
  setTheme(theme:ThemeId){if(theme===this.requestedTheme)return;void this.prepare(theme);}
  start(){if(this.disposed||!this.enabled||this.voices.length||this.buffers.length!==7)return;const at=this.context.currentTime+.08;for(const buffer of this.buffers){const source=this.context.createBufferSource(),gain=this.context.createGain();source.buffer=buffer;source.loop=true;gain.gain.value=0;source.connect(gain);gain.connect(this.output);source.start(at);this.voices.push({source,gain});}this.mix();}
- setState(state:MusicState){this.state=state;this.enabled=true;void this.prepare(this.requestedTheme);this.start();this.mix();}
+ setState(state:MusicState){const enterDuel=state==='final'&&this.state!=='final'&&this.requestedTheme==='throne-duel';if(state!=='final'&&this.herald){try{this.herald.stop();}catch{}this.herald.disconnect();this.herald=null;}this.state=state;this.enabled=true;void this.prepare(this.requestedTheme);this.start();this.mix();if(enterDuel)this.heraldDuel();}
+ private heraldDuel(){const c=this.context,t=c.currentTime,pcm=renderDuelHerald(),buffer=c.createBuffer(1,pcm.length,MUSIC.sampleRate);buffer.copyToChannel(pcm,0);const source=c.createBufferSource();source.buffer=buffer;source.connect(this.filter);this.herald=source;source.onended=()=>{source.disconnect();if(this.herald===source)this.herald=null;};source.start();this.output.gain.cancelAndHoldAtTime(t);this.output.gain.linearRampToValueAtTime(.12,t+.08);this.output.gain.setValueAtTime(.12,t+1.8);this.output.gain.linearRampToValueAtTime(.75,t+3);}
  mix(){const t=this.context.currentTime;this.voices.forEach((v,i)=>{v.gain.gain.cancelAndHoldAtTime(t);v.gain.gain.setTargetAtTime(MIX[this.state][i],t,.45);});}
  duck(){const t=this.context.currentTime;this.output.gain.cancelAndHoldAtTime(t);this.output.gain.linearRampToValueAtTime(.48,t+.04);this.output.gain.setTargetAtTime(.75,t+.22,.3);}
  stop(){this.enabled=false;for(const v of this.voices){try{v.source.stop();}catch{}v.source.disconnect();v.gain.disconnect();}this.voices=[];}
- dispose(){this.cancelScore();this.disposed=true;this.generation++;this.stop();this.buffers=[];this.output.disconnect();this.filter.disconnect();}
+ dispose(){if(this.herald){try{this.herald.stop();}catch{}this.herald.disconnect();this.herald=null;}this.cancelScore();this.disposed=true;this.generation++;this.stop();this.buffers=[];this.output.disconnect();this.filter.disconnect();}
 }
 
 // One cached mono score for choice breaks; battle's seven buffers are reused.
