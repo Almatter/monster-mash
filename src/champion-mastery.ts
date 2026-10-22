@@ -18,9 +18,9 @@ export type MasteryRow={label:string;value:number;target:number;points:number;ma
 const row=(label:string,value:number,target:number,max:number,repeatable=true):MasteryRow=>({label,value,target,points:Math.floor(max*(repeatable?Math.max(0,value)/target:Math.min(1,Math.max(0,value)/target))),max,repeatable});
 export function championMastery(profile:Profile,id:string,courtAvailable=false,realmAvailable=false,warAvailable=false){
  const p=profile.progress,kit=p.archetypes[id]||{},titles=TITLES.filter(t=>t.requirements.some(r=>r.scope===id));
- const baseTitles=titles.filter(t=>t.stage===undefined),courtTitles=titles.filter(t=>t.stage===1),realmTitles=titles.filter(t=>t.stage===2),warTitles=titles.filter(t=>t.stage===3),practice=PRACTICE[id]||[];
+ const baseTitles=titles.filter(t=>t.stage===undefined&&!t.masteryRank),courtTitles=titles.filter(t=>t.stage===1),realmTitles=titles.filter(t=>t.stage===2),warTitles=titles.filter(t=>t.stage===3),practice=PRACTICE[id]||[];
  const bests=Object.entries(profile.personalBests).filter(([key])=>{const [,stage,champion]=key.split('|');return champion===id&&(stage==='0'||courtAvailable&&stage==='1'||realmAvailable&&stage==='2'||warAvailable&&stage==='3');}).map(([,b])=>b);
- const bestSeconds=Math.max(kit.masteryBestSeconds||0,kit.stageOneBestSeconds||0,...bests.map(b=>b.seconds)),bestKills=Math.max(kit.stageOneBestKills||0,...bests.map(b=>b.kills));
+ const bestSeconds=Math.max(kit.masteryBestSeconds||0,kit.stageOneBestSeconds||0,...bests.map(b=>b.seconds)),bestKills=Math.max(kit.masteryBestKills||0,kit.stageOneBestKills||0,...bests.map(b=>b.kills));
  const milestones=[bestKills>=500,bestSeconds>=480,(kit.stageOneTitans||0)>0,(kit.masteryBestMulti||0)>=100,(kit.masteryBestCarnage||0)>=60].filter(Boolean).length;
  const abilityGoals=practice.map(r=>({...r,value:kit[r.metric]||0}));
  const foundationRows=[row('Playtime · 10 points per minute',(kit.seconds||0)/60,450,4500),row('Finished runs ≥60s · 20 points each',kit.runs||0,50,1000),row('Champion titles · 500 points each',baseTitles.filter(t=>p.titles[t.id]).length,3,1500),row('Ability practice',abilityGoals.reduce((n,r)=>n+Math.max(0,r.value/r.target),0),practice.length||1,1500),row('Combat milestones',milestones,5,500,false)];

@@ -1,8 +1,11 @@
+import {championMastery} from './champion-mastery.ts';
+import type {Profile} from './profile.ts';
+import {MONSTERS} from './content-monsters.ts';
 import {STAGE_GATES,trialDays,masteryChampion,masteryProgress,gateChallengeComplete,type StageTrials} from './stage-access.ts';
 export type Totals=Record<string,number>;
 export type Progression={total:Totals;best:Totals;archetypes:Record<string,Totals>;titles:Record<string,string>;legacyTitles:string[];ledger:{id:string;values:Totals}|null;finished:string[];trials:StageTrials};
 export type Requirement={scope:string;metric:string;target:number;label:string};
-export type PrestigeTitle={id:string;name:string;family:string;requirements:Requirement[];stage?:number};
+export type PrestigeTitle={id:string;name:string;family:string;requirements:Requirement[];stage?:number;masteryRank?:'S'};
 const req=(scope:string,metric:string,target:number,label:string):Requirement=>({scope,metric,target,label});
 const title=(id:string,name:string,family:string,...requirements:Requirement[]):PrestigeTitle=>({id,name,family,requirements});
 const runs=(n:number)=>req('total','runs',n,'incarnations lasting at least 60 seconds');
@@ -75,8 +78,9 @@ export const TITLES:PrestigeTitle[]=[
   {...title(id+'DeepResolve',['Unbroken Dominion','Flawless Cataclysm','The Unrelenting Answer','Adamant Resolve','The Unbroken Crown','Unbroken Eclipse','Steadfast Bloodmoon'][i],id[0].toUpperCase()+id.slice(1)+' · Titan depths',req(id,'realmCleanClears',3,'titan victories without resetting')),stage:2},
   {...title(id+'DeepInsight',['The Knowing Emperor','Mind beyond Magic','The Thinking Predator','Wisdom of Stone','The Sevenfold Sovereign','The Remembering Reaper','Sevenfold Moon Huntress'][i],id[0].toUpperCase()+id.slice(1)+' · Titan depths',req(id,'realmInsights',20,'defenses opened without a wrong altar-power trial'),req(id,'realmClears',7,'Stage 3 clears with the Titan slain')),stage:2}
  ]),
- ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different qualifying days with one champion (≥8:30 and ≥15,000 kills each), OR 100 passage points + 6 finished runs + one 8-minute run with one original champion`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion'))))
+ ...STAGE_GATES.map(gate=>gate.kind==='daily'?title(gate.titleId,gate.title,'Stage passage',req('stage:'+gate.titleId,'days',gate.days,`different qualifying days with one champion (≥8:30 and ≥15,000 kills each), OR 100 passage points + 6 finished runs + one 8-minute run with one original champion`)):title(gate.titleId,gate.title,'Stage passage',...gate.goals.map(g=>req('stage:'+gate.titleId,g.metric,g.target,g.label+' with one champion')))),
+ ...Object.values(MONSTERS).map(m=>({...title(m.id+'MasterS',m.archetype+' Grandmaster','S-rank champion mastery',req(m.id,'masteryPoints',600000,'mastery points · rank S with '+m.archetype)),masteryRank:'S' as const}))
 ];
-export function progressValue(p:Progression,r:Requirement){if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return !gate?0:gate.kind==='daily'?(r.metric==='days'?trialDays(p.trials,gate):0):masteryProgress(gate,p,masteryChampion(gate,p)).find(g=>g.metric===r.metric)?.value||0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
+export function progressValue(p:Progression,r:Requirement){if(r.metric==='masteryPoints')return championMastery({progress:p,personalBests:{}} as Profile,r.scope,true,true,true).points;if(r.scope.startsWith('stage:')){const gate=STAGE_GATES.find(g=>g.titleId===r.scope.slice(6));return !gate?0:gate.kind==='daily'?(r.metric==='days'?trialDays(p.trials,gate):0):masteryProgress(gate,p,masteryChampion(gate,p)).find(g=>g.metric===r.metric)?.value||0;}return (r.scope==='total'?p.total:r.scope==='best'?p.best:p.archetypes[r.scope])?.[r.metric]||0;}
 export function titleProgress(p:Progression,t:PrestigeTitle){return t.requirements.map(r=>({...r,value:progressValue(p,r)}));}
 export function awardTitles(p:Progression,now=new Date().toISOString()){const earned:string[]=[];for(const t of TITLES)if(!p.titles[t.id]&&(STAGE_GATES.some(g=>g.titleId===t.id)?gateChallengeComplete(STAGE_GATES.find(g=>g.titleId===t.id)!,p):t.requirements.every(r=>progressValue(p,r)>=r.target))){p.titles[t.id]=now;earned.push(t.id);}return earned;}

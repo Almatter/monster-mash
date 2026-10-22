@@ -54,6 +54,7 @@ let storage:Storage|undefined;try{storage=localStorage;}catch{}
 const preparation=$<HTMLDetailsElement>('preparation');preparation.open=safeRead('mm-guide-seen','0')!=='1';preparation.addEventListener('toggle',()=>{if(!preparation.open)safeWrite('mm-guide-seen','1');});
 if(localTest&&storage){const backing=storage;storage={getItem:key=>backing.getItem('mm-stage2-test-'+key),setItem:(key,value)=>backing.setItem('mm-stage2-test-'+key,value)} as Storage;}const profile=loadProfile(storage);let newRecords:string[]=[],newTitles:string[]=[],runId='';let recordSaveTime=0,selectedPhase=localTest?(new URLSearchParams(location.search).get('stage')==='1'?0:new URLSearchParams(location.search).get('stage')==='2'?1:new URLSearchParams(location.search).get('stage')==='3'?2:3):0,stageServerTime:number|null=null;const verifiedStages=new Set<number>();
 function persist(){if(!saveProfile(profile,storage))$('storageStatus').textContent='Storage unavailable. You can play; records last only for this session.';}
+const openRecordsOnArrival=location.hash==='#records';if(openRecordsOnArrival){const phase=Number(new URLSearchParams(location.search).get('stage'))-1;if(Number.isInteger(phase)&&phase>=0&&phase<=3)selectedPhase=phase;}
 const contentAccess:ContentAccess={champion:id=>championAvailable(id,profile.progress,stageServerTime,localTest),stage:phase=>localTest&&testStageAvailable(phase)||stageAccess(phase,profile.progress,stageServerTime)==='open'};
 const previewIdentity=()=>visibleIdentity(profile,contentAccess);
 const refreshMenu=mountSelection(profile,()=>{persist();renderer.previewIdentity=previewIdentity();},()=>selectedPhase,localTest,contentAccess);
@@ -175,3 +176,5 @@ if('serviceWorker' in navigator){
 
 window.addEventListener('pagehide',event=>{if(event.persisted)audio.setPaused(true);else audio.dispose();});
 window.addEventListener('pageshow',event=>{if(event.persisted&&(!game||game.ended))audio.setPaused(false);});
+
+if(openRecordsOnArrival){$('recordsButton').click();$('closeRecords').focus({preventScroll:true});}

@@ -40,6 +40,7 @@ export function normalizeProfile(value:unknown,legacyName=''):Profile{
  for(const id of GATE_CHAMPIONS){const kit=progress.archetypes[id];if(progress.trials.gatebreaker?.[id]?.length){kit.stageOneBestSeconds=Math.max(kit.stageOneBestSeconds||0,STAGE_GATES[0].kind==='daily'?STAGE_GATES[0].minSeconds:0);kit.stageOneBestKills=Math.max(kit.stageOneBestKills||0,15000);}}
  // This historic best was already explicitly restricted to Calamity by the caller.
  const calamity=progress.archetypes.calamity;if((calamity.magic||0)>0&&(progress.best.calamityMulti||0)>0)calamity.masteryBestCalamityMulti=Math.max(calamity.masteryBestCalamityMulti||0,progress.best.calamityMulti);
+ for(const id of Object.keys(MONSTERS)){const bestKills=Object.entries(personalBests).filter(([key])=>key.split('|')[2]===id).map(([,b])=>b.kills);if(bestKills.length)progress.archetypes[id].masteryBestKills=Math.max(progress.archetypes[id].masteryBestKills||0,...bestKills);}
  awardTitles(progress);
  const profile:Profile={version:3,titanKit:normalizeTitanKit(raw.titanKit),identity,palettes,records,progress,personalBests};identity.colors={...palettes[identity.monsterId]};if(identity.title==='The Hell-Crowned'&&progress.titles.warHell)identity.title='Horde Lord';if(!availableTitles(profile).includes(identity.title))identity.title='';return profile;
 }
@@ -62,7 +63,7 @@ export function recordProgress(profile:Profile,run:RunProgress,finished=false,en
  }
  for(const [key,value] of Object.entries(totals(run.best))){p.best[key]=Math.max(p.best[key]||0,value);const metric='masteryBest'+key[0].toUpperCase()+key.slice(1);kit[metric]=Math.max(kit[metric]||0,value);}
  if(finished&&passage){kit.stageOneBestSeconds=Math.max(kit.stageOneBestSeconds||0,values.seconds||0);kit.stageOneBestKills=Math.max(kit.stageOneBestKills||0,values.kills||0);if((values.seconds||0)>=60)kit.stageOneRuns=(kit.stageOneRuns||0)+1;}
- p.ledger={id:run.id,values};if(finished){if((values.seconds||0)>=60){p.total.runs=(p.total.runs||0)+1;kit.runs=(kit.runs||0)+1;}if(Number.isFinite(endedAt.getTime()))recordStageTrial(p.trials,{monsterId:run.monsterId,phase:run.phase??0,reason:run.reason??'retired',seconds:values.seconds||0,kills:values.kills||0},endedAt);p.finished.push(run.id);p.finished=p.finished.slice(-64);p.ledger=null;}
+ p.ledger={id:run.id,values};if(finished){kit.masteryBestKills=Math.max(kit.masteryBestKills||0,values.kills||0);if((values.seconds||0)>=60){p.total.runs=(p.total.runs||0)+1;kit.runs=(kit.runs||0)+1;}if(Number.isFinite(endedAt.getTime()))recordStageTrial(p.trials,{monsterId:run.monsterId,phase:run.phase??0,reason:run.reason??'retired',seconds:values.seconds||0,kills:values.kills||0},endedAt);p.finished.push(run.id);p.finished=p.finished.slice(-64);p.ledger=null;}
  return awardTitles(p);
 }
 export function resetProgress(profile:Profile){profile.records={};profile.progress=emptyProgress();profile.personalBests={};if(!BASE_TITLES.includes(profile.identity.title))profile.identity.title='';}
