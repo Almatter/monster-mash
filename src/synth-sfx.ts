@@ -26,6 +26,14 @@ function design(kind:string):Design{
 }
 function hash(value:string){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 export function synthesizeCue(context:AudioContext,kind:string,variant=0){
+ if(kind==='victory'){
+  const buffer=context.createBuffer(1,Math.ceil(3.6*context.sampleRate),context.sampleRate),data=buffer.getChannelData(0),rate=context.sampleRate;
+  // A rising brass-like call resolves into a sustained D-major coronation chord.
+  const notes=[[62,0,.22,.7],[69,.22,.22,.7],[74,.44,.38,.8],[77,.84,.3,.7],[76,1.16,.24,.7],[74,1.42,.28,.75],[81,1.72,.35,.8],[50,2.08,1.45,.32],[57,2.08,1.45,.27],[62,2.08,1.45,.32],[66,2.08,1.45,.26],[69,2.08,1.45,.25]];
+  for(const [midi,start,duration,volume] of notes){const frequency=440*2**((midi-69)/12);for(let i=0,n=Math.ceil(duration*rate);i<n;i++){const t=i/rate,p=i/n,phase=2*Math.PI*frequency*t,envelope=Math.min(1,t/.018)*Math.min(1,(duration-t)/.22)*(1-p*.45),sample=(Math.sin(phase)+.3*Math.sin(phase*2)+.12*Math.sin(phase*3))*envelope*volume*.26,index=Math.round(start*rate)+i;if(index<data.length)data[index]+=sample;const echo=index+Math.round(.085*rate);if(echo<data.length)data[echo]+=sample*.13;}}
+  return buffer;
+ }
+
  if(CUES[kind]?.bus==='ui'&&CUES[kind].frequency){const cue=CUES[kind],duration=cue.duration||.08,buffer=context.createBuffer(1,Math.ceil(duration*context.sampleRate),context.sampleRate),data=buffer.getChannelData(0);let phase=0;for(let i=0;i<data.length;i++){const p=i/data.length;phase+=Math.PI*2*cue.frequency!*(1+p*.18)/context.sampleRate;data[i]=Math.sin(phase)*Math.sin(Math.PI*p)*Math.exp(-p*3)*.5;}return buffer;}
 
  const base=design(kind),devourerBasic=kind==='basic.devourer',organic=isOrganicCue(kind),death=isDeathCue(kind),style=base.style,duration=base.duration*(organic?[.84,.93,1,1.08,1.16][variant%5]:1),pitch=base.pitch*(organic?1+((variant*7)%11-5)*(death?.022:.014):1),weight=base.weight,rate=context.sampleRate,length=Math.max(128,Math.ceil(duration*rate));

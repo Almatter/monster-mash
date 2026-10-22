@@ -9,6 +9,7 @@ export const CUES:Record<string,Cue>={
  collision:{bus:'sfx',priority:1,gap:.2},devour:{bus:'sfx',priority:3,gap:.25},corruption:{bus:'sfx',priority:2,gap:.3,frequency:160,duration:.18},
  multikill:{bus:'sfx',priority:4,gap:1.5},'multikill.bloodbath':{bus:'sfx',priority:5,gap:1.5},'multikill.annihilation':{bus:'sfx',priority:6,gap:1.5},'multikill.extinction':{bus:'sfx',priority:8,gap:1.5},carnage:{bus:'sfx',priority:4,gap:1,frequency:620,duration:.25},
  feat:{bus:'sfx',priority:5,gap:1.5,frequency:740,duration:.3},achievement:{bus:'ui',priority:6,gap:1,frequency:880,duration:.35},title:{bus:'ui',priority:8,gap:1,frequency:1040,duration:.5},
+ victory:{bus:'ui',priority:10,gap:2,duration:3.6,gain:1.3},
  defeat:{bus:'sfx',priority:8,gap:1},wave:{bus:'sfx',priority:3,gap:2,frequency:330,duration:.25},
  ultimateStart:{bus:'sfx',priority:6,gap:.5,frequency:110,duration:.45},ultimateImpact:{bus:'sfx',priority:7,gap:.4},meteorImpact:{bus:'sfx',priority:5,gap:.3}
 };
