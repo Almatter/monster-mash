@@ -1,3 +1,4 @@
+import {openHellAscension} from './crucible-ascension-preview.ts';
 import {bindUIAudio} from './ui-audio.ts';
 import {hagState,hagHexPlacement,hagHexCount} from './hag.ts';
 import {WarGame,WAR_GOAL} from './stage-four.ts';
@@ -178,3 +179,5 @@ window.addEventListener('pagehide',event=>{if(event.persisted)audio.setPaused(tr
 window.addEventListener('pageshow',event=>{if(event.persisted&&(!game||game.ended))audio.setPaused(false);});
 
 if(openRecordsOnArrival){$('recordsButton').click();$('closeRecords').focus({preventScroll:true});}
+
+document.addEventListener('mm-hell-ascension',event=>{const id=(event as CustomEvent).detail?.monsterId;if(!Object.hasOwn(MONSTERS,id)||!contentAccess.champion(id)||!contentAccess.stage(3)||(profile.progress.archetypes[id]?.warHellClears||0)<1)return;openHellAscension(createIdentity({...profile.identity,monsterId:id,colors:profile.palettes[id]}),renderer.assets);});

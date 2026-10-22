@@ -1,10 +1,11 @@
 import {MONSTERS} from './content-monsters.ts';
 import type {Identity} from './identity.ts';
 export class CrucibleCelebration{
- started=performance.now();settled=false;canvas:HTMLCanvasElement;identity:Identity;portrait:CanvasImageSource;atlas:CanvasImageSource|undefined;aura:CanvasImageSource|undefined;hell:boolean;motion:boolean;
+ started=performance.now();settled=false;requestedMotion=false;canvas:HTMLCanvasElement;identity:Identity;portrait:CanvasImageSource;atlas:CanvasImageSource|undefined;aura:CanvasImageSource|undefined;hell:boolean;motion:boolean;
  constructor(canvas:HTMLCanvasElement,identity:Identity,portrait:CanvasImageSource,atlas:CanvasImageSource|undefined,aura:CanvasImageSource|undefined,hell:boolean,motion=!matchMedia('(prefers-reduced-motion: reduce)').matches){this.canvas=canvas;this.identity=identity;this.portrait=portrait;this.atlas=atlas;this.aura=aura;this.hell=hell;this.motion=motion;canvas.width=512;canvas.height=576;}
- get animated(){return this.hell&&this.motion&&!!this.atlas;}
- replay(){this.started=performance.now();this.settled=false;}
+ get canPlay(){return this.hell&&!!this.atlas;}
+ get animated(){return this.canPlay&&(this.motion||this.requestedMotion);}
+ replay(){if(!this.canPlay)return false;this.requestedMotion=true;this.started=performance.now();this.settled=false;return true;}
  draw(now:number){
   if(this.settled)return;const c=this.canvas.getContext('2d')!,t=(now-this.started)/1000,animated=this.animated&&t<3.2,blend=animated?Math.max(0,Math.min(1,(t-2.1)/1.1)):1;
   c.clearRect(0,0,512,576);c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
